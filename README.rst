@@ -4,10 +4,6 @@
 (`www.fmriprep.org <https://www.fmriprep.org>`__) for the preprocessing of
 task-based and resting-state functional MRI (fMRI) from stroke patients.
 
-.. image:: https://img.shields.io/badge/docker-nipreps/fmriprep-brightgreen.svg?logo=docker&style=flat
-  :target: https://hub.docker.com/r/nipreps/fmriprep/tags/
-  :alt: Docker image available!
-
 .. image:: https://readthedocs.org/projects/fmriprep/badge/?version=latest
   :target: http://fmriprep.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
@@ -15,19 +11,30 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 
 About
 -----
-.. image:: https://github.com/oesteban/fmriprep/raw/f4c7a9804be26c912b24ef4dccba54bdd72fa1fd/docs/_static/fmriprep-21.0.0.svg
+.. image:: https://github.com/alixlam/fmristroke/blob/main/images/pipeline.png 
 
-
-*fMRIPrep* is a functional magnetic resonance imaging (fMRI) data
-preprocessing pipeline that is designed to provide an easily accessible,
-state-of-the-art interface that is robust to variations in scan acquisition
+*fMRIStroke* is a functional magnetic resonance imaging (fMRI) data
+quality checks pipeline that is designed to provide an easily accessible,
+interface that is robust to variations in scan acquisition
 protocols and that requires minimal user input, while providing easily
 interpretable and comprehensive error and output reporting.
-It performs basic processing steps (coregistration, normalization, unwarping,
-noise component extraction, segmentation, skull-stripping, etc.) providing
-outputs that can be easily submitted to a variety of group level analyses,
-including task-based or resting-state fMRI, graph theory measures, and surface
-or volume-based statistics.
+It uses fmriprep (`www.fmriprep.org <https://www.fmriprep.org>`__) outputs derivatives to generate
+new quality checks plots for stroke patients when lesion masks are available (as recommended in [1]) and
+computes new confounds like signals in lesion masks, and ICA based confounds (as proposed in [2]).
+Added quality checks : 
+ 1- *hemodynamics lagmap* using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
+output report that are added to the fmriprep report
+ 2- *homotopic connectivity* if freesurfer reconstruction was run
+ 3- *parcellation homogeneity* if atlas is provided
+
+Added confounds : 
+ 1- *lesion* : signal in lesion mask
+ 2- *CSF lesion* : signal in CSF + lesion combined mask
+ 3- *ICA_comp* : ICA based confounds [2] 
+
+Added outputs :
+ 1- ROI masks in standardized space
+
 
 .. note::
 
@@ -37,18 +44,13 @@ or volume-based statistics.
    See the `workflows section of our documentation
    <https://fmriprep.readthedocs.io/en/latest/workflows.html>`__ for more details.
 
-The *fMRIPrep* pipeline uses a combination of tools from well-known software
-packages, including FSL_, ANTs_, FreeSurfer_ and AFNI_.
-This pipeline was designed to provide the best software implementation for each
-state of preprocessing, and will be updated as newer and better neuroimaging
-software become available.
+The *fMRIStroke* pipeline uses a combination of tools from well-known software
+packages, including ANTs_ and FreeSurfer_.
+This pipeline was designed to run after fmriprep.
 
 This tool allows you to easily do the following:
 
-- Take fMRI data from raw to fully preprocessed form.
-- Implement tools from different software packages.
-- Achieve optimal data processing quality by using the best tools available.
-- Generate preprocessing quality reports, with which the user can easily
+- Generate preprocessing quality reports specific to stroke patients, with which the user can easily
   identify outliers.
 - Receive verbose output concerning the stage of preprocessing for each
   subject, including meaningful errors.
@@ -56,20 +58,18 @@ This tool allows you to easily do the following:
   speed-up from manual processing or shell-scripted pipelines.
 
 More information and documentation can be found at
-https://fmriprep.readthedocs.io/
+https://fmristroke.readthedocs.io/
 
 
 Citation
 --------
 **Citation**.
-Please acknowledge this work using the citation boilerplate that *fMRIPrep* includes
-in the visual report generated for every subject processed.
+
 
 
 
 Acknowledgements
 ----------------
-This work is steered and maintained by the `NiPreps Community <https://www.nipreps.org>`__.
-This work was supported by the Laura and John Arnold Foundation,
-the NIH (grant NBIB R01EB020740, PI: Ghosh),
-and NIMH (R24MH114705, R24MH117179, R01MH121867, PI: Poldrack)
+This work makes great use of the work by the `NiPreps Community <https://www.nipreps.org>`__.
+and the work done by `rapidtides authors <https://rapidtide.readthedocs.io/en/latest/>__. `
+
