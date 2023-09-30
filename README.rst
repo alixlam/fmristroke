@@ -25,19 +25,19 @@ computes new confounds like signals in lesion masks, and ICA based confounds (as
 Added quality checks: 
 
 - 1- *hemodynamics lagmap* using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
-output report that are added to the fmriprep report
-- 2- *homotopic connectivity* if freesurfer reconstruction was run
-- 3- *parcellation homogeneity* if atlas is provided
+output report that are added to the fmriprep report.
+- 2- *homotopic connectivity* if freesurfer reconstruction was run.
+- 3- *parcellation homogeneity* if atlas is provided.
 
 Added confounds:
 
-- 1- *lesion*: signal in lesion mask
-- 2- *CSF lesion*: signal in CSF + lesion combined mask
-- 3- *ICA_comp*: ICA based confounds [2]_
+- 1- *lesion*: signal in lesion mask.
+- 2- *CSF lesion*: signal in CSF + lesion combined mask.
+- 3- *ICA_comp*: ICA based confounds [2]_.
 
 Added outputs:
 
-- 1- ROI masks in standardized space
+- 1- ROI masks in standardized space.
 
 
 .. note::
