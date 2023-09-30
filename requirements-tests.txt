@@ -1,0 +1,10 @@
+ipython
+pylint
+pycodestyle
+autopep8
+black
+isort
+build
+pytest
+pytest-cov
+coverage

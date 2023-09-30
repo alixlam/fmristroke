@@ -1,0 +1,8 @@
+nilearn
+matplotlib
+ipykernel
+bids
+numpy
+pyantsx
+nipype
+niworkflows
