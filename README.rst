@@ -19,21 +19,21 @@ interface that is robust to variations in scan acquisition
 protocols and that requires minimal user input, while providing easily
 interpretable and comprehensive error and output reporting.
 It uses fmriprep (`www.fmriprep.org <https://www.fmriprep.org>`__) outputs derivatives to generate
-new quality checks plots for stroke patients when lesion masks are available (as recommended in [1]) and
-computes new confounds like signals in lesion masks, and ICA based confounds (as proposed in [2]).
+new quality checks plots for stroke patients when lesion masks are available (as recommended in [1]_) and
+computes new confounds like signals in lesion masks, and ICA based confounds (as proposed in [2]_).
 Added quality checks : 
- 1- *hemodynamics lagmap* using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
+- 1- *hemodynamics lagmap* using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
 output report that are added to the fmriprep report
- 2- *homotopic connectivity* if freesurfer reconstruction was run
- 3- *parcellation homogeneity* if atlas is provided
+- 2- *homotopic connectivity* if freesurfer reconstruction was run
+- 3- *parcellation homogeneity* if atlas is provided
 
 Added confounds : 
- 1- *lesion* : signal in lesion mask
- 2- *CSF lesion* : signal in CSF + lesion combined mask
- 3- *ICA_comp* : ICA based confounds [2] 
+- 1- *lesion* : signal in lesion mask
+- 2- *CSF lesion* : signal in CSF + lesion combined mask
+- 3- *ICA_comp* : ICA based confounds [2]_
 
 Added outputs :
- 1- ROI masks in standardized space
+- 1- ROI masks in standardized space
 
 
 .. note::
@@ -71,5 +71,12 @@ Citation
 Acknowledgements
 ----------------
 This work makes great use of the work by the `NiPreps Community <https://www.nipreps.org>`__.
-and the work done by `rapidtides authors <https://rapidtide.readthedocs.io/en/latest/>__. `
+and the work done by `rapidtides authors <https://rapidtide.readthedocs.io/en/latest/>`__. 
 
+
+References
+----------
+
+.. [1] To  add 
+
+.. [2] To add
