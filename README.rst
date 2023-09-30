@@ -39,15 +39,6 @@ Added outputs:
 
 - 1- ROI masks in standardized space.
 
-
-.. note::
-
-   *fMRIPrep* performs minimal preprocessing.
-   Here we define 'minimal preprocessing'  as motion correction, field
-   unwarping, normalization, bias field correction, and brain extraction.
-   See the `workflows section of our documentation
-   <https://fmriprep.readthedocs.io/en/latest/workflows.html>`__ for more details.
-
 The *fMRIStroke* pipeline uses a combination of tools from well-known software
 packages, including ANTs_ and FreeSurfer_.
 This pipeline was designed to run after fmriprep.
