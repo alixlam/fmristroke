@@ -57,7 +57,7 @@ https://fmristroke.readthedocs.io/
 
 Usage
 -----
-.. image:: /home/alix/fmristroke/images/sub-02_ses-S0_task-MIpre_desc-flirtnobbrlesion_bold.svg
+.. image:: https://github.com/alixlam/fmristroke/blob/main/images/sub-02_ses-S0_task-MIpre_desc-flirtnobbrlesion_bold.svg
 
 
 
