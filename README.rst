@@ -55,6 +55,11 @@ This tool allows you to easily do the following:
 More information and documentation can be found at
 https://fmristroke.readthedocs.io/
 
+Usage
+-----
+.. image:: /home/alix/fmristroke/images/sub-02_ses-S0_task-MIpre_desc-flirtnobbrlesion_bold.svg
+
+
 
 Citation
 --------
