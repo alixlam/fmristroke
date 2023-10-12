@@ -217,8 +217,8 @@ page.
 
 
 
-Usage
------
+Outputs
+=======
 .. image:: https://github.com/alixlam/fmristroke/blob/main/images/sub-02_ses-S0_task-MIpre_desc-flirtnobbrlesion_bold.svg
 
 
