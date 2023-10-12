@@ -81,29 +81,31 @@ Example: ::
 Command-Line Arguments
 ----------------------
     usage: fmristroke [-h]
-              [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
-              [--bids-filter-file FILE] [--fmriprep_dir PATH]
-              [--nprocs NPROCS] [--omp-nthreads OMP_NTHREADS]
-              [--mem MEMORY_MB] [--low-mem] [--use-plugin FILE]
-              [--reports-only] [--output-spaces [OUTPUT_SPACES ...]]
-              [--ncomp_method {varexp,aic,kic,mdl}]
-              [--ica_method {canica,dictlearning}] [--maxlag MAXLAG]
-              [--fs-license-file FILE] [--freesurfer] [-w WORK_DIR]
-              [--clean-workdir] [--resource-monitor] [--config-file FILE]
-              [--write-graph] [-v] [--stop-on-first-crash]
-              bids_dir output_dir {participant}
+      [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
+      [--bids-filter-file FILE] [--fmriprep_dir PATH]
+      [--nprocs NPROCS] [--omp-nthreads OMP_NTHREADS]
+      [--mem MEMORY_MB] [--low-mem] [--use-plugin FILE]
+      [--reports-only] [--output-spaces [OUTPUT_SPACES ...]]
+      [--ncomp_method {varexp,aic,kic,mdl}]
+      [--ica_method {canica,dictlearning}] [--maxlag MAXLAG]
+      [--fs-license-file FILE] [--freesurfer] [-w WORK_DIR]
+      [--clean-workdir] [--resource-monitor] [--config-file FILE]
+      [--write-graph] [-v] [--stop-on-first-crash]
+      bids_dir output_dir {participant}
 
 positional arguments:
 ~~~~~~~~~~~~~~~~~~~~~
-  bids_dir              The root folder of a BIDS valid dataset (sub-XXXXX
-                        folders should be found at the top level in this
-                        folder).
+  bids_dir              
+    The root folder of a BIDS valid dataset (sub-XXXXX
+    folders should be found at the top level in this
+    folder).
   output_dir            The output path for the outcomes of preprocessing and
                         visual reports
   {participant}         Processing stage to be run, only "participant" in the
                         case of fMRIPrep (see BIDS-Apps specification).
 
 options:
+~~~~~~~~
   -h, --help            show this help message and exit
 
 Options for filtering BIDS queries:
