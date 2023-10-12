@@ -40,7 +40,7 @@ setup(
     install_requires=read_requirements("requirements.txt"),
     extras_require={"test": read_requirements("requirements-test.txt")},
     python_requires=">=3.8",
-    console_scripts=[
+    entry_points = {'console_scripts': [
         'fmristroke=fmristroke.cli.run:main'
-    ]
+    ]}
 )
