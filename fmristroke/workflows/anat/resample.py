@@ -71,7 +71,7 @@ def init_roi_std_trans_wf(
 
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from ..interfaces.pyants import ApplyTransforms
+    from ...interfaces.pyants import ApplyTransforms
     from niworkflows.interfaces.nibabel import GenerateSamplingReference
     from niworkflows.interfaces.utility import KeySelect
     from niworkflows.utils.spaces import format_reference
@@ -137,7 +137,7 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
     )
 
     mask_std_tfm = pe.Node(
-        ApplyTransforms(interpolation="MultiLabel"), name="mask_std_tfm", mem_gb=1
+        ApplyTransforms(interpolation="multiLabel"), name="mask_std_tfm", mem_gb=1
     )
 
     # Write corrected file in the designated output dir

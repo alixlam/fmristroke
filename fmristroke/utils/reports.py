@@ -27,12 +27,14 @@ def get_hemoreport(lagmap,
         results["lh_mean_lag"] = None
         results["rh_mean_lag"] = None
     else :
-        lh_mask = nib.load(hemimask).get_fdata()
+        from nilearn.image import resample_to_img
+        hemimask = resample_to_img(source_img = hemimask, target_img=brain_mask, interpolation='nearest')
         # Labels from Freesurfer : 2 : Left cerebral wm, 3: Left cereabelar cortex
+        lh_mask = hemimask.get_fdata()
         lh_mask[lh_mask != 2] = 0
         lh_mask[lh_mask != 3] = 0
         lh_mask[lh_mask != 0] = 1
-        rh_mask = nib.load(hemimask).get_fdata()
+        rh_mask = hemimask.get_fdata()
         rh_mask[lh_mask != 42] = 0
         rh_mask[lh_mask != 43] = 0
         rh_mask[lh_mask != 0] = 1
