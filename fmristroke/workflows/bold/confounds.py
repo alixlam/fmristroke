@@ -95,13 +95,12 @@ def init_confs_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold",
-                "boldref",
-                "bold_mask",
+                "bold_t1",
+                "boldref_t1",
+                "boldmask_t1",
                 "t1w_mask",
                 "roi",
                 "t1w_tpms",
-                "t1_bold_xform",
                 "confounds_file",
             ]
         ),
@@ -117,11 +116,14 @@ def init_confs_wf(
         name="outputnode",
     )
     
-    # Project T1w mask into BOLD space and merge with BOLD brainmask
+    # Resample T1w mask into BOLD space and merge with BOLD brainmask
     t1w_mask_tfm = pe.Node(
-        ApplyTransforms(interpolation="multiLabel"),
-        name="t1w_mask_tfm",
-    )
+        niu.Function(function=_resample_to_img), name="t1w_mask_tfm")
+    t1w_mask_tfm.inputs.interpolation = 'nearest'
+    t1w_mask_tfm_roi = pe.Node(
+        niu.Function(function=_resample_to_img), name="t1w_mask_tfm_roi")
+    t1w_mask_tfm_roi.inputs.interpolation = 'nearest'
+
     
     intersect_mask = pe.Node(niu.Function(function=_boldmsk_from_T1w), name="intersect_mask")
     
@@ -130,11 +132,17 @@ def init_confs_wf(
 
     # Resample probseg maps in BOLD space via T1w-to-BOLD transform
     acc_msk_tfm = pe.MapNode(
-        ApplyTransforms(interpolation="gaussian"),
+        ApplyTransforms(interpolation="gaussian", transforms=['identity']),
         iterfield=["input_image"],
         name="acc_msk_tfm",
         mem_gb=0.1,
     )
+    acc_msk_tfm = pe.MapNode(
+        niu.Function(function=_resample_to_img), 
+        iterfield=["input_image"],
+        name="acc_msk_tfm",)
+    acc_msk_tfm.inputs.interpolation = "continuous"
+    
     acc_msk_brain = pe.MapNode(ApplyMask(), name="acc_msk_brain", iterfield=["in_file"])
     acc_msk_bin = pe.MapNode(Binarize(thresh_low=0.99), name="acc_msk_bin", iterfield=["in_file"])
     
@@ -152,12 +160,7 @@ def init_confs_wf(
         "csf_wm_lesion",
         "csf_wm_nolesion",
     ]
-    
-    # Project lesion mask into bold space
-    t1w_mask_tfm_roi = pe.Node(
-        ApplyTransforms(interpolation="multiLabel"),
-        name="t1w_mask_tfm_roi",
-    )
+        
     
     #Merge rois
     merge_rois = pe.Node(
@@ -220,44 +223,42 @@ def init_confs_wf(
     workflow.connect([
         # Brain masks
         (inputnode, t1w_mask_tfm, [("t1w_mask", "input_image"),
-                                    ("bold_mask", "reference_image"),
-                                    ("t1_bold_xform", "transforms")]),
-        (inputnode, intersect_mask, [("bold", "bold")]),
-        (t1w_mask_tfm, intersect_mask, [("output_image", "T1wmask")]),
+                                    ("boldmask_t1", "reference_image"),]),
+        (inputnode, intersect_mask, [("bold_t1", "bold")]),
+        (t1w_mask_tfm, intersect_mask, [("out", "T1wmask")]),
         
         # CSF, WM and combined masks with lesions
         (inputnode, acc_masks, [("t1w_tpms", "in_vfs"),
-                                (("bold", _get_zooms), "bold_zooms")]),
-        (inputnode, acc_msk_tfm, [("t1_bold_xform", "transforms"),]),
+                                (("bold_t1", _get_zooms), "bold_zooms")]),
+        #(inputnode, acc_msk_tfm, [("t1_bold_xform", "transforms"),]),
         (intersect_mask, acc_msk_tfm, [("out", "reference_image")]),
         (intersect_mask, acc_msk_brain, [("out", "in_mask")]),
         (acc_masks, acc_msk_tfm, [("out_masks", "input_image")]),
-        (acc_msk_tfm, acc_msk_brain, [("output_image", "in_file")]),
+        (acc_msk_tfm, acc_msk_brain, [("out", "in_file")]),
         (acc_msk_brain, acc_msk_bin, [("out_file", "in_file")]),
         (acc_msk_bin, acc_msk_bin_lesion, [("out_file", "in_file")]),
         
         # Lesion masks
         (inputnode, t1w_mask_tfm_roi, [("roi", "input_image"),
-                                        ("bold_mask", "reference_image"),
-                                        ("t1_bold_xform", "transforms")]),
-        (t1w_mask_tfm_roi, acc_msk_bin_lesion, [("output_image", "roi_file")]),
+                                        ("boldmask_t1", "reference_image"),]),
+        (t1w_mask_tfm_roi, acc_msk_bin_lesion, [("out", "roi_file")]),
 
         # Mean region signals
-        (t1w_mask_tfm_roi, merge_rois, [("output_image", "in1")]),
+        (t1w_mask_tfm_roi, merge_rois, [("out", "in1")]),
         (acc_msk_bin_lesion, merge_rois, [("out_masks", "in2")]),
-        (inputnode, signals,[("bold", "in_file")]),
+        (inputnode, signals,[("bold_t1", "in_file")]),
         (merge_rois, signals, [("out", "label_files")]),
 
 
         # ICA
-        (inputnode, n_component, [("bold", "bold")]),
+        (inputnode, n_component, [("bold_t1", "bold")]),
         (intersect_mask, n_component, [("out", "mask")]),
         (n_component, canica, [("out", "n_components")]),
-        (inputnode, canica, [("bold", "in_files")]),
+        (inputnode, canica, [("bold_t1", "in_files")]),
         (intersect_mask, canica, [("out", "mask")]),
         (canica, lesion_components, [("components_img_zscored", "IC_components")]),
         (canica, lesion_components, [("ts", "ts")]),
-        (t1w_mask_tfm_roi, lesion_components, [("output_image", "ROI_mask")]),
+        (t1w_mask_tfm_roi, lesion_components, [("out", "ROI_mask")]),
         
 
         # Collate computed confounds together
@@ -274,9 +275,9 @@ def init_confs_wf(
         
         # Set outputs
         (lesion_components, IC_plot, [("out_signal","in_ts")]),
-        (inputnode, IC_plot, [("boldref", "in_file")]),
+        (inputnode, IC_plot, [("boldref_t1", "in_file")]),
         (canica, IC_plot, [("components_img_zscored", "in_ICs")]),
-        (t1w_mask_tfm_roi, IC_plot, [("output_image", "in_mask")]),
+        (t1w_mask_tfm_roi, IC_plot, [("out", "in_mask")]),
         (concat, outputnode, [("confounds_file", "confounds_file")]),
         (mrg_conf_metadata2, outputnode, [("out_dict", "confounds_metadata")]),
         (intersect_mask, outputnode, [("out", "boldmask")]),
@@ -352,3 +353,11 @@ def _get_zooms(in_file):
     import nibabel as nb
 
     return tuple(nb.load(in_file).header.get_zooms()[:3])
+
+def _resample_to_img(input_image, reference_image, interpolation):
+    from pathlib import Path
+    from nilearn.image import resample_to_img
+    new_img = resample_to_img(input_image, reference_image, interpolation=interpolation)
+    out_name = Path("mask_resamp.nii.gz").absolute()
+    new_img.to_filename(out_name)
+    return str(out_name)

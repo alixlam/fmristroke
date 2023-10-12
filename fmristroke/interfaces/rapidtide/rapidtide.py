@@ -50,7 +50,8 @@ class RapidTideInputSpec(CommandLineInputSpec):
     spatialfilt = traits.Float(
         6,
         argstr="--spatialfilt %f",
-        desc="Spatially filter fMRI data prior to analysis using GAUSSSIGMA in mm."
+        desc="Spatially filter fMRI data prior to analysis using GAUSSSIGMA in mm.",
+        usedefault=True,
     )
     
     confounds_file = File(

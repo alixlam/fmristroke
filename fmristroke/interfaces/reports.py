@@ -62,7 +62,7 @@ class ICPlot(reporting.ReportCapableInterface):
     
     def _generate_report(self):
         from ..utils.viz import plot_multicomponents
-        self._out_report = os.path.abspath(self.inputs.out_report + ".png")
+        self._out_report = os.path.abspath(self.inputs.out_report + ".svg")
         fig = plot_multicomponents(
             anat_nii = self.inputs.in_file, lesion_nii= self.inputs.in_mask,
             stat_map_nii=self.inputs.in_ICs, tseries=self.inputs.in_ts)

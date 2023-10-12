@@ -133,23 +133,14 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# data folders and temporary files
-/data
+# tmp folders and temporary files
 /tmp
 temp*
 __*
 
-# Config file
-config*.py
-
 # Output dirctory 
 out/ 
 
-# data folder
-data/
-
-# tests
-test*
 
 # licence files
 .licenses/

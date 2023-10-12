@@ -1,0 +1,85 @@
+"""
+The workflow builder factory method.
+
+All the checks and the construction of the workflow are done
+inside this function that has pickleable inputs and output
+dictionary (``retval``) to allow isolation using a
+``multiprocessing.Process`` that allows fmriprep to enforce
+a hard-limited memory-scope.
+
+"""
+
+
+def build_workflow(config_file, retval):
+    """Create the Nipype Workflow that supports the whole execution graph."""
+    from pathlib import Path
+
+    from niworkflows.utils.bids import collect_participants
+    from pkg_resources import resource_filename as pkgrf
+
+    from fmriprep.reports.core import generate_reports
+
+    from .. import config
+    from fmriprep.utils.misc import check_deps
+    from ..workflows.final import init_fmristroke_wf
+
+    config.load(config_file)
+    build_log = config.loggers.workflow
+
+    fmriprep_dir = config.execution.fmriprep_dir
+    version = config.environment.version
+
+    retval["return_code"] = 1
+    retval["workflow"] = None
+
+    banner = [f"Running fMRIStroke version {version}"]
+    
+    build_log.log(25, f"\n{' ' * 9}".join(banner))
+    # First check that bids_dir looks like a BIDS folder
+    subject_list = collect_participants(
+        config.execution.layout, participant_label=config.execution.participant_label
+    )
+    
+    # Called with reports only
+    if config.execution.reports_only:
+        build_log.log(25, "Running --reports-only on participants %s", ", ".join(subject_list))
+        retval["return_code"] = generate_reports(
+            config.execution.participant_label,
+            config.execution.fmriprep_dir,
+            config.execution.run_uuid,
+            config=pkgrf("fmristroke", "data/reports-spec.yml"),
+            packagename="fmriprep",
+        )
+        return retval
+
+    # Build main workflow
+    init_msg = [
+        "Building fMRIStroke's workflow:",
+        f"BIDS dataset path: {config.execution.bids_dir}.",
+        f"fMRIPrep path: {config.execution.fmriprep_dir}.",
+        f"Participant list: {subject_list}.",
+        f"Run identifier: {config.execution.run_uuid}.",
+        f"Output spaces: {config.execution.output_spaces}.",
+    ]
+
+    build_log.log(25, f"\n{' ' * 11}* ".join(init_msg))
+
+    retval["workflow"] = init_fmristroke_wf()
+
+    # Check workflow for missing commands
+    missing = check_deps(retval["workflow"])
+    if missing:
+        build_log.critical(
+            "Cannot run fMRIPrep. Missing dependencies:%s",
+            "\n\t* ".join([""] + [f"{cmd} (Interface: {iface})" for iface, cmd in missing]),
+        )
+        retval["return_code"] = 127  # 127 == command not found.
+        return retval
+
+    config.to_filename(config_file)
+    build_log.info(
+        "fMRIStroke workflow graph with %d nodes built successfully.",
+        len(retval["workflow"]._get_all_nodes()),
+    )
+    retval["return_code"] = 0
+    return retval

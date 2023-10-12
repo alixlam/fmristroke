@@ -20,7 +20,7 @@ def plot_multicomponents(
     lesion_nii,
 ):
     
-    ts = pd.read_csv(tseries, sep=" ") if isinstance(tseries, str) else tseries
+    ts = pd.read_csv(tseries, sep="\t") if isinstance(tseries, str) else tseries
     n_components = ts.shape[1]
     
     if n_components == 0:

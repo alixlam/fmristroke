@@ -51,9 +51,9 @@ def init_hemodynamic_wf(
     bold_t1
         BOLD image in T1w space, after the prescribed corrections (STC, HMC and SDC)
         when available.
-    bold_mask
+    boldmask
         Bold fov mask
-    roi_t1w
+    roi
         Roi mask in T1w space 
     t1w
         T1w image
@@ -65,8 +65,6 @@ def init_hemodynamic_wf(
         List of tissue probability maps in T1w space
     t1w_aseg
         Segmentation of structural image, done with FreeSurfer.
-    bold_t1_xform
-        Affine matrix that maps the native BOLD space into alignement the T1w space
     confounds_file
         TSV of all aggregated confounds.
 
@@ -94,12 +92,11 @@ def init_hemodynamic_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_t1",
-                "bold_mask",
+                "boldmask",
                 "roi",
-                "t1w",
+                "t1w_preproc",
                 "t1w_mask",
                 "t1w_tpms",
-                "bold_t1_xform",
                 "t1w_aseg",
                 "confounds_file",
             ]
@@ -113,13 +110,7 @@ def init_hemodynamic_wf(
                 "lagmap_metadata"]
         ),
         name="outputnode",
-    )
-    
-    # Project bold fov mask into T1w space
-    t1w_mask_fov_tfm = pe.Node(
-        ApplyTransforms(interpolation="multiLabel"),
-        name="t1w_mask_fov_tfm",
-    )
+    )    
     
     # Generate GM mask and interesct with bold fov
     gm_mask = pe.Node(niu.Select(index=0), name="gm_mask")
@@ -134,6 +125,7 @@ def init_hemodynamic_wf(
     gm_mask_resamp =  pe.Node(
         niu.Function(function=_resample_to_img), name="gm_resamp")
     gm_mask_resamp.inputs.interpolation = "nearest"
+    
 
     
     # generate lagmaps
@@ -196,18 +188,15 @@ def init_hemodynamic_wf(
     # fmt:off
     workflow.connect([
         # Brain mask and GM mask
-        (inputnode, t1w_mask_fov_tfm, [("bold_mask", "input_image"),
-                                    ("t1w_mask", "reference_image"),
-                                    ("bold_t1_xform", "transforms")]),
         (inputnode, gm_mask, [("t1w_tpms", "inlist")]),
         (gm_mask, gm_mask_bin, [("out", "in_file")]),
         (gm_mask_bin, gm_mask_dilate, [("out_file","in_mask")]),
-        (gm_mask_dilate, intersect_mask, [("out_mask", "in1")]),
-        (t1w_mask_fov_tfm, intersect_mask, [("output_image", "in2")]),
-        (intersect_mask, gm_mask_resamp, [("out", "in_img")]),
+        (inputnode, intersect_mask, [("boldmask", "in1")]),
+        (gm_mask_dilate, gm_mask_resamp, [("out_mask", "in_img")]),
         (inputnode, gm_mask_resamp, [("bold_t1", "ref")]),
         (inputnode, roi_resamp, [("roi", "in_img"), 
                                 ("bold_t1", "ref")]),
+        (gm_mask_resamp, intersect_mask, [("out", "in2")]),
         
         # Hemodynamics
         (inputnode, lagmaps, [("bold_t1", "in_file"),
@@ -225,9 +214,9 @@ def init_hemodynamic_wf(
         (gm_mask_resamp, report_hemo, [("out","brain_mask")]),
         (inputnode, report_hemo, [("t1w_aseg", "hemi_mask")]),
         (inputnode, lagplot, [("roi", "roi"),
-                            ("t1w", "anat_file")]),
+                            ("t1w_preproc", "anat_file")]),
         (inputnode, corrplot, [("roi", "roi"),
-                            ("t1w", "anat_file")]),
+                            ("t1w_preproc", "anat_file")]),
         (mask_maps, select_lagmap, [("out", "inlist")]),
         (mask_maps, select_corrmap, [("out", "inlist")]),
         (select_lagmap, lagplot, [("out", "lagmap_file")]),

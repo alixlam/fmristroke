@@ -4,8 +4,8 @@ import os
 
 def subtract_roi(in_mask, in_roi):
     msk = nib.load(in_mask)
-    mskdata = msk.get_data().astype(np.uint8)  
-    roi = np.invert(nib.load(in_roi).get_data().astype(np.uint8))
+    mskdata = msk.get_fdata().astype(np.uint8)  
+    roi = np.invert(nib.load(in_roi).get_fdata().astype(np.uint8))
     mskdata = mskdata * roi
     msk.set_data_dtype(np.uint8)
     return msk

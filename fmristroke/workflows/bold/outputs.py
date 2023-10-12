@@ -54,7 +54,7 @@ def init_func_lesion_derivatives_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'confounds',
+                'confounds_file',
                 'confounds_metadata',
                 'lagmaps',
                 'source_file',
@@ -84,7 +84,7 @@ def init_func_lesion_derivatives_wf(
     workflow.connect([
         (inputnode, raw_sources, [('all_source_files', 'in_files')]),
         (inputnode, ds_confounds, [('source_file', 'source_file'),
-                                    ('confounds', 'in_file'),
+                                    ('confounds_file', 'in_file'),
                                     ('confounds_metadata', 'meta_dict')]),
     ])
     # fmt:on
@@ -93,17 +93,22 @@ def init_func_lesion_derivatives_wf(
         return workflow
     
     # Hemodynamics
-    ds_lagmaps = pe.Node(
+    lagmap_select = pe.Node(niu.Select(index=0), name="lagmap_select")
+    ds_lagmap = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             desc='hemodyn',
-            suffix='lagmap'
-        )
+            suffix='bold'
+        ),
+        name="ds_lagmap",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
     # fmt:off
     workflow.connect([
-        (inputnode, ds_lagmaps, [('source_file', 'source_file'),
-                                    ('lagmap', 'in_file')]),
+        (inputnode, lagmap_select, [('lagmaps', 'inlist')]),
+        (inputnode, ds_lagmap, [('source_file', 'source_file')]),
+        (lagmap_select, ds_lagmap, [('out', 'in_file')]),
     ])
     # fmt:on
     
@@ -145,8 +150,11 @@ def init_anat_lesion_derivatives_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'roi_mask_std'
+                'roi_mask_std',
                 'source_file',
+                'all_source_files',
+                'spatial_reference',
+                'template'
             ]
         ),
         name='inputnode',
