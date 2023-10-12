@@ -10,7 +10,8 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 
 
 About
-=====
+-----
+
 .. image:: https://github.com/alixlam/fmristroke/blob/main/images/pipeline.png 
 
 *fMRIStroke* is a functional magnetic resonance imaging (fMRI) data
