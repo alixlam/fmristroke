@@ -31,11 +31,9 @@ def read_requirements(path):
 
 
 setup(
-    name="fMRI Stroke preprocessing",
+    name="fmristroke",
     description="Awesome preproceesing tool for stroke functional MRI using Nipype created by Alix L.",
     url="https://github.com/alixlam/fmristroke",
-    long_description=read("README.rst"),
-    long_description_content_type="text/markdown",
     author="Alix L.",
     author_email="alix.lamouroux@imt-atlantique.fr",
     packages=find_packages(exclude=["tests"]),
