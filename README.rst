@@ -111,7 +111,7 @@ options:
 
 Options for filtering BIDS queries:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...], --participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]
+--participant_label PARTICIPANT_LABEL 
                       A space delimited list of participant identifiers or a
                       single identifier (the sub- prefix can be removed)
                       (default: None)
@@ -145,7 +145,7 @@ Options for performing only a subset of the workflow:
 
 Workflow configuration:
 ~~~~~~~~~~~~~~~~~~~~~~~
---output-spaces [OUTPUT_SPACES ...]
+--output-spaces OUTPUT_SPACES
                       Standard and non-standard spaces to resample
                       anatomical and functional images to. Standard spaces
                       may be specified by the form
