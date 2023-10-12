@@ -136,7 +136,6 @@ cython_debug/
 # tmp folders and temporary files
 /tmp
 temp*
-__*
 
 # Output dirctory 
 out/ 
