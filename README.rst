@@ -75,12 +75,12 @@ The common parts of the command follow the `BIDS-Apps
 <https://github.com/BIDS-Apps>`_ definition.
 Example: ::
 
-    $ fmristroke data/bids_root/ out/ participant --fmriprep_dir derivatives/ -w work/
+    fmristroke data/bids_root/ out/ participant --fmriprep_dir derivatives/ -w work/
 
 
 Command-Line Arguments
 ----------------------
-    $ usage: fmristroke [-h]
+    usage: fmristroke [-h]
               [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
               [--bids-filter-file FILE] [--fmriprep_dir PATH]
               [--nprocs NPROCS] [--omp-nthreads OMP_NTHREADS]
@@ -93,9 +93,8 @@ Command-Line Arguments
               [--write-graph] [-v] [--stop-on-first-crash]
               bids_dir output_dir {participant}
 
-fMRIStroke: fMRI Stroke workflows v0.1.0
-
 positional arguments:
+~~~~~~~~~~~~~~~~~~~~~
   bids_dir              The root folder of a BIDS valid dataset (sub-XXXXX
                         folders should be found at the top level in this
                         folder).
@@ -108,6 +107,7 @@ options:
   -h, --help            show this help message and exit
 
 Options for filtering BIDS queries:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   --participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...], --participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]
                         A space delimited list of participant identifiers or a
                         single identifier (the sub- prefix can be removed)
@@ -120,6 +120,7 @@ Options for filtering BIDS queries:
                         (NOT RECOMMENDED). (default: None)
 
 Options to handle performance:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   --nprocs NPROCS, --nthreads NPROCS, --n_cpus NPROCS, --n-cpus NPROCS
                         Maximum number of threads across all processes
                         (default: None)
@@ -134,11 +135,13 @@ Options to handle performance:
                         Nipype plugin configuration file (default: None)
 
 Options for performing only a subset of the workflow:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   --reports-only        Only generate reports, don't run workflows. This will
                         only rerun report aggregation, not reportlet
                         generation for specific nodes. (default: False)
 
 Workflow configuration:
+~~~~~~~~~~~~~~~~~~~~~~~
   --output-spaces [OUTPUT_SPACES ...]
                         Standard and non-standard spaces to resample
                         anatomical and functional images to. Standard spaces
@@ -157,6 +160,7 @@ Workflow configuration:
                         (default: None)
 
 Options relating to confounds:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   --ncomp_method {varexp,aic,kic,mdl}
                         method to estimate number of components for ICA lesion
                         confounds (default: varexp)
@@ -164,17 +168,20 @@ Options relating to confounds:
                         Method to run ICA lesion (default: canica)
 
 Specific options for hemodynmics analysis:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   --maxlag MAXLAG       Max lag for hemodynamic analysis (default: 10)
 
 Specific options for FreeSurfer preprocessing:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   --fs-license-file FILE
                         Path to FreeSurfer license key file. Get it (for free)
                         by registering at
                         https://surfer.nmr.mgh.harvard.edu/registration.html
                         (default: None)
-  --freesurfer          Was freesurfer run (default: True)
+  --freesurfer          Was freesurfer run
 
 Other options:
+~~~~~~~~~~~~~~
   -w WORK_DIR, --work-dir WORK_DIR
                         Path where intermediate results should be stored
                         (default: /homes/a19lamou/fmristroke/work)
