@@ -20,6 +20,7 @@ from packaging.version import Version
 from .. import config
 from ..interfaces import DerivativesDataSink
 from .bold.base import init_lesion_preproc_wf
+from .anat.base import init_roi_preproc_wf
 
 
 def init_fmristroke_wf():
@@ -206,9 +207,6 @@ tasks and sessions), the following lesion specific preprocessing was performed.
                 ('t1w_mask', 'inputnode.t1w_mask'),
                 ('t1w_dseg', 'inputnode.t1w_dseg'),
                 ('t1w_tpms', 'inputnode.t1w_tpms'),
-                ('template', 'inputnode.template'),
-                ('anat2std_xfm', 'inputnode.anat2std_xfm'),
-                ('std2anat_xfm', 'inputnode.std2anat_xfm'),
                 # Undefined if freesurfer was not run
                 ('t1w_aseg', 'inputnode.t1w_aseg')
 
@@ -216,5 +214,16 @@ tasks and sessions), the following lesion specific preprocessing was performed.
         ])
         # fmt:on
         func_preproc_wfs.append(lesion_preproc_wf)
+
+    # ROI resampling
+    roi_anat_wf = init_roi_preproc_wf(name="roi_std_wf")
+    workflow.connect([
+        (bidssrc, roi_anat_wf, [
+            ('t1w_preproc', 'inputnode.t1w_preproc'),
+            ('anat2std_xfm', 'inputnode.anat2std_xfm'),
+            ('std2anat_xfm', 'inputnode.std2anat_xfm'),
+            ('template', 'inputnode.template'),
+            ])
+    ])
 
     return workflow
