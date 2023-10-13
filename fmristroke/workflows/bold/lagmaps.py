@@ -1,7 +1,7 @@
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
-from ..interfaces import DerivativesDataSink
+from ...interfaces import DerivativesDataSink
 
 def init_hemodynamic_wf(
     mem_gb: float,
@@ -75,12 +75,12 @@ def init_hemodynamic_wf(
     """
     
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from ..interfaces.rapidtide.rapidtide import RapidTide
-    from ..interfaces.pyants import ApplyTransforms
-    from ..interfaces.nilearn import Smooth
+    from ...interfaces.rapidtide.rapidtide import RapidTide
+    from ...interfaces.pyants import ApplyTransforms
+    from ...interfaces.nilearn import Smooth
     from niworkflows.interfaces.morphology import BinaryDilation
     from niworkflows.interfaces.nibabel import Binarize
-    from ..interfaces.reports import HemodynamicsSummary, HemoPlot
+    from ...interfaces.reports import HemodynamicsSummary, HemoPlot
 
     workflow = Workflow(name=name)
     

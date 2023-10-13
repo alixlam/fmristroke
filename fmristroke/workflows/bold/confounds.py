@@ -1,7 +1,7 @@
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
-from ..interfaces import DerivativesDataSink
+from ...interfaces import DerivativesDataSink
 
 def init_confs_wf(
     mem_gb: float,
@@ -81,10 +81,10 @@ def init_confs_wf(
     from niworkflows.interfaces.utility import TSV2JSON, DictMerge
     
     from fmriprep.interfaces.confounds import aCompCorMasks
-    from ..interfaces.confounds import LesionMasks, ROIcomp, GatherConfounds
-    from ..interfaces.nilearn import CanICAInterface
-    from ..interfaces.reports import ICPlot
-    from ..interfaces.pyants import ApplyTransforms
+    from ...interfaces.confounds import LesionMasks, ROIcomp, GatherConfounds
+    from ...interfaces.nilearn import CanICAInterface
+    from ...interfaces.reports import ICPlot
+    from ...interfaces.pyants import ApplyTransforms
     
     workflow = Workflow(name=name)
     
