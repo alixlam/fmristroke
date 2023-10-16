@@ -84,7 +84,6 @@ def init_confs_wf(
     from ...interfaces.confounds import LesionMasks, ROIcomp, GatherConfounds
     from ...interfaces.nilearn import CanICAInterface
     from ...interfaces.reports import ICPlot
-    from ...interfaces.pyants import ApplyTransforms
     
     workflow = Workflow(name=name)
     
@@ -131,12 +130,6 @@ def init_confs_wf(
     acc_masks = pe.Node(aCompCorMasks(is_aseg=freesurfer), name="acc_masks")
 
     # Resample probseg maps in BOLD space via T1w-to-BOLD transform
-    acc_msk_tfm = pe.MapNode(
-        ApplyTransforms(interpolation="gaussian", transforms=['identity']),
-        iterfield=["input_image"],
-        name="acc_msk_tfm",
-        mem_gb=0.1,
-    )
     acc_msk_tfm = pe.MapNode(
         niu.Function(function=_resample_to_img), 
         iterfield=["input_image"],
@@ -230,7 +223,6 @@ def init_confs_wf(
         # CSF, WM and combined masks with lesions
         (inputnode, acc_masks, [("t1w_tpms", "in_vfs"),
                                 (("bold_t1", _get_zooms), "bold_zooms")]),
-        #(inputnode, acc_msk_tfm, [("t1_bold_xform", "transforms"),]),
         (intersect_mask, acc_msk_tfm, [("out", "reference_image")]),
         (intersect_mask, acc_msk_brain, [("out", "in_mask")]),
         (acc_masks, acc_msk_tfm, [("out_masks", "input_image")]),

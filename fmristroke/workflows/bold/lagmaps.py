@@ -81,6 +81,7 @@ def init_hemodynamic_wf(
     from niworkflows.interfaces.morphology import BinaryDilation
     from niworkflows.interfaces.nibabel import Binarize
     from ...interfaces.reports import HemodynamicsSummary, HemoPlot
+    from templateflow.api import get as get_template
 
     workflow = Workflow(name=name)
     
@@ -99,6 +100,7 @@ def init_hemodynamic_wf(
                 "t1w_tpms",
                 "t1w_aseg",
                 "confounds_file",
+                "std2anat_xfm",
             ]
         ),
         name="inputnode",
@@ -113,9 +115,24 @@ def init_hemodynamic_wf(
     )    
     
     # Generate GM mask and interesct with bold fov
-    gm_mask = pe.Node(niu.Select(index=0), name="gm_mask")
-    gm_mask_bin = pe.Node(Binarize(thresh_low = 0.02), name="gm_mask_bin")
-    gm_mask_dilate = pe.Node(BinaryDilation(), name="gm_mask_dilate")
+    # Warp segmentation into T1 space
+    resample_parc_T1 = pe.Node(
+        ApplyTransforms(
+            input_image=str(
+                get_template(
+                    "MNI152NLin2009cAsym",
+                    resolution=1,
+                    desc="carpet",
+                    suffix="dseg",
+                    extension=[".nii", ".nii.gz"],
+                )
+            ),
+            interpolation="multiLabel",
+        ),
+        name="resample_parc",
+    )
+    gm_mask = pe.Node(niu.Function(function=_gm_parcellation), name="GM_parcel")
+
     intersect_mask = pe.Node(niu.Function(function=_intersect_masks), name="intersect_mask")
     
     # Resample masks to bold resolution
@@ -125,9 +142,7 @@ def init_hemodynamic_wf(
     gm_mask_resamp =  pe.Node(
         niu.Function(function=_resample_to_img), name="gm_resamp")
     gm_mask_resamp.inputs.interpolation = "nearest"
-    
 
-    
     # generate lagmaps
     lagmaps = pe.Node(
         RapidTide(searchrange=maxlag),
@@ -188,20 +203,20 @@ def init_hemodynamic_wf(
     # fmt:off
     workflow.connect([
         # Brain mask and GM mask
-        (inputnode, gm_mask, [("t1w_tpms", "inlist")]),
-        (gm_mask, gm_mask_bin, [("out", "in_file")]),
-        (gm_mask_bin, gm_mask_dilate, [("out_file","in_mask")]),
-        (inputnode, intersect_mask, [("boldmask", "in1")]),
-        (gm_mask_dilate, gm_mask_resamp, [("out_mask", "in_img")]),
-        (inputnode, gm_mask_resamp, [("bold_t1", "ref")]),
+        (inputnode, resample_parc_T1, [("std2anat_xfm","transforms"),
+                                       ("t1w_preproc", "reference_image")]),
+        (resample_parc_T1, gm_mask, [("output_image", "segmentation")]),
+        (gm_mask, gm_mask_resamp, [("out", "in_img")]),
+        (inputnode, gm_mask_resamp, [("boldmask", "ref")]),
+        (gm_mask_resamp, intersect_mask, [("out", "in1")]),
+        (inputnode, intersect_mask, [("boldmask", "in2")]),
         (inputnode, roi_resamp, [("roi", "in_img"), 
                                 ("bold_t1", "ref")]),
-        (gm_mask_resamp, intersect_mask, [("out", "in2")]),
         
         # Hemodynamics
         (inputnode, lagmaps, [("bold_t1", "in_file"),
                                 ("confounds_file","confounds_file")]),
-        (gm_mask_resamp, lagmaps, [("out", "corrmask"),
+        (intersect_mask, lagmaps, [("out", "corrmask"),
                                     ("out", "globalmeaninclude")]),
         (roi_resamp, lagmaps, [("out", "globalmeanexclude")]),
         (lagmaps, merge_maps, [("output_lagmap", "in1"),
@@ -261,3 +276,26 @@ def _resample_to_img(in_img, ref, interpolation):
     out_name = Path("mask_resamp.nii.gz").absolute()
     new_img.to_filename(out_name)
     return str(out_name)
+
+def _gm_parcellation(segmentation):
+    """Generate GM mask"""
+    from pathlib import Path
+
+    import nibabel as nb
+    import numpy as np
+
+    img = nb.load(segmentation)
+
+    lut = np.zeros((256,), dtype="uint8")
+    lut[1:11] = 0 # WM+CSF
+    lut[100:201] = 1  # Ctx GM
+    lut[30:99] = 1  # dGM
+    lut[255] = 0  # Cerebellum
+    # Apply lookup table
+    seg = lut[np.uint16(img.dataobj)]
+
+    outimg = img.__class__(seg.astype("uint8"), img.affine, img.header)
+    outimg.set_data_dtype("uint8")
+    out_file = Path("segments.nii.gz").absolute()
+    outimg.to_filename(out_file)
+    return str(out_file)

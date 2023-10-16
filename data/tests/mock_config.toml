@@ -1,0 +1,47 @@
+[environment]
+cpu_count = 8
+exec_env = "posix"
+free_mem = 10
+overcommit_policy = "heuristic"
+overcommit_limit = "50%"
+nipype_version = "1.8.6"
+templateflow_version = "23.0.0"
+fmriprep_version = "23.0.2"
+version = "0.1.0"
+
+[execution]
+fmriprep_dir = "FCStroke_2009/derivatives"
+bids_dir = "FCStroke_2009/"
+log_level = 25
+low_mem = False
+output_dir = "tmp/"
+output_spaces = "MNI152NLin2009cAsym:res-native"
+reports_only = false
+participant_label = [ "FC_024",]
+work_dir = "work/"
+write_graph = false
+
+[workflow]
+freesurfer = true
+ncomp_method = "varexp"
+ica_method = "canica"
+maxlag = 10
+spaces = "MNI152NLin2009cAsym:res-native"
+
+[nipype]
+crashfile_format = "txt"
+get_linked_libs = false
+nprocs = 48
+omp_nthreads = 8
+plugin = "MultiProc"
+resource_monitor = false
+stop_on_first_crash = false
+
+[seeds]
+master = 21227
+numpy = 22690
+
+[nipype.plugin_args]
+maxtasksperchild = 1
+raise_insufficient = false
+
