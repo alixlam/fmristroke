@@ -15,15 +15,13 @@ from nipype.interfaces.fsl import Split as FSLSplit
 from nipype.pipeline import engine as pe
 from niworkflows.utils.connections import listify, pop_file
 
-from .. import config
-from ..interfaces import DerivativesDataSink
+from ... import config
+from ...interfaces import DerivativesDataSink
 
 # BOLD workflows
 from .confounds import init_confs_wf
-from .outputs import init_func_lesion_derivatives_wf, init_anat_lesion_derivatives_wf
-from .resample import (
-    init_roi_std_trans_wf,
-)
+from .outputs import init_func_lesion_derivatives_wf
+
 from .lagmaps import init_hemodynamic_wf
 
 def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_file):
@@ -76,12 +74,6 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
         Parcellation of structural image, done with FreeSurfer.
     t1w_tpms
         List of tissue probability maps in T1w space
-    template
-        List of templates to target
-    anat2std_xfm
-        List of transform files, collated with templates
-    std2anat_xfm
-        List of inverse transform files, collated with templates
     confounds_file
         confounds file
     roi
@@ -166,9 +158,7 @@ effects of other kernels [@lanczos].
                 "t1w_dseg",
                 "t1w_tpms",
                 "t1w_aseg",
-                "anat2std_xfm",
                 "std2anat_xfm",
-                "template",
                 "confounds_file",
                 "roi",
             ]
@@ -183,8 +173,6 @@ effects of other kernels [@lanczos].
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "roi_mask_t1",
-                "roi_mask_std",
                 "confounds_file",
                 "confounds_metadata",
                 "lagmaps",
@@ -201,19 +189,11 @@ effects of other kernels [@lanczos].
     func_lesion_derivatives_wf.inputs.inputnode.source_file = bold_file
 
     
-    anat_lesion_derivatives_wf = init_anat_lesion_derivatives_wf(
-        bids_root=layout.root,
-        output_dir=output_dir,
-        spaces=spaces,
-    )
     workflow.connect([
         (outputnode, func_lesion_derivatives_wf, [
             ("confounds_file", "inputnode.confounds_file"),
             ("confounds_metadata", "inputnode.confounds_metadata"),
             ("lagmaps", "inputnode.lagmaps"),
-        ]),
-        (inputnode, anat_lesion_derivatives_wf, [
-            ("t1w_preproc", "inputnode.all_source_files"),
         ]),
     ])
     
@@ -260,6 +240,7 @@ effects of other kernels [@lanczos].
             ("t1w_mask", "inputnode.t1w_mask"),
             ("t1w_tpms", "inputnode.t1w_tpms"),
             ("confounds_file","inputnode.confounds_file"),
+            ("std2anat_xfm", "inputnode.std2anat_xfm"),
             # undefined if freesurfer was not run
             ("t1w_aseg", "inputnode.t1w_aseg"),
         ]),
@@ -270,39 +251,7 @@ effects of other kernels [@lanczos].
             ("outputnode.lagmaps", "lagmaps"),
         ]),
     ])
-    
-    # ROI RESAMPLING #######################################################
 
-    if spaces.get_spaces(nonstandard=False, dim=(3,)):
-        # Apply transforms in 1 shot
-        roi_std_trans_wf = init_roi_std_trans_wf(
-            mem_gb=mem_gb["resampled"],
-            omp_nthreads=omp_nthreads,
-            spaces=spaces,
-            name="lesion_std_trans_wf",
-            use_compression=not config.execution.low_mem,
-        )
-        # fmt:off
-        workflow.connect([
-            (inputnode, roi_std_trans_wf, [
-                ("template", "inputnode.templates"),
-                ("anat2std_xfm", "inputnode.anat2std_xfm"),
-                ("roi", "inputnode.roi")
-            ]),
-            (roi_std_trans_wf, outputnode, [
-                ("outputnode.roi_mask_std", "roi_mask_std"),
-            ]),
-        ])
-        workflow.connect([
-            (roi_std_trans_wf, anat_lesion_derivatives_wf, [
-                ("outputnode.template", "inputnode.template"),
-                ("outputnode.spatial_reference", "inputnode.spatial_reference"),
-                ("outputnode.roi_mask_std", "inputnode.roi_mask_std"),
-            ]),
-        ])
-        # fmt:on
-
-    
 
     # REPORTING ############################################################
 

@@ -89,7 +89,6 @@ class BIDSDerivativeDataGrabber(SimpleInterface):
     def _run_interface(self, runtime):
         bids_dict = self.inputs.bold_derivatives
         bids_dict.update(self.inputs.anat_derivatives)
-
         self._results["out_dict"] = bids_dict
         self._results.update(bids_dict)
         return runtime
