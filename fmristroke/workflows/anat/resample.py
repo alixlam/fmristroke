@@ -48,9 +48,9 @@ def init_roi_std_trans_wf(
         dictionary with template specifications (e.g., a specification of ``{"resolution": 2}``
         would lead to resampling on a 2mm resolution of the space).
     name : :obj:`str`
-        Name of workflow (default: ``bold_std_trans_wf``)
+        Name of workflow (default: `roi_std_trans_wf``)
     use_compression : :obj:`bool`
-        Save registered BOLD series as ``.nii.gz``
+        Save registered roi masks as ``.nii.gz``
 
     Inputs
     ------

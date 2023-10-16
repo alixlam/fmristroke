@@ -158,6 +158,7 @@ effects of other kernels [@lanczos].
                 "t1w_dseg",
                 "t1w_tpms",
                 "t1w_aseg",
+                "std2anat_xfm",
                 "confounds_file",
                 "roi",
             ]
@@ -239,6 +240,7 @@ effects of other kernels [@lanczos].
             ("t1w_mask", "inputnode.t1w_mask"),
             ("t1w_tpms", "inputnode.t1w_tpms"),
             ("confounds_file","inputnode.confounds_file"),
+            ("std2anat_xfm", "inputnode.std2anat_xfm"),
             # undefined if freesurfer was not run
             ("t1w_aseg", "inputnode.t1w_aseg"),
         ]),
