@@ -1,6 +1,6 @@
 *fMRIStroke*: A Preprocessing Pipeline for fMRI Data from Stroke patients 
-=========================================================
-*fMRIStoke* is an application that runs on the outputs of *fmriprep*
+=========================================================================
+*fMRIStoke* is a BID's app application that runs on the outputs of *fmriprep*
 (`www.fmriprep.org <https://www.fmriprep.org>`__) for the preprocessing of
 task-based and resting-state functional MRI (fMRI) from stroke patients.
 
@@ -12,7 +12,7 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 About
 -----
 
-.. image:: https://github.com/alixlam/fmristroke/blob/main/images/pipeline.png 
+.. image:: https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png 
 
 *fMRIStroke* is a functional magnetic resonance imaging (fMRI) data
 quality checks pipeline that is designed to provide an easily accessible,

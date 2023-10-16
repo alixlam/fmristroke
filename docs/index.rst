@@ -11,7 +11,6 @@
    
    installation
    usage
-   workflows
    outputs
    api
    changes
