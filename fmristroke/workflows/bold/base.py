@@ -3,7 +3,7 @@ Orchestrating the BOLD-preprocessing workflow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: init_lesion_preproc_wf
-.. autofunction:: init_func_derivatives_wf
+.. autofunction:: init_func_lesion_derivatives_wf
 
 """
 import os
