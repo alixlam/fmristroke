@@ -10,8 +10,7 @@ Execution and the BIDS format
 -----------------------------
 The *fMRIStoke* workflow takes as principal input the path of the dataset
 that is to be processed and the path to the fMRIprep derivatives. 
-The input dataset must include at least one T1w structural image and
-(unless disabled with a flag) a BOLD series.
+The input dataset must include at least one T1w structural image, an ROI mask of the stroke lesion and a BOLD series.
 
 The exact command to run *fMRIStroke* depends on the Installation_ method.
 The common parts of the command follow the `BIDS-Apps
@@ -33,7 +32,7 @@ Command-Line Arguments
 Troubleshooting
 ---------------
 Logs and crashfiles are outputted into the
-``<output dir>/fmriprep/sub-<participant_label>/log`` directory.
+``<output dir>/sub-<participant_label>/log`` directory.
 Information on how to customize and understand these files can be found on the
 `nipype debugging <http://nipype.readthedocs.io/en/latest/users/debug.html>`_
 page.
