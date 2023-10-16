@@ -50,6 +50,8 @@ autodoc_mock_imports = [
     "numpy",
     "nitime",
     "matplotlib",
+    "nibabel",
+    "fmriprep"
 ]
 
 if pver.parse(sphinxversion) >= pver.parse("1.7.0"):
