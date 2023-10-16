@@ -1,6 +1,6 @@
 """
 fMRIStroke base processing workflows
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: init_fmristroke_wf
 .. autofunction:: init_single_subject_wf
