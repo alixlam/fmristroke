@@ -11,7 +11,7 @@ from templateflow.api import get as get_template
 
 from fmriprep import config
 
-from ..interfaces import DerivativesDataSink
+from ...interfaces import DerivativesDataSink
 
 def init_lesionplot_wf(
     mem_gb: float, name: str = "lesion_plot_wf"

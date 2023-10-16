@@ -98,8 +98,9 @@ class ApplyTransforms(SimpleInterface):
         from niworkflows.utils.images import _copyxform
         from niworkflows import __version__
         self._results["output_image"] = os.path.abspath(self._gen_filename("output_image"))
+        transforms = [self.inputs.transforms] if type(self.inputs.transforms) == "str" else self.inputs.transforms
         apply_transform_ants(fixed = self.inputs.reference_image, moving = self.inputs.input_image,
-                                            transforms=self.inputs.transforms, interpolation=self.inputs.interpolation,
+                                            transforms=transforms, interpolation=self.inputs.interpolation,
                                             outdir = self._results["output_image"],
                                             default_value = 0,)
         _copyxform(
