@@ -3,10 +3,10 @@
 Lesion preprocessing fMRI - BOLD signal workflows
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: fmriprep.workflows.bold.base
-.. automodule:: fmriprep.workflows.bold.confounds
-.. automodule:: fmriprep.workflows.bold.lagmaps
-.. automodule:: fmriprep.workflows.bold.registration
+.. automodule:: fmristroke.workflows.bold.base
+.. automodule:: fmristroke.workflows.bold.confounds
+.. automodule:: fmristroke.workflows.bold.lagmaps
+.. automodule:: fmristroke.workflows.bold.registration
 
 
 """
