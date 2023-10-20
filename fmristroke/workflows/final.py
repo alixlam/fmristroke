@@ -219,6 +219,7 @@ tasks and sessions), the following lesion specific preprocessing was performed.
     # ROI resampling
     roi_anat_wf = init_roi_preproc_wf(name="roi_std_wf")
     roi_anat_wf.inputs.inputnode.roi = roi["roi"][0]
+    
     workflow.connect([
         (bidssrc, roi_anat_wf, [
             ('t1w_preproc', 'inputnode.t1w_preproc'),

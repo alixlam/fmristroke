@@ -1,6 +1,6 @@
 
 ================
-Developers - API
+API
 ================
 
 Internal configuration system

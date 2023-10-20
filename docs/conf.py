@@ -331,6 +331,13 @@ linkcode_resolve = make_linkcode_resolve("fmristroke",
                                          "https://github.com/alixlam/"
                                          "fmristroke/blob/{revision}/"
                                          "{package}/{path}#L{lineno}")
+html_context = {
+    "display_github": True, # Integrate GitHub
+    "github_user": "alixlam", # Username
+    "github_repo": "fmristroke", # Repo name
+    "github_version": "master", # Version
+    "conf_py_path": "/source/", # Path in the checkout to the docs root
+}
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {

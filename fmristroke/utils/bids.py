@@ -18,7 +18,7 @@ def collect_bold_derivatives(
     if spec is None:
         spec = loads((Path(__file__).parent / "../../data/io_spec.json").read_text())
     
-    bids_filters = bids_filters["bold"] or {}
+    bids_filters = bids_filters["bold"] if bids_filters else {}
     
     layout_get_kwargs = {
         'subject': subject_id,

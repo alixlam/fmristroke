@@ -24,7 +24,7 @@ from .resample import (
     init_roi_std_trans_wf,
 )
 
-def init_roi_preproc_wf(name="roi_std_wf"):
+def init_roi_preproc_wf(anat_derivatives, name="roi_std_wf"):
     """
     This workflow controls the lesion specific stages *fMRIStroke*.
 
@@ -40,6 +40,12 @@ def init_roi_preproc_wf(name="roi_std_wf"):
                 bold_file = config.execution.bids_dir / "sub-01" / "func" \
                     / "sub-01_task-mixedgamblestask_run-01_bold.nii.gz"
                 wf = init_func_preproc_wf(str(bold_file))
+
+    Parameters
+    ----------
+    name : :obj:`str`
+        Name of workflow (default: ``roi_std_wf``)
+
 
     Inputs
     ------
@@ -111,6 +117,7 @@ effects of other kernels [@lanczos].
         output_dir=output_dir,
         spaces=spaces,
     )
+    
     workflow.connect([
         (inputnode, anat_lesion_derivatives_wf, [
             ("t1w_preproc", "inputnode.all_source_files"),
