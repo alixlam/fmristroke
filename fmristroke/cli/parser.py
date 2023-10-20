@@ -126,8 +126,7 @@ def _build_parser(**kwargs):
         action="store",
         metavar="PATH",
         type=PathExists,
-        help="Reuse the anatomical derivatives from another fMRIPrep run or calculated "
-        "with an alternative processing tool (NOT RECOMMENDED).",
+        help="Derivatives from fMRIPrep run",
     )
 
     g_perfm = parser.add_argument_group("Options to handle performance")

@@ -21,6 +21,7 @@ from ...interfaces import DerivativesDataSink
 # BOLD workflows
 from .confounds import init_confs_wf
 from .outputs import init_func_lesion_derivatives_wf
+from .registration import init_lesionplot_wf
 
 from .lagmaps import init_hemodynamic_wf
 
@@ -251,7 +252,20 @@ effects of other kernels [@lanczos].
             ("outputnode.lagmaps", "lagmaps"),
         ]),
     ])
-
+    
+    # REGISTRATION PLOT WORKFLOW   ###################################################
+    lesion_plot = init_lesionplot_wf(
+        mem_gb=mem_gb["largemem"],
+        name = "lesion_plot_wf"
+    )
+    workflow.connect([
+        (inputnode, lesion_plot, [
+            ("bold_t1", "inputnode.boldref_t1"),
+            ("t1_preproc", "inputnode.t1w"),
+            ("roi", "inputnode.t1w_roi"),
+            ("t1w_mask", "inputnode.t1w_mask")
+            ])
+    ])
 
     # REPORTING ############################################################
 

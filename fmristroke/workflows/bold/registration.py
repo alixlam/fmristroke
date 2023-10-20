@@ -46,25 +46,23 @@ def init_lesionplot_wf(
 
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from ..interfaces.reports import RegisterLesionRPT
-    from ..interfaces.pyants import ApplyTransforms
+    from ...interfaces.reports import RegisterLesionRPT
+    from ...interfaces.pyants import ApplyTransforms
 
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_ref",
+                "boldref_t1",
                 "t1w",
                 "t1w_roi",
                 "t1w_mask",
-                "bold_t1_xform",
             ]
         ),
         name="inputnode",
     )
 
     outputnode = pe.Node(niu.IdentityInterface(fields=["out_regplot"]), name="outputnode")
-    bold_t1 = pe.Node(ApplyTransforms(interpolation="lanczosWindowedSinc"), "bold_t1_trans")
     
     reg_plot = pe.Node(
         RegisterLesionRPT(),
@@ -80,13 +78,11 @@ def init_lesionplot_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, bold_t1, [("bold_ref", "input_image"),
-                                ("t1w", "reference_image"),
-                                ("bold_t1_xform", "transforms")]),
-        (inputnode, reg_plot, [("t1w_mask", "reference_image_mask"),
+        (inputnode, reg_plot, [
+                            ("boldref_t1", "moving_image"),
+                            ("t1w_mask", "reference_image_mask"),
                             ("t1w", "reference_file"),
                             ("t1w_roi", "roi")]),
-        (bold_t1, reg_plot, [("output_image", "moving_image")]),
         (reg_plot, ds_report_reg, [("out_report", "in_file")]),
         (reg_plot, outputnode, [("out_report", "out_regplot")]),
     ])
