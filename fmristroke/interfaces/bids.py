@@ -92,3 +92,41 @@ class BIDSDerivativeDataGrabber(SimpleInterface):
         self._results["out_dict"] = bids_dict
         self._results.update(bids_dict)
         return runtime
+    
+class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
+    base_directory = traits.Directory(
+        desc="Path to the base directory for storing data."
+    )
+    check_hdr = traits.Bool(True, usedefault=True, desc="fix headers of NIfTI outputs")
+    compress = InputMultiObject(
+        traits.Either(None, traits.Bool),
+        usedefault=True,
+        desc="whether ``in_file`` should be compressed (True), uncompressed (False) "
+        "or left unmodified (None, default).",
+    )
+    data_dtype = Str(
+        desc="NumPy datatype to coerce NIfTI data to, or `source` to"
+        "match the input file dtype"
+    )
+    dismiss_entities = InputMultiObject(
+        traits.Either(None, Str),
+        usedefault=True,
+        desc="a list entities that will not be propagated from the source file",
+    )
+    in_file = InputMultiObject(
+        File(exists=True), mandatory=True, desc="the object to be saved"
+    )
+    meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
+    source_file = InputMultiObject(
+        File(exists=False), mandatory=True, desc="the source file(s) to extract entities from")
+
+
+class _DerivativesDataSinkOutputSpec(TraitedSpec):
+    out_file = OutputMultiObject(File(exists=True, desc="written file path"))
+    out_meta = OutputMultiObject(File(exists=True, desc="written JSON sidecar path"))
+    compression = OutputMultiObject(
+        traits.Either(None, traits.Bool),
+        desc="whether ``in_file`` should be compressed (True), uncompressed (False) "
+        "or left unmodified (None).",
+    )
+    fixed_hdr = traits.List(traits.Bool, desc="whether derivative header was fixed")

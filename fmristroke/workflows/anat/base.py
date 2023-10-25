@@ -24,7 +24,7 @@ from .resample import (
     init_roi_std_trans_wf,
 )
 
-def init_roi_preproc_wf(anat_derivatives, name="roi_std_wf"):
+def init_roi_preproc_wf(name="roi_std_wf"):
     """
     This workflow controls the lesion specific stages *fMRIStroke*.
 
@@ -121,6 +121,7 @@ effects of other kernels [@lanczos].
     workflow.connect([
         (inputnode, anat_lesion_derivatives_wf, [
             ("t1w_preproc", "inputnode.all_source_files"),
+            ("t1w_preproc", "inputnode.source_file")
         ]),
     ])
     

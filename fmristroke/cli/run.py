@@ -84,7 +84,7 @@ def main():
         # Generate reports phase
         failed_reports = generate_reports(
             config.execution.participant_label,
-            config.execution.fmriprep_dir,
+            config.execution.output_dir,
             config.execution.run_uuid,
             config=Path(__file__).parent / "../../data/reports-specs.yml",
             packagename="fmriprep",

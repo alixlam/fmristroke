@@ -104,7 +104,7 @@ class ROIcomp(SimpleInterface):
         ts = np.load(self.inputs.ts).squeeze()
         roi_ts = ts[:, retained_ICS]
                 
-        output = np.vstack((np.array(retained_ICS).reshape(1,-1), roi_ts.astype(str)))
+        output = np.vstack((np.array(['ica_lesion_'+str(i).zfill(3) for i in retained_ICS]).reshape(1,-1), roi_ts.astype(str)))
         self._results["out_signal"] = os.path.join(runtime.cwd, "components_ICs.txt")
         np.savetxt(self._results["out_signal"], output, fmt=b"%s", delimiter="\t")
         
@@ -145,6 +145,219 @@ class GatherConfounds(SimpleInterface):
         self._results['confounds_file'] = combined_out
         self._results['confounds_list'] = confounds_list
         return runtime
+
+class _SelectConfoundsInputSpec(BaseInterfaceInputSpec):
+    pipeline = traits.Either(
+        traits.Dict(), File,
+        mandatory=True,
+        desc="Denoising pipeline")
+    confounds = File(
+        exist=True,
+        mandatory=True,
+        desc="Confounds table")
+    confounds_metadata = File(
+        exist=True,
+        mandatory=True,
+        desc="Confounds description (aCompCor)")
+    output_dir = Directory(
+        exists=True,
+        desc="Output path")
+
+class _SelectConfoundsOutputSpec(TraitedSpec):
+    selected_confounds = File(
+        exists=True,
+        desc="selected confounds table")
+    selected_confounds_metadata = File(
+        exists=True,
+        desc="Summary of selected confounds"
+    )
+
+
+# class Confounds(SimpleInterface):
+#     """Filter confounds table according to denoising pipeline.
+
+#     This interface reads raw confounds table (fmriprep output) and process it 
+#     retaining regressors of interest and creating additional regressors if 
+#     needed. Additionally, it creates summary file containing all relevant 
+#     information about confounds. This interface operates on single BIDS entity
+#     i.e. single subject, task and (optionally) session. 
+    
+#     Summary contains fields:
+#         'mean_fd': 
+#             Mean framewise displacement.
+#         'max_fd': 
+#             Highest recorded framewise displacement.
+#         'n_conf': 
+#             Total number of confounds included.
+#         'include':
+#             Decision about subject inclusion in connectivity analysis based on
+#             three criteria: (1) mean framewise displacement is lower than 
+#             specified by the pipeline, (2) max framewise displacement did not 
+#             exceed 5mm and (3) percentage of outlier scans did not exceed 20%. 
+#             Note that if spikes strategy is not specified, include flag defaults
+#             to True.
+#         'n_spikes':
+#             Number of outlier scans (only if spikes strategy is specified).
+#         'perc_spikes':
+#             Percentage of outlier scans (only if spikes strategy is specified).
+#     """
+#     input_spec = _SelectConfoundsInputSpec
+#     output_spec = _SelectConfoundsOutputSpec
+
+#     def _keep(self, regressor_names):
+#         """
+#         Copies selected regressors from confounds to selcted_confounds.
+#         """
+#         if regressor_names:
+#             self.conf_prep = pd.concat((
+#                 self.conf_prep,
+#                 self.conf_raw[regressor_names]
+#             ), axis=1)
+
+#     def _load_tissue_signals(self):
+#         tissue_regressors = []
+#         for confound, setting in self.inputs.pipeline['confounds'].items():
+            
+#             if confound in ('white_matter', 'csf', 'global_signal'):
+#                 for transform, include in setting.items():
+#                     if transform == 'raw' and include:
+#                         tissue_regressors.append(confound)
+#                     elif include:
+#                         tissue_regressors.append(f'{confound}_{transform}')
+        
+#         self._keep(tissue_regressors)
+
+#     def _load_motion_parameters(self):
+#         hmp_regressors = []
+#         hmp_names = [f'{type_}_{axis}' 
+#                     for type_ in ('trans', 'rot') 
+#                     for axis in ('x', 'y', 'z')]
+
+#         setting = self.inputs.pipeline['confounds']['motion']
+
+#         for transform, include in setting.items():
+#             if transform == 'raw' and include:
+#                 hmp_regressors.extend(hmp_names)
+#             elif include:
+#                 hmp_regressors.extend(f'{hmp}_{transform}' for hmp in hmp_names)
+        
+#         self._keep(hmp_regressors)
+
+#     def _load_compcors(self):
+#         if not self.inputs.pipeline['confounds']['compcor']:
+#             return
+
+#         compcor_regressors = []
+#         for mask in ('CSF', 'WM'):
+#             acompcors = {
+#                 (name, dict_['VarianceExplained']) 
+#                 for name, dict_ in self.conf_json.items()
+#                 if dict_.get('Retained') and dict_.get('Mask') == mask 
+#                 }
+#             acompcors = sorted(acompcors, key=lambda tpl: tpl[1], reverse=True)
+#             acompcor_regressors.extend(acompcor[0] for acompcor in acompcors[:5])
+
+#         self._keep(acompcor_regressors)
+#     def _load_high_pass(self):
+#         if not slef.inputs.pipeline['high_pass']:
+#             return
+
+#     def _load_non_steady_states(self):
+         
+        
+#     def _create_spike_regressors(self):
+#         if not self.inputs.pipeline['spikes']:
+#             return
+
+#         fd_th = self.inputs.pipeline['spikes']['fd_th']
+#         dvars_th = self.inputs.pipeline['spikes']['dvars_th']
+
+#         outliers = (self.conf_raw['framewise_displacement'] > fd_th) \
+#                  | (self.conf_raw['std_dvars'] > dvars_th) 
+#         outliers = list(outliers[outliers].index)
+
+#         if outliers:
+#             spikes = np.zeros((self.n_volumes, len(outliers)))
+#             for i, outlier in enumerate(outliers):
+#                 spikes[outlier, i] = 1.
+                
+#             conf_spikes = pd.DataFrame(
+#                 data=spikes, 
+#                 columns=[f'motion_outlier_{i:02}' for i in range(len(outliers))]
+#                 )
+
+#             self.conf_prep = pd.concat((
+#                 self.conf_prep,
+#                 conf_spikes,
+#             ),
+#             axis=1)
+        
+#         self.n_spikes = len(outliers)
+
+#     def _create_summary_dict(self, subject: str, session: str, task: str, run: str):
+#         self.conf_summary = {
+#             'subject': subject,
+#             'task': task,
+#             'mean_fd': self.conf_raw["framewise_displacement"].mean(),
+#             'max_fd': self.conf_raw["framewise_displacement"].max(),
+#             'n_conf': len(self.conf_prep.columns),
+#             'include': self._inclusion_check()
+#         }
+
+#         if self.inputs.pipeline['spikes']:
+#             self.conf_summary['n_spikes'] = self.n_spikes 
+#             self.conf_summary['perc_spikes'] = self.n_spikes / self.n_volumes * 100
+
+#         if session:
+#             self.conf_summary['session'] = session
+#         if run:
+#             self.conf_summary['run'] = run
+
+#     def _inclusion_check(self):
+#         '''Decide if subject should be included in connectivity analysis'''
+#         if not self.inputs.pipeline['spikes']:
+#             return True
+
+#         mean_fd = self.conf_raw['framewise_displacement'].mean()
+#         max_fd = self.conf_raw['framewise_displacement'].max()
+#         fd_th = self.inputs.pipeline['spikes']['fd_th']
+
+#         if mean_fd > fd_th or max_fd > 5 or self.n_spikes / self.n_volumes > 0.2:
+#             return False
+#         return True
+
+#     def _run_interface(self, runtime):
+
+#         # Setup useful properties
+#         self.conf_raw = pd.read_csv(self.inputs.conf_raw, sep='\t')
+#         with open(self.inputs.conf_json, 'r') as json_file:
+#             self.conf_json = json.load(json_file)
+#         self.n_volumes = len(self.conf_raw)
+#         self.conf_prep = pd.DataFrame()
+
+#         # entities
+#         entities = parse_file_entities_with_pipelines(self.inputs.conf_raw)
+
+#         # Create preprocessed confounds step-by-step
+#         self._filter_motion_parameters()
+#         self._filter_tissue_signals()
+#         self._filter_acompcors()
+#         self._create_spike_regressors()
+#         self._create_summary_dict(
+#             subject=entities.get('subject'), task=entities.get('task'),
+#             session=entities.get('session'), run=entities.get('run'))
+
+#         # Store output
+#         entities['pipeline'] = self.inputs.pipeline['name']
+#         conf_prep = join(self.inputs.output_dir, build_path(entities, self.conf_prep_pattern, False))
+#         conf_summary = join(self.inputs.output_dir, build_path(entities, self.conf_summary_pattern, False))
+#         self.conf_prep.to_csv(conf_prep, sep='\t', index=False, na_rep=0)
+#         with open(conf_summary, 'w') as f:
+#             json.dump(self.conf_summary, f)
+#         self._results['conf_prep'] = conf_prep
+#         self._results['conf_summary'] = conf_summary
+#         return runtime
+
 
 
 def _gather_confounds(

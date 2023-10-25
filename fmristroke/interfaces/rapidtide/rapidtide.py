@@ -48,7 +48,7 @@ class RapidTideInputSpec(CommandLineInputSpec):
     )
     
     spatialfilt = traits.Float(
-        6,
+        3,
         argstr="--spatialfilt %f",
         desc="Spatially filter fMRI data prior to analysis using GAUSSSIGMA in mm.",
         usedefault=True,
@@ -71,6 +71,13 @@ class RapidTideInputSpec(CommandLineInputSpec):
         "None",
         argstr="--filterband %s",
         desc="Filter data and regressors to specific band. Use “None” to disable filtering",
+        usedefault=True
+    )
+    filterfreq = traits.Str(
+        "0.009 0.09",
+        argstr="--filterfreqs %s",
+        desc="Filter data and regressors to retain LOWERPASS to UPPERPASS. If –filterstopfreqs is not also specified, LOWERSTOP and UPPERSTOP will be calculated automatically.",
+        usedefault=True,    
     )
     
     noglm = traits.Bool(

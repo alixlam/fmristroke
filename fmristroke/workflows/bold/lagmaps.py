@@ -71,7 +71,7 @@ def init_hemodynamic_wf(
     Outputs
     -------
     maps
-        lagmap and corrmap
+        lagmap
     """
     
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -187,18 +187,22 @@ def init_hemodynamic_wf(
         DerivativesDataSink(desc="lagmap", datatype="figures"),
         name="ds_report_lagplot",
         run_without_submitting=True,
+        dismiss_entities=("space",)
     )
     
     ds_report_corrplot = pe.Node(
         DerivativesDataSink(desc="corrmap", datatype="figures"),
         name="ds_report_corrplot",
         run_without_submitting=True,
+        dismiss_entities=("space",)
     )
     
     ds_report_hemo = pe.Node(
         DerivativesDataSink(desc="hemo", datatype="figures"),
         name="ds_report_hemo",
         run_without_submitting=True,
+        dismiss_entities=("space",)
+
     )
     # fmt:off
     workflow.connect([

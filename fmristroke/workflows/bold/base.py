@@ -260,8 +260,8 @@ effects of other kernels [@lanczos].
     )
     workflow.connect([
         (inputnode, lesion_plot, [
-            ("bold_t1", "inputnode.boldref_t1"),
-            ("t1_preproc", "inputnode.t1w"),
+            ("boldref_t1", "inputnode.boldref_t1"),
+            ("t1w_preproc", "inputnode.t1w"),
             ("roi", "inputnode.t1w_roi"),
             ("t1w_mask", "inputnode.t1w_mask")
             ])
