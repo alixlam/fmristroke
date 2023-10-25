@@ -169,13 +169,9 @@ class environment(_Config):
     """
     Read-only options regarding the platform and environment.
 
-    Crawls runtime descriptive settings (e.g., default FreeSurfer license,
-    execution environment, nipype and *fMRIPrep* versions, etc.).
     The ``environment`` section is not loaded in from file,
     only written out when settings are exported.
-    This config section is useful when reporting issues,
-    and these variables are tracked whenever the user does not
-    opt-out using the ``--notrack`` argument.
+    This config section is useful when reporting issues.
 
     """
 
@@ -492,7 +488,7 @@ def load(filename, skip=None, init=True):
     Arguments
     ---------
     filename : :py:class:`os.PathLike`
-        TOML file containing fMRIPrep configuration.
+        TOML file containing fMRIStroke configuration.
     skip : dict or None
         Sets of values to ignore during load, keyed by section name
     init : `bool` or :py:class:`~collections.abc.Container`
