@@ -64,25 +64,34 @@ def init_lesionplot_wf(
 
     outputnode = pe.Node(niu.IdentityInterface(fields=["out_regplot"]), name="outputnode")
     
+    resample_bold = pe.Node(
+        niu.Function(function=_resample_to_img), name="boldref_resamp")
+    resample_bold.inputs.interpolation = "continuous"
+    
     reg_plot = pe.Node(
         RegisterLesionRPT(),
         name="reg_plot"
     )
     ds_report_reg = pe.Node(
-            DerivativesDataSink(datatype="figures", dismiss_entities=("echo",)),
+            DerivativesDataSink(datatype="figures", desc="reglesion", dismiss_entities=("echo",)),
             name='ds_report_reg',
             run_without_submitting=True,
+            dismiss_entities=("space",)
+
         )
 
     workflow = Workflow(name=name)
 
     # fmt:off
     workflow.connect([
+        (inputnode, resample_bold, [
+                            ("boldref_t1", "in_img"),
+                            ("t1w", "ref"),]),
         (inputnode, reg_plot, [
-                            ("boldref_t1", "moving_image"),
                             ("t1w_mask", "reference_image_mask"),
                             ("t1w", "reference_file"),
                             ("t1w_roi", "roi")]),
+        (resample_bold, reg_plot, [("out", "moving_image")]),
         (reg_plot, ds_report_reg, [("out_report", "in_file")]),
         (reg_plot, outputnode, [("out_report", "out_regplot")]),
     ])

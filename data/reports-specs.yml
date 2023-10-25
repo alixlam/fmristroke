@@ -131,28 +131,25 @@ sections:
       appear in the 100ms bin.
     static: false
     subtitle: T2* gray-matter values
-  - bids: {datatype: figures, desc: flirtnobbrlesion, suffix: bold}
-    caption: <code>mri_coreg</code> (FreeSurfer) was used to generate transformations
-      from EPI space to T1 Space - BBR refinement using FSL <code>flirt</code> rejected.
-      Note that Nearest Neighbor interpolation is used in the reportlets in order to
-      highlight potential spin-history and other artifacts, whereas final images are
-      resampled using Lanczos interpolation, lesion mask is added.
+  - bids: {datatype: figures, desc: reglesion, suffix: bold}
+    caption: co - registration with lesion mask added.
     static: false
-    subtitle: Alignment of functional and anatomical MRI data with lesion mask (volume based)
-  - bids: {datatype: figures, desc: coreg, suffix: bold}
-    caption: <code>mri_coreg</code> (FreeSurfer) was used to generate transformations
-      from EPI space to T1 Space - <code>bbregister</code> refinement rejected. Note
-      that Nearest Neighbor interpolation is used in the reportlets in order to highlight
-      potential spin-history and other artifacts, whereas final images are resampled
-      using Lanczos interpolation.
-    static: false
-    subtitle: Alignment of functional and anatomical MRI data (volume based)
+    subtitle: Alignment of functional and anatomical MRI data with lesion mask
   - bids: {datatype: figures, desc: hc, suffix: bold}
     caption: Homotopic connectivity on left hemisphere. 
       The FreeSurfer-defined pial surface is displayed as a ribbon over the subject’s T1.
       The ribbon is color-coded based on Homotopic FC strength at each surface vertex.
     static: false
-    subtitle: Homotopic connectivity 
+    subtitle: Homotopic connectivity
+  - bids: {datatype: figures, desc: hemo, suffix: bold}
+    subtitle: Hemodynamics
+  - bids: {datatype: figures, desc: lagmap, suffix: bold}
+    caption: This panel shows the hemodynamic lagmap on top of the T1w image, reference signal
+      is mean GM (lesion excluded)
+    static: false
+  - bids: {datatype: figures, desc: corrmap, suffix: bold}
+    caption: This panel shows the maximum correlation value for the estimation of the lag.
+    static: false
   - bids: {datatype: figures, desc: flirtbbr, suffix: bold}
     caption: FSL <code>flirt</code> was used to generate transformations from EPI-space
       to T1w-space - The white matter mask calculated with FSL <code>fast</code> (brain
@@ -205,7 +202,7 @@ sections:
       "d" and "s" prefixes indicate "deep" and "shallow" relative to the cortex.
       "Edge" indicates regions just outside the brain.
     subtitle: BOLD Summary
-  - bids: {datatype: figures, desc: 'ICplot', suffix: bold}
+  - bids: {datatype: figures, desc: 'icaroi', suffix: bold}
     caption: ICA components overlapping with lesion mask (5% Jaccard Index), ICA spatial maps are plotted along with time serie.
     subtitle: Lesion driven artefacts
   - bids: {datatype: figures, desc: 'confoundcorr', suffix: bold}

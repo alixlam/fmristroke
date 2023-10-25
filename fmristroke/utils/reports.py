@@ -23,7 +23,7 @@ def get_hemoreport(lagmap,
     results["prop_voxel"] = round(1 - (nvoxels/np.sum(mask))) 
     results["num_voxels"] = nvoxels
     
-    if hemimask == None:
+    if not hemimask :
         results["lh_mean_lag"] = None
         results["rh_mean_lag"] = None
     else :

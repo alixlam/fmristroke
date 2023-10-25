@@ -33,7 +33,7 @@ def plot_multicomponents(
     fig = plt.figure(figsize = (10,5 * n_components))
     gs = mgs.GridSpec(nrows = n_components, ncols = 1, wspace=0.0, hspace=0.05)
     for j, IC in enumerate(ts):
-        plot_components(anat, index_img(stat_map, int(IC)), np.array(ts[IC]), gs=gs[j], contour = lesion, name=f"IC {IC}", color = 'white')
+        plot_components(anat, index_img(stat_map, int(IC.split("_")[-1])), np.array(ts[IC]), gs=gs[j], contour = lesion, name=f"IC {IC.split('_')[-1]}", color = 'white')
 
     return fig
 

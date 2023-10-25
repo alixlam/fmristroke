@@ -136,6 +136,8 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
         run_without_submitting=True,
     )
 
+    gen_ref = pe.Node(GenerateSamplingReference(), name="gen_ref", mem_gb=0.01)
+    
     mask_std_tfm = pe.Node(
         ApplyTransforms(interpolation="multiLabel"), name="mask_std_tfm", mem_gb=1
     )
@@ -156,6 +158,7 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
     )
     # fmt:off
     workflow.connect([
+        (inputnode, gen_ref, [("roi", "moving_image")]),
         (iterablesource, split_target, [("std_target", "in_target")]),
         (iterablesource, select_tpl, [("std_target", "template")]),
         (inputnode, select_std, [("anat2std_xfm", "anat2std_xfm"),
@@ -164,6 +167,9 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
         (split_target, select_std, [("space", "key")]),
         (select_std, merge_xforms, [("anat2std_xfm", "in1")]),
         (select_std, mask_merge_tfms, [("anat2std_xfm", "in1")]),
+        (split_target, gen_ref, [(("spec", _is_native), "keep_native")]),
+        (select_tpl, gen_ref, [("out", "fixed_image")]),
+        (gen_ref, mask_std_tfm, [("out_file", "reference_image")]),
         (mask_merge_tfms, mask_std_tfm, [("out", "transforms")]),
     ])
     # fmt:on
@@ -228,3 +234,6 @@ def _select_template(template):
         out = get_template_specs(template, template_spec=specs)
 
     return out[0]
+
+def _is_native(in_value):
+    return in_value.get("resolution") == "native" or in_value.get("res") == "native"

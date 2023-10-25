@@ -9,24 +9,20 @@ upcoming `BEP 011`_ and `BEP 012`_).
 *fMRIStroke* generates three broad classes of outcomes:
 
 1. **Visual QA (quality assessment) reports**:
-   one :abbr:`HTML (hypertext markup language)` per subject,
-   if the output dir is the fmriprep dir then the fmriprep report will be updated with fmriStroke figures, 
-   that allows the user a visual assessment of the quality of preprocessing.
+   one :abbr:`HTML (hypertext markup language)` per subject, that allows the user a visual assessment of the quality of preprocessing.
+   If the output dir is the fmriprep dir then the fmriprep report will be updated with fmriStroke figures.
 
 2. **Derivatives (preprocessed data)** the input fMRI data ready for
    analysis, i.e., after the various preparation procedures
    have been applied.
 
-3. **Confounds**: this is a special family of derivatives that can be utilized
-   to inform subsequent denoising steps.
+3. **Confounds**: Confounds signals that can be utilized
+   to run subsequent denoising steps.
 
-   .. important::
-       In order to remain agnostic to any possible subsequent analysis,
-       *fMRIStroke* as *fMRIPrep* does not perform any denoising (e.g., spatial smoothing) itself.
 
 Layout
 ------
-Assuming fMRIPrep is invoked with::
+Assuming fMRIStroke is invoked with::
 
     fmristroke <input_dir>/ <output_dir>/ participant --fmriprep-dir <derivatives_dir> [OPTIONS]
 
@@ -42,14 +38,14 @@ The outputs will be a `BIDS Derivatives`_ dataset of the form::
 For each participant in the dataset,
 a directory of derivatives (``sub-<label>/``)
 and a visual report (``sub-<label>.html``) are generated.
-``dataset_description.json`` is a metadata file in which fMRIPrep
+``dataset_description.json`` is the metadata file in which fMRIPrep
 records metadata recommended by the BIDS standard.
 
 
 Visual Reports
 --------------
 *fMRIStroke* outputs summary reports, written to ``<output dir>/sub-<subject_label>.html``.
-These reports provide a quick way to make visual inspection of the results easy.
+These reports make visual inspection of the results easy.
 `View a sample report. <_static/SampleReport/sample_report.html>`_
 
    .. note::
@@ -68,7 +64,8 @@ Hemodynamics
 Stroke disrupts the brain's vascular supply, not only within but also outside areas of infarction.
 [Siegel2016]_ investigated temporal delays (lag) in resting state functional magnetic resonance imaging signals and found that significant hemodynamic lag was observed in 30% of stroke patients sub-acutely and
 approximately 10% of patients showed lag at one-year post-stroke. Lags systematically alter measurements of fonctional connectivity from the affected nodes.
-Thus in their paper [Siegel2017]_ recommend excluding patients with an hemodynamic lag > 1s. Eiher way, lags should be kept in mind when doing :abbr:`FC analysis (functional connectivity)` of stroke patients.
+Thus [Siegel2017]_ recommends excluding patients with an hemodynamic lag > 1s.
+Eiher way, lags should be kept in mind when doing :abbr:`FC analysis (functional connectivity)` of stroke patients.
 
 Hemodynamic lag is determined here using cross-correlation with the global gray matter signal.
 Visual report includes the lagmaps along with the max correlation map (Correlation corresponding to the lag in the lagmap).
@@ -138,42 +135,38 @@ Confounds
 The :abbr:`BOLD (blood-oxygen level dependent)` signal measured with fMRI is a mixture of fluctuations
 of both neuronal and non-neuronal origin.
 Neuronal signals are measured indirectly as changes in the local concentration of oxygenated hemoglobin.
-Non-neuronal fluctuations in fMRI data may appear as a result of head motion, scanner noise, physiological fluctuations (related to cardiac or respiratory effects) or lesions in stroke patients.
+Non-neuronal fluctuations in fMRI data may appear as a result of not only motion, scanner noise, physiological fluctuations (related to cardiac or respiratory effects) but also lesion specific artefacts. 
 
 *Confounds* (or nuisance regressors) are variables representing fluctuations with a potential
 non-neuronal origin.
 Such non-neuronal fluctuations may drive spurious results in fMRI data analysis,
 especially in functional connectivity analyses.
-It is possible to minimize confounding effects of non-neuronal signals by including
-them as nuisance regressors and regressing them out from
-the fMRI data - a procedure known as *denoising*.
+To minimize those confounding effects of non-neuronal signals we can include
+them as nuisance regressors and regress them out from
+the fMRI data also known as *denoising*.
 There is currently no consensus on an optimal denoising strategy in the fMRI community.
 Rather, different strategies have been proposed, which achieve different compromises between
 how much of the non-neuronal fluctuations are effectively removed, and how much of neuronal fluctuations
 are damaged in the process.
 The *fMRIPrep* pipeline generates a large array of possible confounds and the *fMRIStoke* pipeline adds to these confounds some lesion specific ones refer to [Yourganov2017]_ for more details.
 
-Confounding variables calculated in *fMRIStroke* are stored separately for each subject,
-session and run in :abbr:`TSV (tab-separated value)` files - one column for each confound variable.
-The file includes the gneneral confounds obtained by fMRIPrep and the lesion specific ones computed with fMRIStroke.  
-Such tabular files may include over 100 columns of potential confound regressors.
 
 .. danger::
+   Similarly to fmriprep computed confounds: 
    Do not include all columns of ``~_desc-confounds_timeseries.tsv`` table
    into your design matrix or denoising procedure.
    Filter the table first, to include only the confounds (or components thereof)
    you want to remove from your fMRI signal.
-   The choice of confounding variables may depend on the analysis you want to perform,
-   and may be not straightforward as no gold standard procedure exists.
+   The choice of confounding variables depends on the analysis you want to perform and the data you have, 
+   it may be not straightforward as no gold standard procedure exists.
 
 Confound regressors description
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Refer to `fmrirep doc
-    <https://fmriprep.org/en/stable/outputs.html#confounds>`__ for more details about confounds and confounds regression.
+Refer to `fmrirep doc <https://fmriprep.org/en/stable/outputs.html#confounds>`_ for more details about confounds and confounds regression.
 
-**ICA confounds**.
-:abbr:`ICA (Independant components Based Noise Correction)` is a :abbr:`ICA (Independant component analysis)`,
-hence component-based, noise identification method.
+**ICLesion confounds**.
+:abbr:`ICLesion analysis (Independant Components Analysis based Lesion Noise Correction)` is a :abbr:`ICA (Independant component analysis)`,
+based noise identification method.
 In the method, independant components are calculated on the bold signal and components that overlap with an :abbr:`ROI (Region of Interest)`
 that is unlikely to include signal related to neuronal activity, such as :abbr:`Lesion` masks are identified as potential noise component.
 Signals extracted from ICA components can be further regressed out from the fMRI data with a
@@ -183,7 +176,7 @@ denoising procedure [Yourganov2017]_.
   (ICA noise correction))`;
 
 Each confounds data file will also have a corresponding metadata file
-(``~desc-confounds_regressors.json``).
+(``~desc-confounds.json``).
 Metadata files contain additional information about columns in the confounds TSV file:
 
 .. code-block:: json
@@ -204,7 +197,7 @@ For ICA decompositions, entries include:
 
 
 Confounds on the visual reports
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The visual reports provide several sections per task and run to aid designing
 a denoising strategy for subsequent analysis.
 
@@ -214,8 +207,77 @@ This is used by *fMRIStroke* to determine whether each component should be saved
 use in denoising operations: a component is saved if the jaccard index between ROI and binarized spatial map is > 5%.
 *fMRIStroke* reports include a plot of the spatial map of each included component along with associated signal.
 
-.. figure:: _static/sub-024_task-rest_ica.svg
+.. figure:: _static/sub-027_task-rest_ica.svg
 
+Denoising
+---------
+As mentioned above there is no concensus on denoising strategy. However, **fmristroke** proposes some simple denoising pipelines [Yourganov2017]_ to preprocess your data.
+By default **fmristroke** performs denoising using 2 common, and 2 lesion specific denoising pipeline. Each pipeline is defined as a single .json file.
+
+SimpleGS
+~~~~~~~~~~
+Denoising strategy based on regressing out: 24HMP - 24 head motion parameters including: 3 translations, 3 rotations, their temporal derivatives, and their quadratic terms,
+8Phys - mean physiological signals from white matter (WM) and cerebrospinal fluid (CSF), their temporal derivatives, and quadratic terms,
+and high pass filtering by adding discrete cosines transformation basis regressors to handle low-frequency signal drifts.
+
+CompCorGS
+~~~~~~~~~~
+Denoising strategy based on regressing out: 24 head motion parameters including: 3 translations, 3 rotations, their temporal derivatives, and their quadratic terms, CompCor - Signals from CompCor,
+and high pass filtering by adding discrete cosines transformation basis regressors to handle low-frequency signal drifts.",
+
+SimpleLesionGS
+~~~~~~~~~~~~~~~
+Same as SimpleGS but with updating region signals (WM and CSF) with lesion mask.
+
+ICLesionGS
+~~~~~~~~~~
+Same as SimpleLesionGS but adding IC_Lesion signals. [Yourganov2017]_
+
+Adding custom strategy
+~~~~~~~~~~~~~~~~~~~~~~
+You can easily add a custom pipeline by creating a .json file. A file should follow the structure below.
+
+.. code-block:: json
+
+    {
+    "name": "Name",
+    "description": "Denoising strategy based on ...",
+    "confounds": {
+        "white_matter": {
+            "raw": "False",
+            "lesion": "False",
+            "derivative1": "False",
+            "power2": "False",
+            "derivative1_power2": "False"
+        },
+        "csf": {
+            "raw": "False",
+            "lesion": "False",
+            "derivative1": "False",
+            "power2": "False",
+            "derivative1_power2":  "False"
+            },
+        "global_signal": {
+            "raw": "False",
+            "derivative1": "False",
+            "power2": "False",
+            "derivative1_power2": "False"
+            },
+        "motion": {
+            "raw": "False",
+            "derivative1": "False",
+            "power2": "False",
+            "derivative1_power2": "False"
+            },
+        "high_pass": "False",
+        "compcor": "False",
+        "ic_lesion": "False"
+        
+    },
+    "aroma": "False",
+    "spikes": "False",
+    "demean": "False"
+    }
 
 
 See implementation on :mod:`~fmristroke.workflows.bold.confounds.init_lesion_confs_wf`.

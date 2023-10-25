@@ -47,7 +47,7 @@ def build_workflow(config_file, retval):
             config.execution.participant_label,
             config.execution.fmriprep_dir,
             config.execution.run_uuid,
-            config=pkgrf("fmristroke", "data/reports-spec.yml"),
+            config=Path(__file__).parent / "../../data/reports-specs.yml",
             packagename="fmriprep",
         )
         return retval

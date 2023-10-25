@@ -9,7 +9,7 @@ from nipype.pipeline import engine as pe
 
 from fmriprep import config
 from fmriprep.config import DEFAULT_MEMORY_MIN_GB
-from fmriprep.interfaces import DerivativesDataSink
+from ...interfaces import DerivativesDataSink
 
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from smriprep.workflows.outputs import _bids_relative
