@@ -3,7 +3,7 @@
 Usage Notes
 ===========
 .. warning::
-   This app runs on **fMRIprep derivatives**, fMRIprep need to be run prior to running **fMRIStroke**. Derivatives obtained with other tools will most likely not work on this tool. 
+   This app runs on **fMRIprep derivatives**, fMRIprep needs to be run prior to running **fMRIStroke**. Derivatives obtained with other tools will most likely not work on this tool. 
 
 
 Execution and the BIDS format
