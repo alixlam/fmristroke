@@ -4,8 +4,8 @@
 Outputs of *fMRIStroke*
 ------------------------
 *fMRIStroke* outputs conform to the :abbr:`BIDS (brain imaging data structure)`
-Derivatives specification (see `BIDS Derivatives`_, along with the
-upcoming `BEP 011`_ and `BEP 012`_).
+Derivatives specification (see `BIDS Derivatives`, along with the
+upcoming `BEP 011` and `BEP 012`).
 *fMRIStroke* generates three broad classes of outcomes:
 
 1. **Visual QA (quality assessment) reports**:
@@ -56,7 +56,7 @@ Coregistration
 ~~~~~~~~~~~~~~
 The ROI mask is added to the coregistration plot.
 
-.. figure:: _static/sub-024_task-rest_ica.svg
+.. figure:: _static/sub-027_ses-1week_task-rest_run-02_space-T1w_desc-reglesion_bold.svg
 
 
 Hemodynamics
@@ -135,17 +135,17 @@ Confounds
 The :abbr:`BOLD (blood-oxygen level dependent)` signal measured with fMRI is a mixture of fluctuations
 of both neuronal and non-neuronal origin.
 Neuronal signals are measured indirectly as changes in the local concentration of oxygenated hemoglobin.
-Non-neuronal fluctuations in fMRI data may appear as a result of not only motion, scanner noise, physiological fluctuations (related to cardiac or respiratory effects) but also lesion specific artefacts. 
+Non-neuronal fluctuations in fMRI data may appear as a result of motion, scanner noise, physiological fluctuations (related to cardiac or respiratory effects) but also lesion specific artefacts. 
 
-*Confounds* (or nuisance regressors) are variables representing fluctuations with a potential
+*Confounds* (or nuisance regressors) are variables representing these fluctuations with a potential
 non-neuronal origin.
-Such non-neuronal fluctuations may drive spurious results in fMRI data analysis,
+These non-neuronal fluctuations may drive spurious results in fMRI data analysis,
 especially in functional connectivity analyses.
-To minimize those confounding effects of non-neuronal signals we can include
+To minimize those confounding effects we can include
 them as nuisance regressors and regress them out from
-the fMRI data also known as *denoising*.
+the fMRI data, also known as *denoising*.
 There is currently no consensus on an optimal denoising strategy in the fMRI community.
-Rather, different strategies have been proposed, which achieve different compromises between
+Different strategies have been proposed, which achieve different compromises between
 how much of the non-neuronal fluctuations are effectively removed, and how much of neuronal fluctuations
 are damaged in the process.
 The *fMRIPrep* pipeline generates a large array of possible confounds and the *fMRIStoke* pipeline adds to these confounds some lesion specific ones refer to [Yourganov2017]_ for more details.
@@ -157,8 +157,11 @@ The *fMRIPrep* pipeline generates a large array of possible confounds and the *f
    into your design matrix or denoising procedure.
    Filter the table first, to include only the confounds (or components thereof)
    you want to remove from your fMRI signal.
-   The choice of confounding variables depends on the analysis you want to perform and the data you have, 
-   it may be not straightforward as no gold standard procedure exists.
+   The choice of confounding variables depends on the analysis you want to perform and the data you have,
+   it may be not straightforward as no gold standard procedure exists. **fMRIStroke** includes a denoising step in its pipeline
+   using simple strategies proposed in the litterature. However, it is up to you to either use these denoised BOLD series, add a custom strategy or
+   denoise using the ``~_desc-confounds_timeseries.tsv`` output independently of **fMRIStroke**. 
+
 
 Confound regressors description
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,12 +210,19 @@ This is used by *fMRIStroke* to determine whether each component should be saved
 use in denoising operations: a component is saved if the jaccard index between ROI and binarized spatial map is > 5%.
 *fMRIStroke* reports include a plot of the spatial map of each included component along with associated signal.
 
-.. figure:: _static/sub-027_task-rest_ica.svg
+.. figure:: _static/sub-027_ses-1week_task-rest_run-02_space-T1w_desc-icaroi_bold.svg
 
 Denoising
 ---------
 As mentioned above there is no concensus on denoising strategy. However, **fmristroke** proposes some simple denoising pipelines [Yourganov2017]_ to preprocess your data.
-By default **fmristroke** performs denoising using 2 common, and 2 lesion specific denoising pipeline. Each pipeline is defined as a single .json file.
+By default **fmristroke** performs denoising using 2 common, and 2 lesion specific denoising pipelines. Each pipeline is defined as a single .json file.
+
+Denoised BOLD series will be saved as::
+
+  sub-<subject_label>/
+    func/
+      sub-<subject_label>_[specifiers]_space-<space_label>_pipeline-[Pipeline]_desc-denoised_bold.nii.gz
+
 
 SimpleGS
 ~~~~~~~~~~
