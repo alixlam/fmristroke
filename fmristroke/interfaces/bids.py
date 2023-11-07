@@ -41,6 +41,7 @@ class _BIDSDerivativeDataGrabberOutputSpec(TraitedSpec):
     boldref_t1 = OutputMultiObject(desc="output functional reference images in anatomical space")
     boldmask_t1 = OutputMultiObject(desc="output bold mask in t1 space")
     confounds_file = OutputMultiObject(desc="confounds timeseries")
+    confounds_metadata = OutputMultiObject(desc="confounds timeseries description file")
     t1w_preproc = OutputMultiObject(desc="output T1w preprocessed images")
     t1w_mask = OutputMultiObject(desc="output T1w brain mask ")
     t1w_dseg = OutputMultiObject(desc="output T1w dseg")

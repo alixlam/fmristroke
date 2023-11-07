@@ -13,6 +13,7 @@ def apply_transform_ants(fixed, moving, transforms, interpolation, outdir, **arg
         interpolator=interpolation,
         float = 0,
         defaultvalue=0,
+        **args
     )
     
     ants.image_write(transformed, outdir)

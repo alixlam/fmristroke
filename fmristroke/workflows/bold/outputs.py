@@ -17,11 +17,13 @@ from smriprep.workflows.outputs import _bids_relative
 
 if ty.TYPE_CHECKING:
     from niworkflows.utils.spaces import SpatialReferences
+    from ...utils.pipelines import Pipelines
 
 def init_func_lesion_derivatives_wf(
     bids_root: str,
     output_dir: str,
     spaces: SpatialReferences,
+    pipelines: Pipelines,
     name='func_lesion_derivatives_wf',
 ):
     """
@@ -48,6 +50,9 @@ def init_func_lesion_derivatives_wf(
         This workflow's identifier (default: ``func_lesion_derivatives_wf``).
 
     """
+    from niworkflows.interfaces.utility import KeySelect
+    from niworkflows.interfaces.space import SpaceDataSource
+
 
     workflow = Workflow(name=name)
 
@@ -59,6 +64,11 @@ def init_func_lesion_derivatives_wf(
                 'lagmaps',
                 'source_file',
                 'all_source_files',
+                'spatial_reference',
+                'template',
+                'denoised_bold_t1',
+                'denoised_bold_std',
+                'pipeline',
             ]
         ),
         name='inputnode',
@@ -111,5 +121,96 @@ def init_func_lesion_derivatives_wf(
         (lagmap_select, ds_lagmap, [('out', 'in_file')]),
     ])
     # fmt:on
+    
+    # Denoising
+    pipelinessource = pe.Node(
+        niu.IdentityInterface(
+            fields=["pipeline"]),
+        name  = "pipelineinter"
+        )
+    pipelinessource.iterables = [("pipeline", pipelines.get_pipelines())]
+    
+    fields = ['denoised_bold_t1']
+    select_pipeline = pe.Node(
+        KeySelect(fields=fields),
+        name='select_pipeline',
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    ds_denoised_t1 = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="denoised",
+            suffix="bold",
+            space="T1w",
+            compress=True,
+            dismiss_entities=("echo",),
+        ),
+        name="ds_denoised_t1",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB
+    )
+    
+    spacesourceiter = pe.Node(SpaceDataSource(), name='spacesourceiter', run_without_submitting=True)
+    spacesourceiter.iterables= (
+        'in_tuple',
+        [(s.fullname, s.spec) for s in spaces.cached.get_standard(dim=(3,))],
+    )
+    
+    fields_space = ['template', 'denoised_bold_std']
+    fields = ['denoised_bold_std']
+    select_pipeline_std = pe.Node(
+        KeySelect(fields=fields),
+        name='select_pipeline_std',
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    select_std = pe.Node(
+            KeySelect(fields=fields_space),
+            name='select_std',
+            run_without_submitting=True,
+            mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    
+    ds_denoised_std = pe.Node(
+        DerivativesDataSink(
+                base_directory=output_dir,
+                desc='denoised',
+                suffix='bold',
+                compress=True,
+                dismiss_entities=("echo",),
+            ),
+            name='ds_denoised_std',
+            run_without_submitting=True,
+            mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    # fmt:off
+    workflow.connect([
+        # Denoised bold in T1w space
+        (inputnode, ds_denoised_t1, [('source_file', 'source_file')]),
+        (inputnode, select_pipeline, [('denoised_bold_t1', 'denoised_bold_t1'),
+                                        ('pipeline', 'keys')]),
+        (pipelinessource, select_pipeline, [('pipeline', 'key')]),
+        (select_pipeline, ds_denoised_t1, [('denoised_bold_t1', 'in_file')]),
+        (pipelinessource, ds_denoised_t1, [('pipeline', 'pipeline')]),
+        
+        # Denoised bold in std space
+        (inputnode, ds_denoised_std, [('source_file', 'source_file')]),
+        (inputnode, select_pipeline_std, [('denoised_bold_std', 'denoised_bold_std'),
+                                            ('pipeline', 'keys')]),
+        (pipelinessource, select_pipeline_std, [('pipeline', 'key')]),
+        (inputnode, select_std, [('template', 'template'),
+                                ('spatial_reference', 'keys')]),
+        (spacesourceiter, select_std, [('uid', 'key')]),
+        (select_pipeline_std, select_std, [('denoised_bold_std', 'denoised_bold_std')]),
+        (select_std, ds_denoised_std, [('denoised_bold_std', 'in_file')]),
+        (spacesourceiter, ds_denoised_std, [('space', 'space'),
+                                        ('cohort', 'cohort'),
+                                        ('resolution', 'resolution'),
+                                        ('density', 'density')]),
+        (pipelinessource, ds_denoised_std, [('pipeline', 'pipeline')])
+    ])
+    # fmt:on
+    
     
     return workflow

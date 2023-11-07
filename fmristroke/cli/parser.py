@@ -198,6 +198,13 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         % ("latest"),
     )
     
+    g_pipe = parser.add_argument_group("Denoising pipeline configuration")
+    g_pipe.add_argument(
+        "--output_pipelines",
+        nargs="+",
+        help="Pipelines to use for denoising, space separated pipeline name, accepts either json file describing pipeline or name of pipeline from package."
+    )
+    
     g_confounds = parser.add_argument_group("Options relating to confounds")
     g_confounds.add_argument(
         "--ncomp_method",
@@ -227,7 +234,7 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         type=int,
         help="Max lag for hemodynamic analysis",
     )
-
+    
     # FreeSurfer options
     g_fs = parser.add_argument_group("Specific options for FreeSurfer preprocessing")
     g_fs.add_argument(
@@ -319,6 +326,10 @@ def parse_args(args=None, namespace=None):
         config.execution.output_spaces = SpatialReferences(
             [Reference("MNI152NLin2009cAsym", {"res": "native"})]
         )
+    
+    # Initialize --output-pipelines if not defined
+    if config.execution.output_pipelines is None:
+        config.execution.output_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS"]
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -382,7 +393,7 @@ def parse_args(args=None, namespace=None):
         )
 
     # Setup directories
-    config.execution.log_dir = config.execution.fmriprep_dir / "logs"
+    config.execution.log_dir = config.execution.output_dir / "logs"
     # Check and create output and working directories
     config.execution.log_dir.mkdir(exist_ok=True, parents=True)
     work_dir.mkdir(exist_ok=True, parents=True)

@@ -47,7 +47,7 @@ def build_workflow(config_file, retval):
             config.execution.participant_label,
             config.execution.fmriprep_dir,
             config.execution.run_uuid,
-            config=Path(__file__).parent / "../../data/reports-specs.yml",
+            config=pkgrf("fmristroke", "data/reports-specs.yml"),
             packagename="fmriprep",
         )
         return retval
@@ -60,6 +60,7 @@ def build_workflow(config_file, retval):
         f"Participant list: {subject_list}.",
         f"Run identifier: {config.execution.run_uuid}.",
         f"Output spaces: {config.execution.output_spaces}.",
+        f"Denoising pipelines: {config.execution.output_pipelines}."
     ]
 
     build_log.log(25, f"\n{' ' * 11}* ".join(init_msg))
@@ -70,7 +71,7 @@ def build_workflow(config_file, retval):
     missing = check_deps(retval["workflow"])
     if missing:
         build_log.critical(
-            "Cannot run fMRIPrep. Missing dependencies:%s",
+            "Cannot run fMRIStroke. Missing dependencies:%s",
             "\n\t* ".join([""] + [f"{cmd} (Interface: {iface})" for iface, cmd in missing]),
         )
         retval["return_code"] = 127  # 127 == command not found.

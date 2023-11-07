@@ -1,0 +1,8 @@
+{
+    "pipeline": "Name",
+    "desc": "Denoising strategy based on ...",
+    "confounds": {
+    },
+    "demean": true,
+    "clean_spec": {}
+    }

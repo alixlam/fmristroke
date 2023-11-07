@@ -79,6 +79,7 @@ def init_confs_wf(
     from niworkflows.interfaces.morphology import BinaryDilation, BinarySubtraction
     from niworkflows.interfaces.nibabel import ApplyMask, Binarize
     from niworkflows.interfaces.utility import TSV2JSON, DictMerge
+    from niworkflows.interfaces.confounds import ExpandModel
     
     from fmriprep.interfaces.confounds import aCompCorMasks
     from ...interfaces.confounds import LesionMasks, ROIcomp, GatherConfounds
@@ -209,6 +210,11 @@ def init_confs_wf(
         DictMerge(), name="merge_confound_metadata2", run_without_submitting=True
     )
     
+    model_expand = pe.Node(
+        ExpandModel(model_formula="(dd1(wm_nolesion + csf_lesion))^^2 + others"),
+        name="model_expansion",
+    )
+    
     # Concatenate all confounds
     concat = pe.Node(GatherConfounds(), name= "concat", mem_gb=0.01, run_without_submitting=True)
     
@@ -258,6 +264,9 @@ def init_confs_wf(
         (lesion_components, concat, [("out_signal", "ic_roi_signals")]),
         (inputnode, concat, [("confounds_file", "confounds_file")]),
         
+        # Expand model with derivatives
+        (concat, model_expand, [("confounds_file", "confounds_file")]),
+        
         # Confounds metadata
         (canica, ica_metadata_fmt, [("metadata_file", "in_file")]),
         (lesion_components, lesion_conf_metadata_fmt, [("metadata_file", "in_file")]),
@@ -270,7 +279,7 @@ def init_confs_wf(
         (inputnode, IC_plot, [("boldref_t1", "in_file")]),
         (canica, IC_plot, [("components_img_zscored", "in_ICs")]),
         (t1w_mask_tfm_roi, IC_plot, [("out", "in_mask")]),
-        (concat, outputnode, [("confounds_file", "confounds_file")]),
+        (model_expand, outputnode, [("confounds_file", "confounds_file")]),
         (mrg_conf_metadata2, outputnode, [("out_dict", "confounds_metadata")]),
         (intersect_mask, outputnode, [("out", "boldmask")]),
         (IC_plot, ds_report_ica, [("out_report", "in_file")])

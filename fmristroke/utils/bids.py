@@ -16,13 +16,12 @@ def collect_bold_derivatives(
         layout = BIDSLayout(str(derivatives_dir), validate=False)
     
     if spec is None:
-        spec = loads((Path(__file__).parent / "../../data/io_spec.json").read_text())
+        spec = loads(Path(pkgrf('fmristroke','data/io_spec.json')).read_text())
     
     bids_filters = bids_filters["bold"] if bids_filters else {}
     
     layout_get_kwargs = {
         'subject': subject_id,
-        'extension': ['.nii', '.nii.gz', '.tsv'],
         'session': Query.OPTIONAL
         }
     

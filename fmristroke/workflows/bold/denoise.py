@@ -1,73 +1,212 @@
+from __future__ import annotations
 
+import typing as ty
 
-#def init_denoise_wf(
-#    mem_gb: float,
-#    pipelines: Pipeline,
-#    maxlag : int = 10, 
-#    name: str = "hemodynamic_wf",
-#):
-#    """
-#    Build a workflow to generate lagmaps.
-#
-#    This workflow calculates the hemodynamic lag for stroke patients.
-#    as recommended by Siegel et al. (2017) ``https://pubmed.ncbi.nlm.nih.gov/28541130/``
-#    It uses the existing tool RapidTide that calculates a similarity function between a 
-#    “probe” signal and every voxel of a BOLD fMRI dataset. It then determines the peak value, 
-#    time delay, and width of the similarity function to determine when and how strongly that 
-#    probe signal appears in each voxel.
-#    For details about the method visit : ``https://rapidtide.readthedocs.io/en/latest/``
-#    
-#
-#
-#    Workflow Graph
-#        .. workflow::
-#            :graph2use: orig
-#            :simple_form: yes
-#
-#            from fmristroke.workflows.lagmaps import init_hemodynamic_wf
-#            wf = init_hemodynamic_wf(
-#                mem_gb=1,
-#                metadata={},
-#            )
-#
-#    Parameters
-#    ----------
-#    mem_gb : :obj:`float`
-#        Size of BOLD file in GB - please note that this size
-#        should be calculated after resamplings that may extend
-#        the FoV
-#    metadata : :obj:`dict`
-#        BIDS metadata for BOLD file
-#    maxlag :obj: `int`
-#        Max lag to compute.
-#    name : :obj:`str`
-#        Name of workflow (default: ``bold_confs_wf``)
-#
-#    Inputs
-#    ------
-#    bold_t1
-#        BOLD image in T1w space, after the prescribed corrections (STC, HMC and SDC)
-#        when available.
-#    boldmask
-#        Bold fov mask
-#    roi
-#        Roi mask in T1w space 
-#    t1w
-#        T1w image
-#    t1w_mask_lesion
-#        Mask of the lesion in T1w space
-#    t1w_mask
-#        Brain Mask of T1
-#    t1w_tpms
-#        List of tissue probability maps in T1w space
-#    t1w_aseg
-#        Segmentation of structural image, done with FreeSurfer.
-#    confounds_file
-#        TSV of all aggregated confounds.
-#
-#    Outputs
-#    -------
-#    maps
-#        lagmap and corrmap
-#    """
-#    return
+from nipype import Function
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
+from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
+
+from ...config import DEFAULT_MEMORY_MIN_GB
+
+if ty.TYPE_CHECKING:
+    from niworkflows.utils.spaces import SpatialReferences
+    from ..utils.pipelines import Pipelines
+
+def init_denoise_wf(
+    mem_gb: float,
+    omp_nthreads: int,
+    metadata: dict,
+    pipelines: Pipelines,
+    spaces: SpatialReferences,
+    name: str = "bold_denoise_wf"
+):
+    """
+    Build a workflow to denoise BOLD series.
+
+    This workflow denoises the BOLD series according to the specified denoising strategies.
+    
+    Parameters
+    ----------
+    mem_gb : :obj:`float`
+        Size of BOLD file in GB - please note that this size
+        should be calculated after resamplings that may extend
+        the FoV
+    metadata : :obj:`dict`
+        BIDS metadata for BOLD file
+    pipelines : :py:class:`~fmristroke.utils.pipelines.Pipelines`
+        A container for storing denoising strategies.
+    spaces: py:class:`~niworkflows.utils.spaces.SpatialReferences`
+        A container for storing, organizing, and parsing spatial normalizations. Composed of
+        :py:class:`~niworkflows.utils.spaces.Reference` objects representing spatial references.
+        Each ``Reference`` contains a space, which is a string of either TemplateFlow template IDs
+        (e.g., ``MNI152Lin``, ``MNI152NLin6Asym``, ``MNIPediatricAsym``), nonstandard references
+        (e.g., ``T1w`` or ``anat``, ``sbref``, ``run``, etc.), or a custom template located in
+        the TemplateFlow root directory. Each ``Reference`` may also contain a spec, which is a
+        dictionary with template specifications (e.g., a specification of ``{"resolution": 2}``
+        would lead to resampling on a 2mm resolution of the space).
+    name : :obj:`str`
+        Name of workflow (default: ``bold_denoise_wf``)
+
+    Inputs
+    ------
+    bold_t1
+        BOLD image in T1 space, after the prescribed corrections (STC, HMC and SDC)
+        when available.
+    boldmask
+        Bold fov mask in t1 space
+    anat2std_xfm
+        List of anatomical-to-standard space transforms generated during
+        spatial normalization.
+    templates
+        List of templates that were applied as targets during
+        spatial normalization.
+    confounds_file
+        TSV of all aggregated confounds.
+    confounds_metadata
+        JSON of confounds metadata file
+
+    Outputs
+    -------
+    denoised_bold_t1
+        BOLD image in T1 denoised
+    denoised_bold_std
+        BOLD image in std spaces denoised
+    template
+        Template identifiers synchronized correspondingly to previously
+        described outputs.
+    spatial reference
+        Spatial reference 
+    pipeline
+        Pipeline identifyers
+
+    """
+    
+    from ...interfaces.confounds import SelectConfounds
+    from ...interfaces.nilearn import Denoise
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from .resample import init_bold_std_trans_wf
+    
+    workflow = Workflow(name=name)
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=[
+            "bold_t1",
+            "boldmask",
+            "anat2std_xfm",
+            "templates",
+            "confounds_file",
+            "confounds_metadata",
+        ]
+    ), name="inputnode")
+    
+    iterablesource = pe.Node(niu.IdentityInterface(fields=["pipeline"]),name="iterablesource2")
+    # Generate conversion for every template+spec at the input
+    iterablesource.iterables = [("pipeline", pipelines.pipelines)]
+    
+    if spaces.get_spaces(nonstandard=False, dim=(3,)):
+        bold_std_trans_wf = init_bold_std_trans_wf(
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+            spaces=spaces,
+            name="bold_std_trans",
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, bold_std_trans_wf, [
+                ("templates", "inputnode.templates"),
+                ("anat2std_xfm", "inputnode.anat2std_xfm"),
+                ("bold_t1", "inputnode.bold_t1")
+            ]),
+        ])
+        # fmt:on
+    
+    # Get pipeline info
+    pipeline_info = pe.Node(
+        niu.Function(function=_get_pipeline_info,
+        input_name=["in_pipeline"],
+        output_names=["pipeline", "confounds_spec", "demean", "clean_specs"]),
+        name="pipeline_info"
+    )
+    
+    # Select and prepare confounds for given strategy 
+    select_confounds = pe.Node(SelectConfounds(), name="select_confounds")
+    
+    # Denoise image
+    denoise_t1 = pe.Node(Denoise(), name="denoise_t1")
+    if "RepetitionTime" in metadata:
+        denoise_t1.inputs.tr = metadata["RepetitionTime"]
+    
+    denoise_std = pe.MapNode(Denoise(), iterfield=["input_image"], name="denoise_std")
+    if "RepetitionTime" in metadata:
+        denoise_std.inputs.tr = metadata["RepetitionTime"]
+    
+    workflow.connect([
+        (inputnode, select_confounds, [("confounds_file", "confounds"),
+                                        ("confounds_metadata", "confounds_metadata"),]),
+        (iterablesource, pipeline_info, [("pipeline", "in_pipeline")]),
+        (pipeline_info, select_confounds, [("pipeline", "pipeline"),
+                                            ("confounds_spec", "confounds_spec"),
+                                            ("demean", "demean")]),
+        (select_confounds, denoise_t1, [("selected_confounds", "confounds_file")]),
+        (select_confounds, denoise_std, [("selected_confounds", "confounds_file")]),
+        (pipeline_info, denoise_t1, [("clean_specs", "pipeline")]),
+        (pipeline_info, denoise_std, [("clean_specs", "pipeline")]),
+        (inputnode, denoise_t1, [("bold_t1", "input_image")]),
+        (bold_std_trans_wf, denoise_std, [("outputnode.bold_std", "input_image")])
+        
+    ])
+
+    output_names = [
+        "denoised_bold_t1",
+        "denoised_bold_std",
+        "pipeline"
+        ]
+    poutputnode = pe.Node(niu.IdentityInterface(fields=output_names), name="poutputnode2")
+    # fmt:off
+    workflow.connect([
+        # Connecting outputnode
+        (iterablesource, poutputnode, [
+            (("pipeline", _get_pipeline_name), "pipeline")]),
+        (denoise_std, poutputnode, [("output_image", "denoised_bold_std")]),
+        (denoise_t1, poutputnode, [("output_image", "denoised_bold_t1")]),
+    ])
+    # fmt:on
+    
+
+    # Connect parametric outputs to a Join outputnode
+    outputnode_denoise = pe.JoinNode(
+        niu.IdentityInterface(fields=output_names),
+        name="outputnode_denoise",
+        joinfield=output_names,
+        joinsource="iterablesource2",
+    )
+    # fmt:off
+    workflow.connect([
+        (poutputnode, outputnode_denoise, [(f, f) for f in output_names]),
+    ])
+    # fmt:on
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=output_names+["template", "spatial_reference"]),
+        name="outputnode",
+    )
+    # fmt:off
+    workflow.connect([
+        (bold_std_trans_wf, outputnode, [("outputnode.template", "template"),
+                                        ("outputnode.spatial_reference", "spatial_reference")]),
+        (outputnode_denoise, outputnode, [(f, f) for f in output_names]),
+    ])
+    # fmt:on
+    
+    return workflow
+
+def _get_pipeline_info(in_pipeline):
+    pipeline = in_pipeline.pipeline
+    confounds_spec = in_pipeline.confounds_spec
+    demean = in_pipeline.demean
+    clean_specs = in_pipeline.clean_specs
+    return pipeline, confounds_spec, demean, clean_specs
+
+def _get_pipeline_name(in_pipeline):
+    return in_pipeline.pipeline
