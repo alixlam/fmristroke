@@ -121,13 +121,15 @@ Confounds_ are saved as a :abbr:`TSV (tab-separated value)` file::
 
 These :abbr:`TSV (tab-separated values)` tables look like the example below,
 where each row of the file corresponds to one time point found in the
-corresponding :abbr:`BOLD (blood-oxygen level dependent)` time series::
+corresponding :abbr:`BOLD (blood-oxygen level dependent)` time series.
 
-  csf white_matter  global_signal std_dvars dvars framewise_displacement  t_comp_cor_00 t_comp_cor_01 t_comp_cor_02 t_comp_cor_03 t_comp_cor_04 t_comp_cor_05 a_comp_cor_00 a_comp_cor_01 a_comp_cor_02 a_comp_cor_03 a_comp_cor_04 a_comp_cor_05 non_steady_state_outlier00  trans_x trans_y trans_z rot_x rot_y rot_z
-  682.75275 0.0 491.64752000000004  n/a n/a n/a 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 -0.00017029 -0.0  0.0
-  669.14166 0.0 489.4421  1.168398  17.575331 0.07211929999999998 -0.4506846719 0.1191909139  -0.0945884724 0.1542023065  -0.2302324641 0.0838194238  -0.032426848599999995 0.4284323184  -0.5809158299 0.1382414008  -0.1203486637 0.3783661265  0.0 0.0 0.0207752 0.0463124 -0.000270924  -0.0  0.0
-  665.3969  0.0 488.03  1.085204  16.323903999999995  0.0348966 0.010819676200000001  0.0651895837  -0.09556632150000001  -0.033148835  -0.4768871111 0.20641088559999998 0.2818768463  0.4303863764  0.41323714850000004 -0.2115232212 -0.0037154909000000004  0.10636180070000001 0.0 0.0 0.0 0.0457372 0.0 -0.0  0.0
-  662.82715 0.0 487.37302 1.01591 15.281561 0.0333937 0.3328022893  -0.2220965269 -0.0912891436 0.2326688125  0.279138129 -0.111878887  0.16901660629999998 0.0550480212  0.1798747037  -0.25383302620000003  0.1646403629  0.3953613889  0.0 0.010164  -0.0103568  0.0424513 0.0 -0.0  0.00019174
+.. csv-table:: confounds_file
+  :header: "csf", "white_matter",  "global_signal", "std_dvars dvars", "framewise_displacement" 
+  :widths: 10, 10, 10, 10, 10
+
+  682.75275, 0.0, 491.64752000000004,  n/a, n/a
+  665.3969,  0.0, 488.03,  1.085204,  16.323903999999995
+  662.82715, 0.0, 487.37302, 1.01591, 15.281561
 
 
 Confounds
@@ -215,7 +217,7 @@ use in denoising operations: a component is saved if the jaccard index between R
 Denoising
 ---------
 As mentioned above there is no concensus on denoising strategy. However, **fmristroke** proposes some simple denoising pipelines [Yourganov2017]_ to preprocess your data.
-By default **fmristroke** performs denoising using 2 common, and 2 lesion specific denoising pipelines. Each pipeline is defined as a single .json file.
+By default **fmristroke** performs denoising using 4 different pipelines described below. Among those pipelines two are "basic" pipelines non specific to stroke patients (SimpleGS and CompCorGS), and two are lesion specific denoising pipelines. Each pipeline is defined as a single .json file.
 
 Denoised BOLD series will be saved as::
 
@@ -250,45 +252,22 @@ You can easily add a custom pipeline by creating a .json file. A file should fol
 .. code-block:: json
 
     {
-    "name": "Name",
-    "description": "Denoising strategy based on ...",
+    "pipeline": "Name",
+    "desc": "Denoising strategy based on ...",
     "confounds": {
-        "white_matter": {
-            "raw": "False",
-            "lesion": "False",
-            "derivative1": "False",
-            "power2": "False",
-            "derivative1_power2": "False"
+        "wm_csf": {
+            "wm_csf": "full"
         },
-        "csf": {
-            "raw": "False",
-            "lesion": "False",
-            "derivative1": "False",
-            "power2": "False",
-            "derivative1_power2":  "False"
-            },
-        "global_signal": {
-            "raw": "False",
-            "derivative1": "False",
-            "power2": "False",
-            "derivative1_power2": "False"
-            },
-        "motion": {
-            "raw": "False",
-            "derivative1": "False",
-            "power2": "False",
-            "derivative1_power2": "False"
-            },
-        "high_pass": "False",
-        "compcor": "False",
-        "ic_lesion": "False"
-        
+        "global_signal": {"global_signal": "full"},
+        "motion": {"motion": "full"},
+        "high_pass": {}
     },
-    "aroma": "False",
-    "spikes": "False",
-    "demean": "False"
+    "demean": true,
+    "clean_spec": {"detrend": true}
     }
+        
 
+Denoising is run using nilearn, refer to `nilearn doc (load_confounds) <https://nilearn.github.io/stable/modules/generated/nilearn.interfaces.fmriprep.load_confounds.html>`_ for list of possible confounds and corresponding arguments. To those you can add ``iclesion`` and ``wm_csf_lesion`` with argument ``wm_csf`` that can either be ``full``, ``basic``, ``power2``, ``derivatives``.
 
 See implementation on :mod:`~fmristroke.workflows.bold.confounds.init_lesion_confs_wf`.
 

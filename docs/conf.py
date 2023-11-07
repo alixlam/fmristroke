@@ -336,7 +336,7 @@ html_context = {
     "github_user": "alixlam", # Username
     "github_repo": "fmristroke", # Repo name
     "github_version": "master", # Version
-    "conf_py_path": "/source/", # Path in the checkout to the docs root
+    "conf_py_path": "/docs/", # Path in the checkout to the docs root
 }
 
 # Example configuration for intersphinx: refer to the Python standard library.
