@@ -296,9 +296,11 @@ effects of other kernels [@lanczos].
             ("bold_t1", "inputnode.bold_t1"),
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("templates", "inputnode.templates"),
-            ("confounds_file", "inputnode.confounds_file"),
             ("confounds_metadata", "inputnode.confounds_metadata")
             ]),
+        (lesion_confounds_wf, denoising_wf, [
+            ("outputnode.confounds_file", "inputnode.confounds_file")
+        ]),
         (denoising_wf, outputnode, [
             ("outputnode.template", "template"),
             ("outputnode.spatial_reference", "spatial_reference"),

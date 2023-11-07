@@ -27,7 +27,7 @@ def _load_iclesion(confounds_raw):
     """
     ic_lesion_params = _find_confounds(confounds_raw, ["ica_lesion"])
     if not ic_lesion_params:
-        raise MissingConfound(keyword=["ica_lesion"])
+        raise MissingConfound(keywords=["ica_lesion"])
     return confounds_raw[ic_lesion_params]
 
 def _load_wm_csf_lesion(confounds_raw, wm_csf):
@@ -57,4 +57,4 @@ def _load_wm_csf_lesion(confounds_raw, wm_csf):
     if _check_params(confounds_raw, wm_csf_params):
         return confounds_raw[wm_csf_params]
     else:
-        raise MissingConfound(keyword=["wm_csf"])
+        raise MissingConfound(keywords=["wm_csf"])
