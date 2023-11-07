@@ -149,4 +149,49 @@ class Smooth(SimpleInterface):
         smoothed_image = smooth_img(self.inputs.input_image, self.inputs.fwhm)
         smoothed_image.to_filename(self._results["output_image"])
         return runtime
+
+class _DenoiseInputSpec(BaseInterfaceInputSpec):
+    input_image = traits.File(desc="NifTi Bold series to denoise",
+                                        exists=True, mandatory=True)
+    confounds_file = traits.File(desc="Selected processed confounds", exists=True, mandatory=True)
+    pipeline = traits.Dict(desc="Dictionary describing the pipeline to use")
+    tr = traits.Float(desc="Repetition time, in second")
+    mask_img = traits.File(desc="If provided, signal is only cleaned from voxels inside mask, should have same shape and affine as intput_image")
+    out_postfix = traits.Str("_denoised", usedefault=True, desc="Postfix that is appended to all output files")
+    output_image = traits.Str(desc="output file name", genfile=True, hash_files=False)
+
+
+class _DenoiseOutputSpec(TraitedSpec):
+    output_image = traits.File(desc="Denoised image, same shape as denoised img")
     
+class Denoise(SimpleInterface):
+    """ Interface to denoise fMRI data based on clean_image from nilearn.
+
+    For more information look at: nilearn.image.clean_img
+    """
+    input_spec = _DenoiseInputSpec
+    output_spec = _DenoiseOutputSpec
+    
+    def _gen_filename(self, name):
+        if name == "output_image":
+            output = self.inputs.output_image
+            if not isdefined(output):
+                _, name, ext = split_filename(self.inputs.input_image)
+                output = name + self.inputs.out_postfix + ext
+            return output
+        return None
+    
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["output_image"] = os.path.abspath(self._gen_filename("output_image"))
+        return outputs
+    
+    def _run_interface(self, runtime):
+        from nilearn.image import clean_img
+        self._results["output_image"] = os.path.abspath(self._gen_filename("output_image"))
+                
+        mask_img = self.inputs.mask_img if isdefined(self.inputs.mask_img) else None
+        denoised_image = clean_img(self.inputs.input_image,mask_img=mask_img, confounds= self.inputs.confounds_file,  tr=self.inputs.tr, **self.inputs.pipeline)
+        denoised_image.to_filename(self._results["output_image"])
+        return runtime
+

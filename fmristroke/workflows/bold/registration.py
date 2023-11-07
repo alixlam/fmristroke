@@ -8,6 +8,8 @@ Genrerate Registration plot with roi
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
+from pathlib import Path
+
 
 from fmriprep import config
 
@@ -68,6 +70,9 @@ def init_lesionplot_wf(
         niu.Function(function=_resample_to_img), name="boldref_resamp")
     resample_bold.inputs.interpolation = "continuous"
     
+    mask_img = pe.Node(
+        niu.Function(function=_mask_img), name="mask_img")
+    
     reg_plot = pe.Node(
         RegisterLesionRPT(),
         name="reg_plot"
@@ -87,10 +92,10 @@ def init_lesionplot_wf(
         (inputnode, resample_bold, [
                             ("boldref_t1", "in_img"),
                             ("t1w", "ref"),]),
-        (inputnode, reg_plot, [
-                            ("t1w_mask", "reference_image_mask"),
-                            ("t1w", "reference_file"),
-                            ("t1w_roi", "roi")]),
+        (inputnode, mask_img, [("t1w", "in_img"),
+                                ("t1w_mask", "in_mask")]),
+        (mask_img, reg_plot, [("out", "reference_file")]),
+        (inputnode, reg_plot, [("t1w_roi", "roi")]),
         (resample_bold, reg_plot, [("out", "moving_image")]),
         (reg_plot, ds_report_reg, [("out_report", "in_file")]),
         (reg_plot, outputnode, [("out_report", "out_regplot")]),
@@ -105,4 +110,17 @@ def _resample_to_img(in_img, ref, interpolation):
     new_img = resample_to_img(in_img, ref, interpolation=interpolation)
     out_name = Path("mask_resamp.nii.gz").absolute()
     new_img.to_filename(out_name)
+    return str(out_name)
+
+def _mask_img(in_img, in_mask):
+    from pathlib import Path
+    from nilearn.image import threshold_img, load_img
+    from nilearn.masking import apply_mask, unmask
+    img= load_img(in_img)
+    out_image = unmask(
+                apply_mask(in_img, in_mask),
+                in_mask,
+            )
+    out_name = Path("mask_resamp.nii.gz").absolute()
+    out_image.to_filename(out_name)
     return str(out_name)

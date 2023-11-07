@@ -1,0 +1,44 @@
+{
+      "bold_t1": {
+        "datatype": "func",
+        "desc": "preproc",
+        "suffix": "bold",
+        "space": "T1w",
+        "return_type": "file",
+        "extension": [".nii", ".nii.gz"]
+
+      },
+      "boldmask_t1": {
+        "datatype": "func",
+        "desc": "brain",
+        "suffix": "mask",
+        "space": "T1w",
+        "return_type": "file",
+        "extension": [".nii", ".nii.gz"]
+
+
+      },
+      "boldref_t1": {
+        "datatype": "func",
+        "suffix": "boldref",
+        "space": "T1w",
+        "return_type": "file",
+        "extension": [".nii", ".nii.gz"]
+
+
+      },
+      "confounds_file": {
+        "datatype": "func",
+        "desc": "confounds",
+        "suffix": "timeseries",
+        "return_type": "file",
+        "extension": [".tsv"]
+      },
+      "confounds_metadata": {
+        "datatype": "func",
+        "desc": "confounds",
+        "suffix": "timeseries",
+        "return_type": "file",
+        "extension": [".json"]
+      }
+    }

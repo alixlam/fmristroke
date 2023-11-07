@@ -189,12 +189,13 @@ tasks and sessions), the following lesion specific preprocessing was performed.
     )
 
     func_preproc_wfs = []
-    for bold_file, boldref, boldmask, confounds_file in zip(
+    for bold_file, boldref, boldmask, confounds_file, confounds_metadata in zip(
         bold_derivatives['bold_t1'], 
         bold_derivatives['boldref_t1'],
         bold_derivatives['boldmask_t1'],
-        bold_derivatives['confounds_file']):
-        lesion_preproc_wf = init_lesion_preproc_wf(bold_file, boldref, boldmask, confounds_file)
+        bold_derivatives['confounds_file'],
+        bold_derivatives['confounds_metadata']):
+        lesion_preproc_wf = init_lesion_preproc_wf(bold_file, boldref, boldmask, confounds_file, confounds_metadata)
         if lesion_preproc_wf is None:
             continue
         lesion_preproc_wf.inputs.inputnode.roi = roi["roi"][0]
@@ -208,6 +209,8 @@ tasks and sessions), the following lesion specific preprocessing was performed.
                 ('t1w_dseg', 'inputnode.t1w_dseg'),
                 ('t1w_tpms', 'inputnode.t1w_tpms'),
                 ('std2anat_xfm','inputnode.std2anat_xfm'),
+                ('anat2std_xfm', 'inputnode.anat2std_xfm'),
+                ('template', 'inputnode.templates'),
                 # Undefined if freesurfer was not run
                 ('t1w_aseg', 'inputnode.t1w_aseg')
 

@@ -294,6 +294,8 @@ class execution(_Config):
     output_spaces = None
     """List of (non)standard spaces designated (with the ``--output-spaces`` flag of
     the command line) as spatial references for outputs."""
+    output_pipelines = None
+    """List of pipelines designated (with the ``--output-pipelines`` flag of the comand line) as pipelines for denoising"""
     reports_only = False
     """Only build the reports, based on the reportlets found in a cached working directory."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
@@ -386,6 +388,8 @@ class workflow(_Config):
     spaces = None
     """Keeps the :py:class:`~niworkflows.utils.spaces.SpatialReferences`
     instance keeping standard and nonstandard spaces."""
+    pipelines = None
+    """Keeps the pipelines instances for denoising"""
     
 
 
@@ -514,6 +518,7 @@ def load(filename, skip=None, init=True):
             ignore = skip.get(sectionname)
             section.load(configs, ignore=ignore, init=initialize(sectionname))
     init_spaces()
+    init_pipelines()
 
 
 def get(flat=False):
@@ -567,3 +572,18 @@ def init_spaces(checkpoint=True):
 
     # Make the SpatialReferences object available
     workflow.spaces = spaces
+    
+def init_pipelines():
+    """Initialize the :attr:`~workflow.pipelines` setting."""
+    from .utils.pipelines import Pipeline, Pipelines
+    from pkg_resources import resource_filename as pkgrf
+    
+    pipelines = execution.output_pipelines or Pipelines()
+    known_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS"]
+    if not isinstance(pipelines, Pipelines):
+        pipelines_filenames = [pkgrf("fmristroke", f"data/denoising/{s}.json") if s in known_pipelines else s for s in pipelines]
+        pipelines = Pipelines([Pipeline.from_json(f) for f in pipelines_filenames])
+    
+    
+    # Make the Pipelines object available
+    workflow.pipelines = pipelines

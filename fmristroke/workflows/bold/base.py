@@ -22,10 +22,11 @@ from ...interfaces import DerivativesDataSink
 from .confounds import init_confs_wf
 from .outputs import init_func_lesion_derivatives_wf
 from .registration import init_lesionplot_wf
+from .denoise import init_denoise_wf
 
 from .lagmaps import init_hemodynamic_wf
 
-def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_file):
+def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_file, confounds_metadata):
     """
     This workflow controls the lesion specific stages *fMRIStroke*.
 
@@ -52,6 +53,8 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
         Path to NIfTI file
     confounds_file
         Path to tsv file
+    confounds_metadata
+        Path to json file describin confounds
 
 
     Inputs
@@ -111,6 +114,7 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
     # Have some options handy
     omp_nthreads = config.nipype.omp_nthreads
     spaces = config.workflow.spaces
+    pipelines = config.workflow.pipelines
     output_dir = str(config.execution.output_dir)
     freesurfer = config.workflow.freesurfer
 
@@ -160,8 +164,11 @@ effects of other kernels [@lanczos].
                 "t1w_tpms",
                 "t1w_aseg",
                 "std2anat_xfm",
+                "anat2std_xfm",
                 "confounds_file",
+                "confounds_metadata",
                 "roi",
+                "templates",
             ]
         ),
         name="inputnode",
@@ -170,6 +177,7 @@ effects of other kernels [@lanczos].
     inputnode.inputs.boldref_t1 = boldref_file
     inputnode.inputs.boldmask_t1 = boldmask_file
     inputnode.inputs.confounds_file = confounds_file
+    inputnode.inputs.confounds_metadata = confounds_metadata
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -185,7 +193,9 @@ effects of other kernels [@lanczos].
         bids_root=layout.root,
         output_dir=output_dir,
         spaces=spaces,
+        pipelines=pipelines,
     )
+    
     func_lesion_derivatives_wf.inputs.inputnode.all_source_files = bold_file
     func_lesion_derivatives_wf.inputs.inputnode.source_file = bold_file
 
@@ -195,6 +205,11 @@ effects of other kernels [@lanczos].
             ("confounds_file", "inputnode.confounds_file"),
             ("confounds_metadata", "inputnode.confounds_metadata"),
             ("lagmaps", "inputnode.lagmaps"),
+            ("template", "inputnode.template"),
+            ("spatial_reference", "inputnode.spatial_reference"),
+            ("denoised_bold_t1", "inputnode.denoised_bold_t1"),
+            ("denoised_bold_std", "inputnode.denoised_bold_std"),
+            ("pipeline", "inputnode.pipeline")
         ]),
     ])
     
@@ -267,6 +282,32 @@ effects of other kernels [@lanczos].
             ])
     ])
 
+    # DENOISING WORKFLOW ########################################################
+    denoising_wf = init_denoise_wf(
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
+        metadata=metadata,
+        pipelines=pipelines,
+        spaces=spaces,
+        name = "bold_denoise_wf"
+    )
+    workflow.connect([
+        (inputnode, denoising_wf, [
+            ("bold_t1", "inputnode.bold_t1"),
+            ("anat2std_xfm", "inputnode.anat2std_xfm"),
+            ("templates", "inputnode.templates"),
+            ("confounds_file", "inputnode.confounds_file"),
+            ("confounds_metadata", "inputnode.confounds_metadata")
+            ]),
+        (denoising_wf, outputnode, [
+            ("outputnode.template", "template"),
+            ("outputnode.spatial_reference", "spatial_reference"),
+            ("outputnode.denoised_bold_t1", "denoised_bold_t1"),
+            ("outputnode.denoised_bold_std", "denoised_bold_std"),
+            ("outputnode.pipeline", "pipeline")
+        ])
+    ])
+    
     # REPORTING ############################################################
 
     # Fill-in datasinks of reportlets seen so far

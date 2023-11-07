@@ -1,0 +1,14 @@
+{
+    "pipeline": "SimpleLesionGS",
+    "desc": "Denoising strategy based on regressing out: 24 head motion parameters including: 3 translations, 3 rotations, their temporal derivatives, and their quadratic terms (Satterthwaite et al., 2013), 2Phys - mean physiological signals from white matter (WM) and cerebrospinal fluid (CSF) with roi, and high pass filtering by adding discrete cosines transformation basis regressors to handle low-frequency signal drifts.",
+    "confounds": {
+        "wm_csf_lesion": {
+            "wm_csf": "full"
+        },
+        "global_signal": {"global_signal": "full"},
+        "motion": {"motion": "full"},
+        "high_pass": {}
+    },
+    "demean": true,
+    "clean_spec": {"detrend": true}
+    }

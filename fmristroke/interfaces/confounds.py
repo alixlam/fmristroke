@@ -20,6 +20,26 @@ from nipype.interfaces.base import (
 )
 from nipype.utils.filemanip import fname_presuffix
 
+from nilearn.interfaces.fmriprep.load_confounds_components import (
+    _load_high_pass,
+    _load_compcor,
+    _load_global_signal,
+    _load_wm_csf,
+    _load_motion,
+    _load_non_steady_state,
+    _load_scrub,
+)
+from nilearn.interfaces.fmriprep.load_confounds_utils import _prepare_output
+from ..utils.confounds import _load_iclesion, _load_wm_csf_lesion
+
+component_parameters = {
+    "motion": ["motion"],
+    "wm_csf": ["wm_csf"],
+    "global_signal": ["global_signal"],
+    "compcor": ["meta_json", "compcor", "n_compcor"],
+    "scrub": ["scrub", "fd_threshold", "std_dvars_threshold"],
+    "wm_csf_lesion": ["wm_csf"],
+}
 
 class _LesionMasksInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, desc="Input mask")
@@ -147,10 +167,18 @@ class GatherConfounds(SimpleInterface):
         return runtime
 
 class _SelectConfoundsInputSpec(BaseInterfaceInputSpec):
-    pipeline = traits.Either(
-        traits.Dict(), File,
+    pipeline = traits.Str(
         mandatory=True,
-        desc="Denoising pipeline")
+        desc="Denoising pipeline's name")
+    confounds_spec = traits.Dict(
+        mandatory=True,
+        desc="Confounds to include"
+    )
+    demean =  traits.Bool(
+        True,
+        desc="Wether to demean confounds",
+        usedefault=True,
+    )
     confounds = File(
         exist=True,
         mandatory=True,
@@ -167,196 +195,67 @@ class _SelectConfoundsOutputSpec(TraitedSpec):
     selected_confounds = File(
         exists=True,
         desc="selected confounds table")
-    selected_confounds_metadata = File(
-        exists=True,
-        desc="Summary of selected confounds"
+    sample_mask = traits.Either(
+        None,
+        File(),
+        desc="shape: (number of scans - number of volumes removed,The index of the niimgs along time/fourth dimension for valid volumes for subsequent analysis."
     )
 
 
-# class Confounds(SimpleInterface):
-#     """Filter confounds table according to denoising pipeline.
+class SelectConfounds(SimpleInterface):
+    """Filter confounds table according to denoising pipeline and prepare them for denoising.
 
-#     This interface reads raw confounds table (fmriprep output) and process it 
-#     retaining regressors of interest and creating additional regressors if 
-#     needed. Additionally, it creates summary file containing all relevant 
-#     information about confounds. This interface operates on single BIDS entity
-#     i.e. single subject, task and (optionally) session. 
+    This interface reads raw confounds table and process it 
+    retaining regressors of interest and creating additional regressors if 
+    needed. This interface operates on single BIDS entity
+    i.e. single subject, task and (optionally) session. 
     
-#     Summary contains fields:
-#         'mean_fd': 
-#             Mean framewise displacement.
-#         'max_fd': 
-#             Highest recorded framewise displacement.
-#         'n_conf': 
-#             Total number of confounds included.
-#         'include':
-#             Decision about subject inclusion in connectivity analysis based on
-#             three criteria: (1) mean framewise displacement is lower than 
-#             specified by the pipeline, (2) max framewise displacement did not 
-#             exceed 5mm and (3) percentage of outlier scans did not exceed 20%. 
-#             Note that if spikes strategy is not specified, include flag defaults
-#             to True.
-#         'n_spikes':
-#             Number of outlier scans (only if spikes strategy is specified).
-#         'perc_spikes':
-#             Percentage of outlier scans (only if spikes strategy is specified).
-#     """
-#     input_spec = _SelectConfoundsInputSpec
-#     output_spec = _SelectConfoundsOutputSpec
+    """
+    input_spec = _SelectConfoundsInputSpec
+    output_spec = _SelectConfoundsOutputSpec
 
-#     def _keep(self, regressor_names):
-#         """
-#         Copies selected regressors from confounds to selcted_confounds.
-#         """
-#         if regressor_names:
-#             self.conf_prep = pd.concat((
-#                 self.conf_prep,
-#                 self.conf_raw[regressor_names]
-#             ), axis=1)
-
-#     def _load_tissue_signals(self):
-#         tissue_regressors = []
-#         for confound, setting in self.inputs.pipeline['confounds'].items():
-            
-#             if confound in ('white_matter', 'csf', 'global_signal'):
-#                 for transform, include in setting.items():
-#                     if transform == 'raw' and include:
-#                         tissue_regressors.append(confound)
-#                     elif include:
-#                         tissue_regressors.append(f'{confound}_{transform}')
+    
+    def _load_confounds(self):
+        import pandas as pd
+        import json
+        with open(self.inputs.confounds_metadata, "rb") as f:   
+            meta_json = json.load(f) 
         
-#         self._keep(tissue_regressors)
-
-#     def _load_motion_parameters(self):
-#         hmp_regressors = []
-#         hmp_names = [f'{type_}_{axis}' 
-#                     for type_ in ('trans', 'rot') 
-#                     for axis in ('x', 'y', 'z')]
-
-#         setting = self.inputs.pipeline['confounds']['motion']
-
-#         for transform, include in setting.items():
-#             if transform == 'raw' and include:
-#                 hmp_regressors.extend(hmp_names)
-#             elif include:
-#                 hmp_regressors.extend(f'{hmp}_{transform}' for hmp in hmp_names)
+        confounds_all = pd.read_csv(
+            self.inputs.confounds, delimiter="\t", encoding="utf-8"
+            )
         
-#         self._keep(hmp_regressors)
-
-#     def _load_compcors(self):
-#         if not self.inputs.pipeline['confounds']['compcor']:
-#             return
-
-#         compcor_regressors = []
-#         for mask in ('CSF', 'WM'):
-#             acompcors = {
-#                 (name, dict_['VarianceExplained']) 
-#                 for name, dict_ in self.conf_json.items()
-#                 if dict_.get('Retained') and dict_.get('Mask') == mask 
-#                 }
-#             acompcors = sorted(acompcors, key=lambda tpl: tpl[1], reverse=True)
-#             acompcor_regressors.extend(acompcor[0] for acompcor in acompcors[:5])
-
-#         self._keep(acompcor_regressors)
-#     def _load_high_pass(self):
-#         if not slef.inputs.pipeline['high_pass']:
-#             return
-
-#     def _load_non_steady_states(self):
-         
+        missing = {"confounds": [], "keywords": []}
+        confounds_select, missing = _load_noise_component(confounds_all, "non_steady_state", missing, meta_json=meta_json)
+        for component, params in self.inputs.confounds_spec.items():
+            loaded_confounds, missing = _load_noise_component(
+                confounds_all, component, missing, meta_json=meta_json, **params 
+            )
+            confounds_select = pd.concat([confounds_select, loaded_confounds], axis=1)
         
-#     def _create_spike_regressors(self):
-#         if not self.inputs.pipeline['spikes']:
-#             return
+        if missing["confounds"] or missing["keywords"]:
+            error_msg = (
+                "The following keywords or parameters are missing: "
+                + f" {missing['confounds']}"
+                + f" {missing['keywords']}"
+                + ". You may want to try a different denoising strategy."
+            )
+            raise ValueError(error_msg)
 
-#         fd_th = self.inputs.pipeline['spikes']['fd_th']
-#         dvars_th = self.inputs.pipeline['spikes']['dvars_th']
+        return _prepare_output(confounds_select, self.inputs.demean)
 
-#         outliers = (self.conf_raw['framewise_displacement'] > fd_th) \
-#                  | (self.conf_raw['std_dvars'] > dvars_th) 
-#         outliers = list(outliers[outliers].index)
+    def _run_interface(self, runtime):
+        sample_mask, selected_confounds = self._load_confounds()
+        self._results["selected_confounds"] = os.path.join(runtime.cwd, f"selected_confounds_{self.inputs.pipeline}.tsv")
+        selected_confounds.to_csv(self._results["selected_confounds"], sep='\t', index=False, na_rep='n/a')
 
-#         if outliers:
-#             spikes = np.zeros((self.n_volumes, len(outliers)))
-#             for i, outlier in enumerate(outliers):
-#                 spikes[outlier, i] = 1.
-                
-#             conf_spikes = pd.DataFrame(
-#                 data=spikes, 
-#                 columns=[f'motion_outlier_{i:02}' for i in range(len(outliers))]
-#                 )
-
-#             self.conf_prep = pd.concat((
-#                 self.conf_prep,
-#                 conf_spikes,
-#             ),
-#             axis=1)
-        
-#         self.n_spikes = len(outliers)
-
-#     def _create_summary_dict(self, subject: str, session: str, task: str, run: str):
-#         self.conf_summary = {
-#             'subject': subject,
-#             'task': task,
-#             'mean_fd': self.conf_raw["framewise_displacement"].mean(),
-#             'max_fd': self.conf_raw["framewise_displacement"].max(),
-#             'n_conf': len(self.conf_prep.columns),
-#             'include': self._inclusion_check()
-#         }
-
-#         if self.inputs.pipeline['spikes']:
-#             self.conf_summary['n_spikes'] = self.n_spikes 
-#             self.conf_summary['perc_spikes'] = self.n_spikes / self.n_volumes * 100
-
-#         if session:
-#             self.conf_summary['session'] = session
-#         if run:
-#             self.conf_summary['run'] = run
-
-#     def _inclusion_check(self):
-#         '''Decide if subject should be included in connectivity analysis'''
-#         if not self.inputs.pipeline['spikes']:
-#             return True
-
-#         mean_fd = self.conf_raw['framewise_displacement'].mean()
-#         max_fd = self.conf_raw['framewise_displacement'].max()
-#         fd_th = self.inputs.pipeline['spikes']['fd_th']
-
-#         if mean_fd > fd_th or max_fd > 5 or self.n_spikes / self.n_volumes > 0.2:
-#             return False
-#         return True
-
-#     def _run_interface(self, runtime):
-
-#         # Setup useful properties
-#         self.conf_raw = pd.read_csv(self.inputs.conf_raw, sep='\t')
-#         with open(self.inputs.conf_json, 'r') as json_file:
-#             self.conf_json = json.load(json_file)
-#         self.n_volumes = len(self.conf_raw)
-#         self.conf_prep = pd.DataFrame()
-
-#         # entities
-#         entities = parse_file_entities_with_pipelines(self.inputs.conf_raw)
-
-#         # Create preprocessed confounds step-by-step
-#         self._filter_motion_parameters()
-#         self._filter_tissue_signals()
-#         self._filter_acompcors()
-#         self._create_spike_regressors()
-#         self._create_summary_dict(
-#             subject=entities.get('subject'), task=entities.get('task'),
-#             session=entities.get('session'), run=entities.get('run'))
-
-#         # Store output
-#         entities['pipeline'] = self.inputs.pipeline['name']
-#         conf_prep = join(self.inputs.output_dir, build_path(entities, self.conf_prep_pattern, False))
-#         conf_summary = join(self.inputs.output_dir, build_path(entities, self.conf_summary_pattern, False))
-#         self.conf_prep.to_csv(conf_prep, sep='\t', index=False, na_rep=0)
-#         with open(conf_summary, 'w') as f:
-#             json.dump(self.conf_summary, f)
-#         self._results['conf_prep'] = conf_prep
-#         self._results['conf_summary'] = conf_summary
-#         return runtime
+        if sample_mask is not None:
+            import numpy as np
+            self._results["sample_mask"] = os.path.join(runtime.cwd, f"sample_mask_{self.inputs.pipeline}.txt")
+            np.savetxt(self._results["sample_mask"], sample_mask)
+        else:
+            self._results["sample_mask"] = None
+        return runtime
 
 
 
@@ -433,4 +332,53 @@ def _gather_confounds(
 
     return combined_out, confounds_list
 
+def _load_noise_component(confounds_raw, component, missing, **kargs):
+    """
+    copied from Nilearn (https://nilearn.github.io)
+    Load confound of a single noise component.
+
+    Parameters
+    ----------
+    confounds_raw : :class:`pandas.DataFrame`
+        The confounds loaded from the confounds file.
+
+    component : :obj:`str`
+        The noise component to be loaded. The item from the confounds list.
+
+    missing : :obj:`dict`
+        A dictionary of missing confounds and noise component keywords.
+
+    kargs : :obj:`dict`
+        Extra relevant parameters for the given `component`.
+
+    Returns
+    -------
+    loaded_confounds : :class:`pandas.DataFrame`
+        The confounds loaded from the confounds file for the given component.
+
+    missing : :obj:`dict`
+        A dictionary of missing confounds and noise component keywords.
+
+    Raises
+    ------
+    MissingConfound
+        If any of the confounds specified in the strategy are not found in the
+        confounds file or confounds json file.
+    """
+    try:
+        need_params = component_parameters.get(component)
+        if need_params:
+            params = {param: kargs.get(param) for param in need_params}
+            loaded_confounds = eval(f"_load_{component}")(
+                confounds_raw, **params
+            )
+        else:
+            loaded_confounds = eval(f"_load_{component}")(
+                confounds_raw
+            )
+    except MissingConfound as exception:
+        missing["confounds"] += exception.params
+        missing["keywords"] += exception.keywords
+        loaded_confounds = pd.DataFrame()
+    return loaded_confounds, missing
 

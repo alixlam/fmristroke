@@ -55,6 +55,10 @@ class _ApplyTransformsInputSpec(BaseInterfaceInputSpec):
         argstr="%s",
         usedefault=True,
     )
+    
+    imagetype = traits.Int(0, desc="choose 0/1/2/3 mapping to scalar/vecotr/tensor/time-series", usedefault=True)
+
+    
     transforms = InputMultiObject(
         traits.Either(File(exists=True), "identity"),
         argstr="%s",
@@ -101,6 +105,7 @@ class ApplyTransforms(SimpleInterface):
         transforms = [self.inputs.transforms] if type(self.inputs.transforms) == "str" else self.inputs.transforms
         apply_transform_ants(fixed = self.inputs.reference_image, moving = self.inputs.input_image,
                                             transforms=transforms, interpolation=self.inputs.interpolation,
+                                            imagetype=self.inputs.imagetype, 
                                             outdir = self._results["output_image"],
                                             default_value = 0,)
         _copyxform(

@@ -156,10 +156,6 @@ class _RegPlotInputSpecRPT(reporting.ReportCapableInputSpec):
         desc="Moving image",
         exists=True
     )
-    reference_image_mask = File(
-        desc="Reference image mask",
-        exists=True
-    )
     roi = File(exists=True, desc="ROI file, lesion")
     compress_report = traits.Enum(
         "auto",
@@ -187,7 +183,6 @@ class RegisterLesionRPT(nrb.RegistrationRC):
     def _post_run_hook(self, runtime):
         self._fixed_image = self.inputs.reference_file
         self._moving_image = self.inputs.moving_image
-        self._fixed_image_mask = self.inputs.reference_image_mask
         self._contour = self.inputs.roi
         self._out_report = os.path.abspath(self.inputs.out_report + ".svg")
         return super()._post_run_hook(runtime)

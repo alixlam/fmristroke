@@ -86,7 +86,7 @@ def main():
             config.execution.participant_label,
             config.execution.output_dir,
             config.execution.run_uuid,
-            config=Path(__file__).parent / "../../data/reports-specs.yml",
+            config=pkgrf("fmristroke","data/reports-specs.yml"),
             packagename="fmriprep",
         )
         write_derivative_description(config.execution.bids_dir, config.execution.fmriprep_dir)
