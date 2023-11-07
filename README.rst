@@ -15,19 +15,28 @@ About
 
 .. image:: _static/pipeline.png
 
-*fMRIStroke* is a functional magnetic resonance imaging (fMRI) data
-quality checks pipeline that is designed to provide an easily accessible,
+Motivation
+~~~~~~~~~~
+Stroke not only leads to structural damages of gray/white matter in affected patietns, 
+but can also produce remote changes in structurally normal brain areas by a variety of different mechanisms [Siegel2017]_.
+As a result, it is highly recommended, notably by [Siegel2017]_, to add specific quality checks and strategies to mitigate lesion specific confounds when dealing with
+stroke data especially when doing :abbr:`FC analysis (functional connectivity)`.
+
+
+To do this we propose *fMRIStroke* a functional magnetic resonance imaging (fMRI) data
+quality checks and preprocessing pipeline tailored to stroke data. It is designed to provide an easily accessible,
 interface that is robust to variations in scan acquisition
 protocols and that requires minimal user input, while providing easily
-interpretable and comprehensive error and output reporting.
+interpretable and comprehensive reports.
 It uses fmriprep (`www.fmriprep.org <https://www.fmriprep.org>`__) outputs derivatives to generate
-new quality checks plots for stroke patients when lesion masks are available (as recommended in [1]_) and
-computes new confounds like signals in lesion masks, and ICA based confounds (as proposed in [2]_).
+new quality checks plots for stroke patients when lesion masks are available (as recommended in [Siegel2017]_) and
+computes new confounds like signals in lesion masks, and ICA based confounds (as proposed in [Yourganov2017]_).
+
 
 Added quality checks: 
 ~~~~~~~~~~~~~~~~~~~~~
 -  **hemodynamics lagmap** using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
-  output reports that are added to the fmriprep report.
+  output reports on the hemodynamic lags present bold series.
 -  **homotopic connectivity** if freesurfer reconstruction was run.
 -  **Registration plots with lesion mask**
 
@@ -36,7 +45,7 @@ Added confounds:
 
 - **lesion**: signal in lesion mask.
 - **CSF lesion**: signal in CSF + lesion combined mask.
-- **ICA_comp**: ICA based confounds [2]_.
+- **ICA_comp**: ICA based confounds [Yourganov2017]_.
 
 
 Added outputs:
@@ -47,7 +56,7 @@ Added outputs:
 
 
 The *fMRIStroke* pipeline uses a combination of tools from well-known software
-packages, including ANTs_ and FreeSurfer_.
+packages, including ANTs_,  FreeSurfer_ and Rapidtide_
 
 .. important::
   This pipeline was designed to run after fmriprep. Any other fMRI preprocessing tools might not provide the required derivatives for fMRIStroke to run properly. 
@@ -82,8 +91,8 @@ and the work done by `rapidtides authors <https://rapidtide.readthedocs.io/en/la
 References
 ----------
 
-.. [1] J. S. Siegel, G. L. Shulman, and M. Corbetta, Measuring functional connectivity in stroke: Approaches and considerations, J Cereb Blood Flow Metab, 2017.
+.. [Siegel2017] J. S. Siegel, G. L. Shulman, and M. Corbetta, Measuring functional connectivity in stroke: Approaches and considerations, J Cereb Blood Flow Metab, 2017.
      doi: `10.1177/0271678X17709198. <https://doi.org/10.1177/0271678X17709198>`_
 
-.. [2] Yourganov, G., Fridriksson, J., Stark, B., Rorden, C., Removal of artifacts from resting-state fMRI data in stroke. Neuroimage Clin 2017.
+.. [Yourganov2017] Yourganov, G., Fridriksson, J., Stark, B., Rorden, C., Removal of artifacts from resting-state fMRI data in stroke. Neuroimage Clin 2017.
      doi: `10.1016/j.nicl.2017.10.027 <https://doi.org/10.1016/j.nicl.2017.10.027>`_
