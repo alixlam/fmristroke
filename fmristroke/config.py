@@ -4,13 +4,13 @@ A Python module to maintain unique, run-wide *fMRIStroke* settings.
 This module implements the memory structures to keep a consistent, singleton config.
 Settings are passed across processes via filesystem, and a copy of the settings for
 each run and subject is left under
-``<fmriprep_dir>/sub-<participant_id>/log/<run_unique_id>/fmristroke.toml``.
+``<fmristroke_dir>/sub-<participant_id>/log/<run_unique_id>/fmristroke.toml``.
 Settings are stored using :abbr:`ToML (Tom's Markup Language)`.
-The module has a :py:func:`~fmriprep.config.to_filename` function to allow writing out
+The module has a :py:func:`~fmristroke.config.to_filename` function to allow writing out
 the settings to hard disk in *ToML* format, which looks like:
 
 This config file is used to pass the settings across processes,
-using the :py:func:`~fmriprep.config.load` function.
+using the :py:func:`~fmristroke.config.load` function.
 
 Configuration sections
 ----------------------
@@ -169,13 +169,9 @@ class environment(_Config):
     """
     Read-only options regarding the platform and environment.
 
-    Crawls runtime descriptive settings (e.g., default FreeSurfer license,
-    execution environment, nipype and *fMRIPrep* versions, etc.).
     The ``environment`` section is not loaded in from file,
     only written out when settings are exported.
-    This config section is useful when reporting issues,
-    and these variables are tracked whenever the user does not
-    opt-out using the ``--notrack`` argument.
+    This config section is useful when reporting issues.
 
     """
 
@@ -496,7 +492,7 @@ def load(filename, skip=None, init=True):
     Arguments
     ---------
     filename : :py:class:`os.PathLike`
-        TOML file containing fMRIPrep configuration.
+        TOML file containing fMRIStroke configuration.
     skip : dict or None
         Sets of values to ignore during load, keyed by section name
     init : `bool` or :py:class:`~collections.abc.Container`

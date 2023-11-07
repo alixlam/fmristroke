@@ -1,6 +1,6 @@
-*fMRIStroke*: A Preprocessing Pipeline for fMRI Data from Stroke patients 
+*fMRIStroke*: A ... for fMRI Data from Stroke patients 
 =========================================================================
-*fMRIStoke* is a BIDs app application that runs on the outputs of *fmriprep*
+*fMRIStoke* is a BIDs application that runs on the outputs of *fmriprep*
 (`www.fmriprep.org <https://www.fmriprep.org>`__) for the preprocessing of
 task-based and resting-state functional MRI (fMRI) from stroke patients.
 
@@ -26,28 +26,34 @@ computes new confounds like signals in lesion masks, and ICA based confounds (as
 
 Added quality checks: 
 ~~~~~~~~~~~~~~~~~~~~~
-- 1- *hemodynamics lagmap* using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
+-  **hemodynamics lagmap** using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
   output reports that are added to the fmriprep report.
-- 2- *homotopic connectivity* if freesurfer reconstruction was run.
-- 3- *parcellation homogeneity* if atlas is provided.
+-  **homotopic connectivity** if freesurfer reconstruction was run.
+-  **Registration plots with lesion mask**
 
 Added confounds:
 ~~~~~~~~~~~~~~~
 
-- 1- *lesion*: signal in lesion mask.
-- 2- *CSF lesion*: signal in CSF + lesion combined mask.
-- 3- *ICA_comp*: ICA based confounds [2]_.
+- **lesion**: signal in lesion mask.
+- **CSF lesion**: signal in CSF + lesion combined mask.
+- **ICA_comp**: ICA based confounds [2]_.
+
 
 Added outputs:
 ~~~~~~~~~~~~~~
 
-- 1- ROI masks in standardized space.
+- **ROI masks** in standardized space.
+- **Denoised fMRI**: Denoised BOLD series using the provided pipelines.
+
 
 The *fMRIStroke* pipeline uses a combination of tools from well-known software
 packages, including ANTs_ and FreeSurfer_.
-This pipeline was designed to run after fmriprep.
 
-This tool allows you to easily do the following:
+.. important::
+  This pipeline was designed to run after fmriprep. Any other fMRI preprocessing tools might not provide the required derivatives for fMRIStroke to run properly. 
+
+
+In summary this tool allows you to easily do the following:
 
 - Generate preprocessing quality reports specific to stroke patients, with which the user can easily
   identify outliers.
@@ -76,6 +82,8 @@ and the work done by `rapidtides authors <https://rapidtide.readthedocs.io/en/la
 References
 ----------
 
-.. [1] To  add 
+.. [1] J. S. Siegel, G. L. Shulman, and M. Corbetta, Measuring functional connectivity in stroke: Approaches and considerations, J Cereb Blood Flow Metab, 2017.
+     doi: `10.1177/0271678X17709198. <https://doi.org/10.1177/0271678X17709198>`_
 
-.. [2] To add
+.. [2] Yourganov, G., Fridriksson, J., Stark, B., Rorden, C., Removal of artifacts from resting-state fMRI data in stroke. Neuroimage Clin 2017.
+     doi: `10.1016/j.nicl.2017.10.027 <https://doi.org/10.1016/j.nicl.2017.10.027>`_
