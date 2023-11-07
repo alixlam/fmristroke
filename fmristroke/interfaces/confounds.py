@@ -29,7 +29,7 @@ from nilearn.interfaces.fmriprep.load_confounds_components import (
     _load_non_steady_state,
     _load_scrub,
 )
-from nilearn.interfaces.fmriprep.load_confounds_utils import _prepare_output
+from nilearn.interfaces.fmriprep.load_confounds_utils import _prepare_output, MissingConfound
 from ..utils.confounds import _load_iclesion, _load_wm_csf_lesion
 
 component_parameters = {
