@@ -4,13 +4,15 @@ from tempfile import mkdtemp
 import shutil
 import os
 from contextlib import contextmanager
+from pkg_resources import resource_filename as pkgrf
+
 
 @contextmanager
 def mock_config():
 	"""Create mock config for tests and documentation"""
 	from .. import config
 
-	config_file = Path(__file__).parent / "../../data/tests/mock_config.toml"
+	config_file = Path(pkgrf("fmristroke", f"data/tests/mock_config.toml"))
 	settings = loads(config_file.read_text())
 
 	for sectionname, configs in settings.items():
@@ -23,7 +25,7 @@ def mock_config():
 	config.init_spaces()
 
 	config.execution.work_dir = Path(mkdtemp())
-	config.execution.bids_dir = Path(__file__.parent / "../../data/tests/FCStroke_2009").absolute()
+	config.execution.bids_dir = Path(pkgrf("fmristroke", f"data/tests/FCStroke_2009")).absolute()
 	config.execution.fmriprep_dir = Path(mkdtemp())
 	config.execution.init()
 
