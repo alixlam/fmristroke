@@ -54,7 +54,7 @@ These reports make visual inspection of the results easy.
 
 Coregistration
 ~~~~~~~~~~~~~~
-The ROI mask is added to the coregistration plot.
+The ROI mask (in red) is added to the coregistration plot.
 
 .. figure:: _static/sub-027_ses-1week_task-rest_run-02_space-T1w_desc-reglesion_bold.svg
 
