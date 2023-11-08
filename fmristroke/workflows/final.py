@@ -149,26 +149,6 @@ def init_single_subject_wf(subject_id: str):
     )
 
     workflow = Workflow(name=name)
-    #workflow.__desc__ = """
-#Results included in this manuscript come from preprocessing
-#performed using *fMRIPrep* {fmriprep_ver}
-#(@fmriprep1; @fmriprep2; RRID:SCR_016216),
-#which is based on *Nipype* {nipype_ver}
-#(@nipype1; @nipype2; RRID:SCR_002502).
-
-#""".format(
-#        fmriprep_ver=config.environment.version, nipype_ver=config.environment.nipype_version
-#    )
-#    workflow.__postdesc__ = """
-
-#Many internal operations of *fMRIPrep* use
-#*Nilearn* {nilearn_ver} [@nilearn, RRID:SCR_001362],
-#mostly within the functional processing workflow.
-#For more details of the pipeline, see [the section corresponding
-#to workflows in *fMRIPrep*'s documentation]\
-#(https://fmriprep.readthedocs.io/en/latest/workflows.html \
-#"FMRIPrep's documentation")."""
-
 
     bidssrc = pe.Node(
         BIDSDerivativeDataGrabber(

@@ -9,7 +9,7 @@
         "global_signal": {"global_signal": "full"},
         "motion": {"motion": "full"},
         "high_pass": {},
-        "ic_lesion": {}
+        "iclesion": {}
     },
     "demean": true,
     "clean_spec": {"detrend": true}

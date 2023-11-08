@@ -173,6 +173,11 @@ def init_hemodynamic_wf(
     select_lagmap = pe.Node(niu.Select(index=0), name="lagmap_select")
     select_corrmap =  pe.Node(niu.Select(index=1), name="corrmap_select")
     
+    # Mask T1w for report
+    mask_img = pe.Node(
+        niu.Function(function=_mask_img), name="mask_img")
+    
+    
     # Hemo report
     lagplot = pe.Node(
         HemoPlot(label="LagMap"),
@@ -231,11 +236,13 @@ def init_hemodynamic_wf(
         (mask_maps, report_hemo, [("out", "in_files")]),
         (lagmaps, report_hemo, [("output_corrfit_mask", "corrfit_mask")]),
         (gm_mask_resamp, report_hemo, [("out","brain_mask")]),
+        (inputnode, mask_img, [("t1w_preproc", "input_image"),
+                                ("t1w_mask", "mask_file")]),
         (inputnode, report_hemo, [("t1w_aseg", "hemi_mask")]),
-        (inputnode, lagplot, [("roi", "roi"),
-                            ("t1w_preproc", "anat_file")]),
-        (inputnode, corrplot, [("roi", "roi"),
-                            ("t1w_preproc", "anat_file")]),
+        (inputnode, lagplot, [("roi", "roi")]),
+        (mask_img, lagplot, [("out", "anat_file")]),
+        (inputnode, corrplot, [("roi", "roi")]),
+        (mask_img, corrplot, [("out", "anat_file")]),
         (mask_maps, select_lagmap, [("out", "inlist")]),
         (mask_maps, select_corrmap, [("out", "inlist")]),
         (select_lagmap, lagplot, [("out", "lagmap_file")]),
