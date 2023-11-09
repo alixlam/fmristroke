@@ -3,8 +3,9 @@
 from niworkflows.interfaces.bids import DerivativesDataSink as _DDSink
 from json import loads
 from pathlib import Path
+from pkg_resources import resource_filename as pkgrf
 
-_pybids_spec = loads((Path(__file__).parent / "../data/bids.json").read_text())
+_pybids_spec = loads(Path(pkgrf("fmristroke", "data/bids.json")).read_text())
 BIDS_DERIV_ENTITIES = _pybids_spec["entities"]
 BIDS_DERIV_PATTERNS = tuple(_pybids_spec["default_path_patterns"])
 
