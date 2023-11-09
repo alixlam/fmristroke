@@ -1,3 +1,10 @@
+"""
+Hemodynamics
+^^^^^^^^^^^^^
+
+.. autofunction:: init_hemodynamic_wf
+
+"""
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
