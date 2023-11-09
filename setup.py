@@ -38,7 +38,7 @@ setup(
     author="Alix L.",
     author_email="alix.lamouroux@imt-atlantique.fr",
     packages=find_packages(exclude=["tests"]),
-    package_data={'fmristroke': ['data/*']},
+    package_data={'fmristroke': ['data/*', "data/denoising/*", "data/tests/*"]},
     install_requires=read_requirements("requirements.txt"),
     extras_require={"test": read_requirements("requirements-test.txt")},
     python_requires=">=3.8",
