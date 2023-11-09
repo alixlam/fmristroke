@@ -1,3 +1,10 @@
+"""
+Confounds generation
+^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: init_confs_wf
+
+"""
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 

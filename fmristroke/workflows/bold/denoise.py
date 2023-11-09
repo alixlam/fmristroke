@@ -1,3 +1,11 @@
+"""
+Denoising
+^^^^^^^^^^
+
+.. autofunction:: init_denoise_wf
+
+"""
+
 from __future__ import annotations
 
 import typing as ty
