@@ -1,19 +1,20 @@
-*fMRIStroke*: A ... for fMRI Data from Stroke patients 
+*fMRIStroke*: A preprocessing pipeline for fMRI Data from Stroke patients 
 =========================================================================
 *fMRIStoke* is a BIDs application that runs on the outputs of *fmriprep*
 (`www.fmriprep.org <https://www.fmriprep.org>`__) for the preprocessing of
 task-based and resting-state functional MRI (fMRI) from stroke patients.
 
-.. image:: https://readthedocs.org/projects/fmriprep/badge/?version=latest
-  :target: http://fmriprep.readthedocs.io/en/latest/?badge=latest
-  :alt: Documentation Status
+.. image:: https://readthedocs.org/projects/fmristroke/badge/?version=latest
+    :target: https://fmristroke.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 
 
 About
 -----
 
-.. image:: https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png
+.. figure:: https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png?raw=true
+    :target: https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png
 
 Motivation
 ~~~~~~~~~~
@@ -28,15 +29,14 @@ quality checks and preprocessing pipeline tailored to stroke data. It is designe
 interface that is robust to variations in scan acquisition
 protocols and that requires minimal user input, while providing easily
 interpretable and comprehensive reports.
-It uses fmriprep (`www.fmriprep.org <https://www.fmriprep.org>`__) outputs derivatives to generate
-new quality checks plots for stroke patients when lesion masks are available (as recommended in [Siegel2017]_) and
+It uses fmriprep (`www.fmriprep.org <https://www.fmriprep.org>`_) outputs derivatives to generate
+new quality checks plots for stroke patients when lesion masks are available and
 computes new confounds like signals in lesion masks, and ICA based confounds (as proposed in [Yourganov2017]_).
 
 
 Added quality checks: 
 ~~~~~~~~~~~~~~~~~~~~~
--  **hemodynamics lagmap** using the *rapidtide* python tool (`https://rapidtide.readthedocs.io/en/latest/`__) providing
-  output reports on the hemodynamic lags present bold series.
+-  **hemodynamics lagmap** using the Rapidtide_ python tool providing output reports on the hemodynamic lags present bold series.
 -  **homotopic connectivity** if freesurfer reconstruction was run.
 -  **Registration plots with lesion mask**
 
