@@ -34,7 +34,7 @@ setup(
     name="fmristroke",
     description="Awesome preproceesing tool for stroke functional MRI using Nipype created by Alix L.",
     url="https://github.com/alixlam/fmristroke",
-    version=read("VERSION"),
+    version="0.1.0",
     author="Alix L.",
     author_email="alix.lamouroux@imt-atlantique.fr",
     packages=find_packages(exclude=["tests"]),
