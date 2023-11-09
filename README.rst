@@ -13,7 +13,7 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 About
 -----
 
-.. image:: https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png
+.. image:: _static/pipeline.png
 
 Motivation
 ~~~~~~~~~~

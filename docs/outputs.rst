@@ -70,7 +70,9 @@ Eiher way, lags should be kept in mind when doing :abbr:`FC analysis (functional
 Hemodynamic lag is determined here using cross-correlation with the global gray matter signal.
 Visual report includes the lagmaps along with the max correlation map (Correlation corresponding to the lag in the lagmap).
 
-.. figure:: _static/sub-024_task-rest_.svg
+.. figure:: _static/sub-027_ses-1week_task-rest_run-02_space-T1w_desc-lagmap_bold.svg
+
+.. figure:: _static/sub-027_ses-1week_task-rest_run-02_space-T1w_desc-corrmap_bold.svg
 
 
 Derivatives of *fMRIStroke* (preprocessed data)
