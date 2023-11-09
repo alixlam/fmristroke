@@ -30,19 +30,6 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
     """
     This workflow controls the lesion specific stages *fMRIStroke*.
 
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from fmriprep.workflows.tests import mock_config
-            from fmriprep import config
-            from fmriprep.workflows.bold.base import init_func_preproc_wf
-            with mock_config():
-                bold_file = config.execution.bids_dir / "sub-01" / "func" \
-                    / "sub-01_task-mixedgamblestask_run-01_bold.nii.gz"
-                wf = init_func_preproc_wf(str(bold_file))
-
     Parameters
     ----------
     bold_file

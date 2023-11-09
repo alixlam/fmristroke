@@ -21,18 +21,6 @@ def init_hemodynamic_wf(
     For details about the method visit : ``https://rapidtide.readthedocs.io/en/latest/``
     
 
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from fmristroke.workflows.lagmaps import init_hemodynamic_wf
-            wf = init_hemodynamic_wf(
-                mem_gb=1,
-                metadata={},
-            )
-
     Parameters
     ----------
     mem_gb : :obj:`float`
