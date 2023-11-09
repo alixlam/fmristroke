@@ -30,16 +30,6 @@ def init_fmristroke_wf():
     This workflow organizes the execution of FMRISTROKE, with a sub-workflow for
     each subject.
 
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from fmristroke.workflows.tests import mock_config
-            from fmristroke.workflows.base import init_fmristroke_wf
-            with mock_config():
-                wf = init_fmristroke_wf()
-
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
@@ -76,16 +66,6 @@ def init_single_subject_wf(subject_id: str):
     sub-workflows to perform pipelines..
     Functional is performed using a separate workflow for each
     individual BOLD series.
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from fmriprep.workflows.tests import mock_config
-            from fmriprep.workflows.base import init_single_subject_wf
-            with mock_config():
-                wf = init_single_subject_wf('01')
 
     Parameters
     ----------

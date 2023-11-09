@@ -25,17 +25,6 @@ def init_confs_wf(
     #. ICA based lesion confounds
 
 
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from fmristroke.workflows.confounds import init_confs_wf
-            wf = init_confs_wf(
-                mem_gb=1,
-                metadata={},
-            )
-
     Parameters
     ----------
     mem_gb : :obj:`float`
