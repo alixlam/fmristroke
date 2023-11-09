@@ -8,3 +8,5 @@ build
 pytest
 pytest-cov
 coverage
+sphinxarg
+sphinx
