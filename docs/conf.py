@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# fmriprep documentation build configuration file, created by
-# sphinx-quickstart on Mon May  9 09:04:25 2016.
+# fmristroke documentation build configuration file, created by
+# sphinx-quickstart.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
