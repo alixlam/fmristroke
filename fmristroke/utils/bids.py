@@ -56,3 +56,20 @@ def collect_roi_mask(
         "roi": layout.get(**query)
     }
     return roi
+
+def group_runs(bold):
+    """Group runs from same session and same task"""
+    from itertools import groupby
+    import re
+    
+    def _grp_runs(x):
+        if "_run-" not in x:
+            return x
+        run = re.search("_run-\\d*", x).group(0)
+        return  x.replace(run, "_run-?")
+    
+    grouped_runs = []
+    for _, bold in groupby(bold, key=_grp_runs):
+        bold=list(bold)
+        grouped_runs.append(bold)
+    return grouped_runs
