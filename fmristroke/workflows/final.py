@@ -82,13 +82,16 @@ def init_single_subject_wf(subject_id: str):
     from niworkflows.interfaces.bids import BIDSInfo
     from niworkflows.utils.spaces import Reference
     from smriprep.utils.bids import collect_derivatives
-    from ..utils.bids import collect_bold_derivatives, collect_roi_mask
+    from ..utils.bids import collect_bold_derivatives, collect_roi_mask, group_runs
     from ..interfaces.bids import BIDSDerivativeDataGrabber
 
     name = "single_subject_%s_wf" % subject_id
     fmriprep_dir = str(config.execution.fmriprep_dir)
     raw_data_dir = str(config.execution.bids_dir)
     spaces = config.workflow.spaces
+    session_level = config.execution.run_sessionlevel
+    if session_level:
+        croprun = config.workflow.croprun
 
 
     bold_derivatives = collect_bold_derivatives(
@@ -149,13 +152,23 @@ tasks and sessions), the following lesion specific preprocessing was performed.
     )
 
     func_preproc_wfs = []
+    if session_level:
+        bold_derivatives['bold_t1'] = group_runs(bold_derivatives['bold_t1'])
+        bold_derivatives['boldref_t1'] = group_runs(bold_derivatives['boldref_t1'])
+        bold_derivatives['boldmask_t1'] = group_runs(bold_derivatives['boldmask_t1'])
+        bold_derivatives['confounds_file'] = group_runs(bold_derivatives['confounds_file'])
+        bold_derivatives['confounds_metadata'] = group_runs(bold_derivatives['confounds_metadata'])
+        
     for bold_file, boldref, boldmask, confounds_file, confounds_metadata in zip(
         bold_derivatives['bold_t1'], 
         bold_derivatives['boldref_t1'],
         bold_derivatives['boldmask_t1'],
         bold_derivatives['confounds_file'],
         bold_derivatives['confounds_metadata']):
-        lesion_preproc_wf = init_lesion_preproc_wf(bold_file, boldref, boldmask, confounds_file, confounds_metadata)
+        lesion_preproc_wf = init_lesion_preproc_wf(bold_file,
+                                                    boldref, boldmask,
+                                                    confounds_file,
+                                                    confounds_metadata,)
         if lesion_preproc_wf is None:
             continue
         lesion_preproc_wf.inputs.inputnode.roi = roi["roi"][0]

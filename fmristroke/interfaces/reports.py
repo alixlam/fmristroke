@@ -36,6 +36,15 @@ HEMO_TEMPLATE = """\
 \t\t</details>
 """
 
+SESSION_TEMPLATE = """\
+\t\t<details open>
+\t\t<summary>Summary</summary>
+\t\t<ul class="elem-desc">
+\t\t\t<li>Number of runs : {n_runs}</li>
+\t\t\t<li>Final run length: {final_run}</li>
+\t\t</ul>
+\t\t</details>
+"""
 
 class _ICPlotInputSpecRPT(reporting.ReportCapableInputSpec):
     in_file = File(
@@ -186,3 +195,22 @@ class RegisterLesionRPT(nrb.RegistrationRC):
         self._contour = self.inputs.roi
         self._out_report = os.path.abspath(self.inputs.out_report + ".svg")
         return super()._post_run_hook(runtime)
+    
+class _SessionSummaryInputSpec(BaseInterfaceInputSpec):
+    bold_t1 = InputMultiObject(File(exists=True), desc="BOLD series from the same session and task")
+    croprun= traits.Int(desc="Run are cropped by n volumes before concatenating")
+
+class SessionSummary(SummaryInterface):
+    input_spec = _SessionSummaryInputSpec
+    
+    def _run_interface(self, runtime):
+        return super()._run_interface(runtime)
+    
+    def _generate_segment(self):
+        import nibabel as nib
+        n_runs = len(self.inputs.bold_t1)
+        croprun=self.inputs.croprun
+        run_lengths = [nib.load(f).get_fdata()[:,:,:,croprun:].shape[-1] for f in self.inputs.bold_t1]
+        final_length = sum(run_lengths)
+        
+        return SESSION_TEMPLATE.format(final_run=final_length, n_runs=n_runs)

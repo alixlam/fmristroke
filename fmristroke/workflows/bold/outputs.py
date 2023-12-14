@@ -7,7 +7,6 @@ import numpy as np
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
-from fmriprep import config
 from fmriprep.config import DEFAULT_MEMORY_MIN_GB
 from ...interfaces import DerivativesDataSink
 
@@ -76,14 +75,15 @@ def init_func_lesion_derivatives_wf(
 
     raw_sources = pe.Node(niu.Function(function=_bids_relative), name='raw_sources')
     raw_sources.inputs.bids_root = bids_root
-
+    
+    # fmt:on
     # Confounds
     ds_confounds = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             desc='confounds2',
             suffix='timeseries',
-            dismiss_entities=("echo",),
+            dismiss_entities=("echo", "space"),
         ),
         name="ds_confounds",
         run_without_submitting=True,
@@ -108,7 +108,8 @@ def init_func_lesion_derivatives_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             desc='maxtime',
-            suffix='map'
+            suffix='map',
+            compress=True,
         ),
         name="ds_lagmap",
         run_without_submitting=True,
