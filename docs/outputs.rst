@@ -19,6 +19,8 @@ upcoming `BEP 011` and `BEP 012`).
 3. **Confounds**: Confounds signals that can be utilized
    to run subsequent denoising steps.
 
+*fMRIStroke* can be either run run level, each run is preprocessed independently or session level with the tag --session-level. In the latter case, 
+preprocessed runs are concatenated and fMRIStroke pipeline is run on this new concatenated run (compcor regressors are computed for the new run).
 
 Layout
 ------

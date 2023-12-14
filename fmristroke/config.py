@@ -292,6 +292,8 @@ class execution(_Config):
     the command line) as spatial references for outputs."""
     output_pipelines = None
     """List of pipelines designated (with the ``--output-pipelines`` flag of the comand line) as pipelines for denoising"""
+    run_sessionlevel = False
+    """Concatenate runs from the same session and task"""
     reports_only = False
     """Only build the reports, based on the reportlets found in a cached working directory."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
@@ -386,6 +388,8 @@ class workflow(_Config):
     instance keeping standard and nonstandard spaces."""
     pipelines = None
     """Keeps the pipelines instances for denoising"""
+    croprun = None
+    """Crops n first volumes in fMRI run before concatenating when session-level is true"""
     
 
 

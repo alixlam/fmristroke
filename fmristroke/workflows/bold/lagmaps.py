@@ -39,7 +39,7 @@ def init_hemodynamic_wf(
     maxlag :obj: `int`
         Max lag to compute.
     name : :obj:`str`
-        Name of workflow (default: ``bold_confs_wf``)
+        Name of workflow (default: ``hemodynamic_wf``)
 
     Inputs
     ------
@@ -70,6 +70,7 @@ def init_hemodynamic_wf(
     """
     
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from niworkflows.interfaces.utility import KeySelect
     from ...interfaces.rapidtide.rapidtide import RapidTide
     from ...interfaces.pyants import ApplyTransforms
     from ...interfaces.nilearn import Smooth
@@ -96,6 +97,7 @@ def init_hemodynamic_wf(
                 "t1w_aseg",
                 "confounds_file",
                 "std2anat_xfm",
+                "template"
             ]
         ),
         name="inputnode",
@@ -107,9 +109,16 @@ def init_hemodynamic_wf(
                 "lagmap_metadata"]
         ),
         name="outputnode",
-    )    
+    ) 
     
     # Generate GM mask and interesct with bold fov
+    # Select xform to "MNI152Lin2009cAsym" (always computed)
+    select_mni_xfm = pe.Node(
+        KeySelect(fields=["std2anat_xfm"], key="MNI152NLin2009cAsym"),
+        name="select_mni_xfm",
+        run_without_submitting=True
+        )
+
     # Warp segmentation into T1 space
     resample_parc_T1 = pe.Node(
         ApplyTransforms(
@@ -207,8 +216,10 @@ def init_hemodynamic_wf(
     # fmt:off
     workflow.connect([
         # Brain mask and GM mask
-        (inputnode, resample_parc_T1, [("std2anat_xfm","transforms"),
-                                       ("t1w_preproc", "reference_image")]),
+        (inputnode, select_mni_xfm, [("std2anat_xfm", "std2anat_xfm"),
+                                     ("template", "keys")]),
+        (inputnode, resample_parc_T1, [("t1w_preproc", "reference_image")]),
+        (select_mni_xfm, resample_parc_T1, [("std2anat_xfm", "transforms")]),
         (resample_parc_T1, gm_mask, [("output_image", "segmentation")]),
         (gm_mask, gm_mask_resamp, [("out", "in_img")]),
         (inputnode, gm_mask_resamp, [("boldmask", "ref")]),

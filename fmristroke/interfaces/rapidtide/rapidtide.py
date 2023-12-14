@@ -77,7 +77,7 @@ class RapidTideInputSpec(CommandLineInputSpec):
         "0.009 0.09",
         argstr="--filterfreqs %s",
         desc="Filter data and regressors to retain LOWERPASS to UPPERPASS. If –filterstopfreqs is not also specified, LOWERSTOP and UPPERSTOP will be calculated automatically.",
-        usedefault=True,    
+        usedefault=False,    
     )
     
     noglm = traits.Bool(
