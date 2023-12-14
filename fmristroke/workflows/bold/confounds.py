@@ -8,6 +8,7 @@ Confounds generation
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
+from templateflow.api import get as get_template
 from ...interfaces import DerivativesDataSink
 
 def init_confs_wf(
@@ -16,6 +17,7 @@ def init_confs_wf(
     ica_method : str = 'canica',
     freesurfer: bool = False,
     ncomp_method: str or int = "varexp", 
+    session_level: bool = True,
     name: str = "confounds_wf",
 ):
     """
@@ -58,7 +60,7 @@ def init_confs_wf(
         Affine matrix that maps the T1w space into alignment with
         the native BOLD space
     confounds_file
-        TSV of all aggregated confounds computed by fmriprep
+        TSV of all aggregated confouconf_corr_plotnds computed by fmriprep
 
     Outputs
     -------
@@ -76,8 +78,16 @@ def init_confs_wf(
     from niworkflows.interfaces.nibabel import ApplyMask, Binarize
     from niworkflows.interfaces.utility import TSV2JSON, DictMerge
     from niworkflows.interfaces.confounds import ExpandModel
+    from niworkflows.interfaces.morphology import BinaryDilation, BinarySubtraction
+    from niworkflows.interfaces.patches import RobustACompCor as ACompCor
+    from niworkflows.interfaces.patches import RobustTCompCor as TCompCor
+    from niworkflows.interfaces.plotting import (
+        CompCorVariancePlot,
+        ConfoundsCorrelationPlot,
+    )
+    from niworkflows.interfaces.reportlets.masks import ROIsPlot
     
-    from fmriprep.interfaces.confounds import aCompCorMasks
+    from fmriprep.interfaces.confounds import aCompCorMasks, FilterDropped, RenameACompCor
     from ...interfaces.confounds import LesionMasks, ROIcomp, GatherConfounds
     from ...interfaces.nilearn import CanICAInterface
     from ...interfaces.reports import ICPlot
@@ -107,7 +117,11 @@ def init_confs_wf(
             fields=[
                 "confounds_file",
                 "confounds_metadata",
-                "boldmask"]
+                "boldmask",
+                # if recomputed compcors (session level)
+                "confounds_metadata_comp",
+                "acompcor_masks",
+                "crown_mask"]
         ),
         name="outputnode",
     )
@@ -152,7 +166,7 @@ def init_confs_wf(
     ]
         
     
-    #Merge rois
+    # Merge rois
     merge_rois = pe.Node(
         niu.Merge(2, ravel_inputs=True), name="merge_rois_csf", run_without_submitting=True
     )
@@ -198,12 +212,12 @@ def init_confs_wf(
         name = "lesionconf_metadata_fmt",
         )
     
-    mrg_conf_metadata = pe.Node(
-        niu.Merge(2), name="merge_confound_metadata", run_without_submitting=True
+    mrg_confic_metadata = pe.Node(
+        niu.Merge(2), name="merge_confound_metadata_ic", run_without_submitting=True
     )
     
-    mrg_conf_metadata2 = pe.Node(
-        DictMerge(), name="merge_confound_metadata2", run_without_submitting=True
+    mrg_confic_metadata2 = pe.Node(
+        DictMerge(), name="merge_confound_metadata2_ic", run_without_submitting=True
     )
     
     model_expand = pe.Node(
@@ -211,6 +225,155 @@ def init_confs_wf(
         name="model_expansion",
     )
     
+    # Redo CompCor if session level code adapted from fmriprep repo
+    if session_level:
+        acompcor = pe.Node(
+            ACompCor(
+                components_file="acompcor.tsv",
+                header_prefix="a_comp_cor_",
+                pre_filter="cosine",
+                save_pre_filter=True,
+                save_metadata=True,
+                mask_names=["CSF", "WM", "combined"],
+                merge_method="none",
+                failure_mode="NaN",
+            ),
+            name="acompcor",
+            mem_gb=mem_gb,
+        )
+        # Create the crown mask
+        dilated_mask = pe.Node(BinaryDilation(), name="dilated_mask")
+        subtract_mask = pe.Node(BinarySubtraction(), name="subtract_mask")
+        
+        crowncompcor = pe.Node(
+            ACompCor(
+                components_file="crown_compcor.tsv",
+                header_prefix="edge_comp_",
+                pre_filter="cosine",
+                save_pre_filter=True,
+                save_metadata=True,
+                mask_names=["Edge"],
+                merge_method="none",
+                failure_mode="NaN",
+                num_components=24,
+            ),
+            name="crowncompcor",
+            mem_gb=mem_gb,
+        )
+
+        tcompcor = pe.Node(
+            TCompCor(
+                components_file="tcompcor.tsv",
+                header_prefix="t_comp_cor_",
+                pre_filter="cosine",
+                save_pre_filter=True,
+                save_metadata=True,
+                percentile_threshold=0.02,
+                failure_mode="NaN",
+            ),
+            name="tcompcor",
+            mem_gb=mem_gb,
+        )
+
+        
+        acompcor.inputs.variance_threshold = 0.5
+        tcompcor.inputs.variance_threshold = 0.5
+
+        # Set TR if present
+        if "RepetitionTime" in metadata:
+            tcompcor.inputs.repetition_time = metadata["RepetitionTime"]
+            acompcor.inputs.repetition_time = metadata["RepetitionTime"]
+            crowncompcor.inputs.repetition_time = metadata["RepetitionTime"]
+
+        # Split aCompCor results into a_comp_cor, c_comp_cor, w_comp_cor
+        rename_acompcor = pe.Node(RenameACompCor(), name="rename_acompcor")
+        
+        # CompCor metadata
+        tcc_metadata_filter = pe.Node(FilterDropped(), name="tcc_metadata_filter")
+        acc_metadata_filter = pe.Node(FilterDropped(), name="acc_metadata_filter")
+        tcc_metadata_fmt = pe.Node(
+            TSV2JSON(
+                index_column="component",
+                drop_columns=["mask"],
+                output=None,
+                additional_metadata={"Method": "tCompCor"},
+                enforce_case=True,
+            ),
+            name="tcc_metadata_fmt",
+        )
+        acc_metadata_fmt = pe.Node(
+            TSV2JSON(
+                index_column="component",
+                output=None,
+                additional_metadata={"Method": "aCompCor"},
+                enforce_case=True,
+            ),
+            name="acc_metadata_fmt",
+        )
+        crowncc_metadata_fmt = pe.Node(
+            TSV2JSON(
+                index_column="component",
+                output=None,
+                additional_metadata={"Method": "EdgeRegressor"},
+                enforce_case=True,
+            ),
+            name="crowncc_metadata_fmt",
+        )
+        mrg_compcor = pe.Node(
+            niu.Merge(3, ravel_inputs=True), name="mrg_compcor", run_without_submitting=True
+        )
+        
+        # extract tcompcor
+        signals_tcompcor = pe.Node(
+        SignalExtraction(class_labels=['tcompcor']), name="signal_tcompcor", mem_gb=mem_gb
+        )
+        
+        # Generate metadata file
+        mrg_conf_metadata = pe.Node(
+            niu.Merge(3), name="merge_confound_metadata", run_without_submitting=True
+        )
+        mrg_conf_metadata.inputs.in3 = {label: {"Method": "Mean"} for label in signals_class_labels}
+        mrg_conf_metadata2 = pe.Node(
+            DictMerge(), name="merge_confound_metadata2", run_without_submitting=True
+        )
+        out_meta = pe.Node(niu.Function(function=_dict2json), name="out_meta")
+        
+        
+        # Generate reportlet (ROIs)
+        mrg_compcor = pe.Node(
+            niu.Merge(3, ravel_inputs=True), name="mrg_compcor", run_without_submitting=True
+        )
+        rois_plot = pe.Node(
+            ROIsPlot(colors=["b", "magenta", "g"], generate_report=True),
+            name="rois_plot",
+            mem_gb=mem_gb,
+        )
+
+        ds_report_bold_rois = pe.Node(
+            DerivativesDataSink(desc="rois", datatype="figures", dismiss_entities=("echo",)),
+            name="ds_report_bold_rois",
+            run_without_submitting=True,
+            mem_gb=0.01,
+        )
+
+        # Generate reportlet (CompCor)
+        mrg_cc_metadata = pe.Node(
+            niu.Merge(2), name="merge_compcor_metadata", run_without_submitting=True
+        )
+        compcor_plot = pe.Node(
+            CompCorVariancePlot(
+                variance_thresholds=(0.5, 0.7, 0.9),
+                metadata_sources=["tCompCor", "aCompCor", "crownCompCor"],
+            ),
+            name="compcor_plot",
+        )
+
+        ds_report_compcor = pe.Node(
+            DerivativesDataSink(desc="compcorvar", datatype="figures", dismiss_entities=("echo",)),
+            name="ds_report_compcor",
+            run_without_submitting=True,
+            mem_gb=0.01,)
+
     # Concatenate all confounds
     concat = pe.Node(GatherConfounds(), name= "concat", mem_gb=0.01, run_without_submitting=True)
     
@@ -259,16 +422,70 @@ def init_confs_wf(
         (signals, concat, [("out_file", "region_signals")]),
         (lesion_components, concat, [("out_signal", "ic_roi_signals")]),
         (inputnode, concat, [("confounds_file", "confounds_file")]),
-        
+    ])
+    
+    if session_level:
+        workflow.connect([
+            # CompCor 
+            (inputnode, acompcor, [("bold_t1", "realigned_file")]),
+            (acc_msk_bin, acompcor, [("out_file", "mask_files")]),
+            (acompcor, rename_acompcor, [("components_file", "components_file"),
+                                        ("metadata_file", "metadata_file")]),
+            # crownCompCor
+            (intersect_mask, dilated_mask, [("out", "in_mask")]),
+            (intersect_mask, subtract_mask, [("out", "in_subtract")]),
+            (dilated_mask, subtract_mask, [("out_mask", "in_base")]),
+            (inputnode, crowncompcor, [("bold_t1", "realigned_file"),]),
+            (subtract_mask, crowncompcor, [("out_mask", "mask_files")]),
+            (inputnode, tcompcor, [("bold_t1", "realigned_file"),
+                                ("boldmask_t1", "mask_files")]),
+            (inputnode, signals_tcompcor, [("bold_t1", "in_file")]),
+            (tcompcor, signals_tcompcor, [("high_variance_masks", "label_files")]),
+            (signals_tcompcor, concat, [("out_file", "tcompcor")]),
+            (rename_acompcor, concat, [("components_file", "acompcor")]),
+            (crowncompcor, concat, [("components_file", "crowncompcor")]),
+            
+            # Reporting
+            (inputnode, rois_plot, [("bold_t1", "in_file"),
+                                ("boldmask_t1", "in_mask")]),
+            (tcompcor, mrg_compcor, [("high_variance_masks", "in1")]),
+            (acc_msk_bin, mrg_compcor, [(("out_file", _last), "in2")]),
+            (subtract_mask, mrg_compcor, [("out_mask", "in3")]),
+            (mrg_compcor, rois_plot, [("out", "in_rois")]),
+            (rois_plot, ds_report_bold_rois, [("out_report", "in_file")]),
+            (tcompcor, mrg_cc_metadata, [("metadata_file", "in1")]),
+            (acompcor, mrg_cc_metadata, [("metadata_file", "in2")]),
+            (crowncompcor, mrg_cc_metadata, [("metadata_file", "in3")]),
+            (mrg_cc_metadata, compcor_plot, [("out", "metadata_files")]),
+            (compcor_plot, ds_report_compcor, [("out_file", "in_file")]),
+            
+            # Outputs
+            (tcompcor, tcc_metadata_filter, [("metadata_file", "in_file")]),
+            (tcc_metadata_filter, tcc_metadata_fmt, [("out_file", "in_file")]),
+            (rename_acompcor, acc_metadata_filter, [("metadata_file", "in_file")]),
+            (acc_metadata_filter, acc_metadata_fmt, [("out_file", "in_file")]),
+            (crowncompcor, crowncc_metadata_fmt, [("metadata_file", "in_file")]),
+            (tcc_metadata_fmt, mrg_conf_metadata, [("output", "in1")]),
+            (acc_metadata_fmt, mrg_conf_metadata, [("output", "in2")]),
+            (crowncc_metadata_fmt, mrg_conf_metadata, [("output", "in3")]),
+            (mrg_conf_metadata, mrg_conf_metadata2, [("out", "in_dicts")]),
+            (mrg_conf_metadata2, out_meta, [("out_dict", "dicti")]),
+            (out_meta, outputnode, [("out", "confounds_metadata_comp")]),
+            (acc_msk_bin, outputnode, [("out_file", "acompcor_masks")]),
+            (subtract_mask, outputnode, [("out_mask", "crown_mask")]),
+            
+        ])
+    
+    workflow.connect([
         # Expand model with derivatives
         (concat, model_expand, [("confounds_file", "confounds_file")]),
         
         # Confounds metadata
         (canica, ica_metadata_fmt, [("metadata_file", "in_file")]),
         (lesion_components, lesion_conf_metadata_fmt, [("metadata_file", "in_file")]),
-        (ica_metadata_fmt, mrg_conf_metadata, [("output", "in1")]),
-        (lesion_conf_metadata_fmt, mrg_conf_metadata, [("output", "in2")]),
-        (mrg_conf_metadata, mrg_conf_metadata2, [("out", "in_dicts")]),
+        (ica_metadata_fmt, mrg_confic_metadata, [("output", "in1")]),
+        (lesion_conf_metadata_fmt, mrg_confic_metadata, [("output", "in2")]),
+        (mrg_confic_metadata, mrg_confic_metadata2, [("out", "in_dicts")]),
         
         # Set outputs
         (lesion_components, IC_plot, [("out_signal","in_ts")]),
@@ -276,11 +493,137 @@ def init_confs_wf(
         (canica, IC_plot, [("components_img_zscored", "in_ICs")]),
         (t1w_mask_tfm_roi, IC_plot, [("out", "in_mask")]),
         (model_expand, outputnode, [("confounds_file", "confounds_file")]),
-        (mrg_conf_metadata2, outputnode, [("out_dict", "confounds_metadata")]),
+        (mrg_confic_metadata2, outputnode, [("out_dict", "confounds_metadata")]),
         (intersect_mask, outputnode, [("out", "boldmask")]),
         (IC_plot, ds_report_ica, [("out_report", "in_file")])
     
     ])
+    
+    return workflow
+
+def init_carpetplot_wf(
+    mem_gb: float, metadata: dict, name: str = "bold_carpet_wf"
+):
+    """
+    Adapted from fmriprep `https://fmriprep.org/en/stable/`
+    
+    Build a workflow to generate *carpet* plots.
+
+    Resamples the MNI parcellation (ad-hoc parcellation derived from the
+    Harvard-Oxford template and others).
+
+    Parameters
+    ----------
+    mem_gb : :obj:`float`
+        Size of BOLD file in GB - please note that this size
+        should be calculated after resamplings that may extend
+        the FoV
+    metadata : :obj:`dict`
+        BIDS metadata for BOLD file
+    name : :obj:`str`
+        Name of workflow (default: ``bold_carpet_wf``)
+
+    Inputs
+    ------
+    bold
+        BOLD image, after the prescribed corrections (STC, HMC and SDC)
+        when available.
+    bold_mask
+        BOLD series mask
+    confounds_file
+        TSV of all aggregated confounds
+    std2anat_xfm
+        ANTs-compatible affine-and-warp transform file
+    crown_mask
+        Mask of brain edge voxels
+    acompcor_mask
+        Mask of deep WM+CSF
+
+    Outputs
+    -------
+    out_carpetplot
+        Path of the generated SVG file
+
+    """
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from ...interfaces.pyants import ApplyTransforms
+    from ...interfaces.confounds import FMRISummary
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "bold",
+                "bold_mask",
+                "confounds_file",
+                "std2anat_xfm",
+                "crown_mask",
+                "acompcor_mask",
+            ]
+        ),
+        name="inputnode",
+    )
+
+    outputnode = pe.Node(niu.IdentityInterface(fields=["out_carpetplot"]), name="outputnode")
+
+    # Carpetplot and confounds plot
+    conf_plot = pe.Node(
+        FMRISummary(
+            tr=metadata["RepetitionTime"],
+            confounds_list=[
+                ("global_signal", None, "GS"),
+                ("csf", None, "GSCSF"),
+                ("white_matter", None, "GSWM"),
+                ("std_dvars", None, "DVARS"),
+                ("framewise_displacement", "mm", "FD"),
+            ],
+        ),
+        name="conf_plot",
+        mem_gb=mem_gb,
+    )
+    ds_report_bold_conf = pe.Node(
+        DerivativesDataSink(
+            desc="carpetplot", datatype="figures", extension="svg", dismiss_entities=("echo",)
+        ),
+        name="ds_report_bold_conf",
+        run_without_submitting=True,
+        mem_gb=0.01,
+    )
+
+    parcels = pe.Node(niu.Function(function=_carpet_parcellation), name="parcels")
+
+    # Warp segmentation into T1 space
+    resample_parc = pe.Node(
+        ApplyTransforms(
+            input_image=str(
+                get_template(
+                    "MNI152NLin2009cAsym",
+                    resolution=1,
+                    desc="carpet",
+                    suffix="dseg",
+                    extension=[".nii", ".nii.gz"],
+                )
+            ),
+            interpolation="multiLabel",
+        ),
+        name="resample_parc",
+    )
+
+    workflow = Workflow(name=name)
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, resample_parc, [("bold_mask", "reference_image")]),
+        (inputnode, parcels, [("crown_mask", "crown_mask")]),
+        (inputnode, parcels, [("acompcor_mask", "acompcor_mask")]),
+        (inputnode, conf_plot, [("bold", "in_nifti"),
+                                ("confounds_file", "confounds_file"),]),
+        (inputnode, resample_parc, [("std2anat_xfm", "transforms")]),
+        (resample_parc, parcels, [("output_image", "segmentation")]),
+        (parcels, conf_plot, [("out", "in_segm")]),
+        (conf_plot, ds_report_bold_conf, [("out_file", "in_file")]),
+        (conf_plot, outputnode, [("out_file", "out_carpetplot")]),
+    ])
+    # fmt:on
     return workflow
 
 def _boldmsk_from_T1w(T1wmask, bold):
@@ -358,3 +701,39 @@ def _resample_to_img(input_image, reference_image, interpolation):
     out_name = Path("mask_resamp.nii.gz").absolute()
     new_img.to_filename(out_name)
     return str(out_name)
+
+def _last(inlist):
+        return inlist[-1]
+    
+def _dict2json(dicti):
+    from pathlib import Path
+    from json import dumps
+    out_name = Path("confounds_metadata.json").absolute()
+    out_name.write_text(dumps(dicti, sort_keys=True, indent=2))
+    return str(out_name)
+
+def _carpet_parcellation(segmentation, crown_mask, acompcor_mask):
+    """Generate the union of two masks."""
+    from pathlib import Path
+
+    import nibabel as nb
+    import numpy as np
+
+    img = nb.load(segmentation)
+
+    lut = np.zeros((256,), dtype="uint8")
+    lut[100:201] = 1  
+    lut[30:99] = 2   # dGM
+    lut[1:11] = 3   # WM+CSF
+    lut[255] = 5   # Cerebellum
+    # Apply lookup table
+    seg = lut[np.uint16(img.dataobj)]
+    seg[np.bool_(nb.load(crown_mask).dataobj)] = 6 
+    # Separate deep from shallow WM+CSF
+    seg[np.bool_(nb.load(acompcor_mask).dataobj)] = 4 
+
+    outimg = img.__class__(seg.astype("uint8"), img.affine, img.header)
+    outimg.set_data_dtype("uint8")
+    out_file = Path("segments.nii.gz").absolute()
+    outimg.to_filename(out_file)
+    return str(out_file)
