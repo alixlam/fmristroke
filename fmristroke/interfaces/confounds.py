@@ -32,6 +32,9 @@ from nilearn.interfaces.fmriprep.load_confounds_components import (
 from nilearn.interfaces.fmriprep.load_confounds_utils import _prepare_output, MissingConfound
 from ..utils.confounds import _load_iclesion, _load_wm_csf_lesion
 
+from niworkflows.utils.timeseries import _nifti_timeseries
+from niworkflows.viz.plots import fMRIPlot
+
 component_parameters = {
     "motion": ["motion"],
     "wm_csf": ["wm_csf"],
@@ -145,7 +148,10 @@ class _GatherConfoundsInputSpec(BaseInterfaceInputSpec):
     region_signals = File(exists=True, desc="Average time series from regions")
     ic_roi_signals = File(exists=True, desc="Signals from ICs overlapping with regions")
     confounds_file = File(exists=True, desc="Confounds file from fmriprep")
-
+    tcompcor = File(exists=True, desc='input tCompCorr')
+    acompcor = File(exists=True, desc='input aCompCorr')
+    crowncompcor = File(exists=True, desc='input crown-based regressors')
+    
 class _GatherConfoundsOutputSpec(TraitedSpec):
     confounds_file = File(exists=True, description="Confounds from fmriprep and confounds from roi")
     confounds_list = traits.List(traits.Str, desc='list of headers')
@@ -161,6 +167,9 @@ class GatherConfounds(SimpleInterface):
             signals=self.inputs.region_signals,
             ic_roi=self.inputs.ic_roi_signals,
             confounds_fmriprep=self.inputs.confounds_file,
+            tcompcor=self.inputs.tcompcor,
+            acompcor=self.inputs.acompcor,
+            crowncompcor=self.inputs.crowncompcor,
             newpath=runtime.cwd)
         self._results['confounds_file'] = combined_out
         self._results['confounds_list'] = confounds_list
@@ -257,11 +266,102 @@ class SelectConfounds(SimpleInterface):
             self._results["sample_mask"] = None
         return runtime
 
+# FMRISummary from fmriprep `https://github.com/nipreps/fmriprep/blob/0ed3a93e4ab6c694743e7314b4753065a39b8334/fmriprep/interfaces/confounds.py`
+# adapted to generate carpetplot
+class _FMRISummaryInputSpec(BaseInterfaceInputSpec):
+    in_nifti = File(exists=True, mandatory=True, desc="input BOLD (4D NIfTI file)")
+    in_segm = File(exists=True, desc="volumetric segmentation corresponding to in_nifti")
+    confounds_file = File(exists=True, desc="BIDS' _confounds.tsv file")
 
+    str_or_tuple = traits.Either(
+        traits.Str,
+        traits.Tuple(traits.Str, traits.Either(None, traits.Str)),
+        traits.Tuple(traits.Str, traits.Either(None, traits.Str), traits.Either(None, traits.Str)),
+    )
+    confounds_list = traits.List(
+        str_or_tuple, minlen=1, desc='list of headers to extract from the confounds_file'
+    )
+    tr = traits.Either(None, traits.Float, usedefault=True, desc='the repetition time')
+    drop_trs = traits.Int(0, usedefault=True, desc="dummy scans")
+
+
+class _FMRISummaryOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='written file path')
+
+
+class FMRISummary(SimpleInterface):
+    """
+    """
+
+    input_spec = _FMRISummaryInputSpec
+    output_spec = _FMRISummaryOutputSpec
+
+    def _run_interface(self, runtime):
+        self._results['out_file'] = fname_presuffix(
+            self.inputs.in_nifti, suffix='_fmriplot.svg', use_ext=False, newpath=runtime.cwd
+        )
+
+        # Read input object and create timeseries + segments object
+        seg_file = self.inputs.in_segm if isdefined(self.inputs.in_segm) else None
+        dataset, segments = _nifti_timeseries(
+            nb.load(self.inputs.in_nifti),
+            nb.load(seg_file),
+            remap_rois=False,
+            labels=(
+                ("Ctx GM", "dGM", "sWM+sCSF", "dWM+dCSF", "Cb", "Edge")
+            ),
+        )
+
+        dataframe = pd.read_csv(
+            self.inputs.confounds_file,
+            sep="\t",
+            index_col=None,
+            dtype='float32',
+            na_filter=True,
+            na_values='n/a',
+        )
+
+        headers = []
+        units = {}
+        names = {}
+
+        for conf_el in self.inputs.confounds_list:
+            if isinstance(conf_el, (list, tuple)):
+                headers.append(conf_el[0])
+                if conf_el[1] is not None:
+                    units[conf_el[0]] = conf_el[1]
+
+                if len(conf_el) > 2 and conf_el[2] is not None:
+                    names[conf_el[0]] = conf_el[2]
+            else:
+                headers.append(conf_el)
+
+        if not headers:
+            data = None
+            units = None
+        else:
+            data = dataframe[headers]
+
+        data = data.rename(columns=names)
+
+        fig = fMRIPlot(
+            dataset,
+            segments=segments,
+            tr=self.inputs.tr,
+            confounds=data,
+            units=units,
+            nskip=self.inputs.drop_trs,
+            paired_carpet=False,
+        ).plot()
+        fig.savefig(self._results["out_file"], bbox_inches="tight")
+        return runtime
 
 def _gather_confounds(
         signals=None, 
-        ic_roi=None, 
+        ic_roi=None,
+        tcompcor=None,
+        acompcor=None,
+        crowncompcor=None,
         confounds_fmriprep=None,
         newpath=None):
     r"""
@@ -302,6 +402,9 @@ def _gather_confounds(
     for confound, name in (
         (signals, 'Global signals'),
         (ic_roi, 'IC ROI'),
+        (tcompcor, 'tCompCor'),
+        (acompcor, 'aCompCor'),
+        (crowncompcor, 'crownCompCor'),
         (confounds_fmriprep, 'fmriprep Confounds')
     ):
         if confound is not None and isdefined(confound):

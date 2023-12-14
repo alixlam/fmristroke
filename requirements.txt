@@ -123,7 +123,7 @@ mapca==0.0.3
     # via tedana
 markupsafe==2.1.3
     # via jinja2
-matplotlib==3.8.0
+matplotlib==3.8.2
     # via
     #   antspyx
     #   nitime
@@ -180,7 +180,6 @@ nitransforms==23.0.1
     #   sdcflows
 niworkflows==1.7.9
     # via
-    #   -r requirements.in
     #   fmriprep
     #   sdcflows
     #   smriprep
@@ -394,9 +393,7 @@ six==1.16.0
     #   python-dateutil
     #   retrying
 smriprep==0.11.1
-    # via
-    #   -r requirements.in
-    #   fmriprep
+    # via fmriprep
 sqlalchemy==2.0.21
     # via pybids
 stack-data==0.6.3

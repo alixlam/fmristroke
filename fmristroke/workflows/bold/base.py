@@ -19,10 +19,11 @@ from ... import config
 from ...interfaces import DerivativesDataSink
 
 # BOLD workflows
-from .confounds import init_confs_wf
+from .confounds import init_confs_wf, init_carpetplot_wf
 from .outputs import init_func_lesion_derivatives_wf
 from .registration import init_lesionplot_wf
 from .denoise import init_denoise_wf
+from .concatenate import init_concat_wf
 
 from .lagmaps import init_hemodynamic_wf
 
@@ -91,6 +92,7 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
         SimpleBeforeAfterRPT as SimpleBeforeAfter,
     )
     from niworkflows.interfaces.utility import DictMerge, KeySelect
+    from ...utils.combine_runs import combine_run_source
 
     img = nb.load(bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file)
     nvols = 1 if img.ndim < 4 else img.shape[3]
@@ -104,6 +106,8 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
     pipelines = config.workflow.pipelines
     output_dir = str(config.execution.output_dir)
     freesurfer = config.workflow.freesurfer
+    croprun = config.workflow.croprun
+    session_level = config.execution.run_sessionlevel
 
     # Extract BIDS entities and metadata from BOLD file(s)
     entities = extract_entities(bold_file)
@@ -184,8 +188,18 @@ effects of other kernels [@lanczos].
     )
     
     func_lesion_derivatives_wf.inputs.inputnode.all_source_files = bold_file
-    func_lesion_derivatives_wf.inputs.inputnode.source_file = bold_file
-
+    
+    if not session_level:
+        workflow.connect([
+            (inputnode, func_lesion_derivatives_wf, [
+                ("bold_t1", "inputnode.source_file")
+            ])
+        ])
+    else:
+        workflow.connect([
+            (inputnode, func_lesion_derivatives_wf, [
+                (("bold_t1", combine_run_source), "inputnode.source_file")])
+        ])
     
     workflow.connect([
         (outputnode, func_lesion_derivatives_wf, [
@@ -200,6 +214,22 @@ effects of other kernels [@lanczos].
         ]),
     ])
     
+    # COMBINE RUNS  ##########################################################
+    concat_wf = init_concat_wf(
+        mem_gb=mem_gb["largemem"],
+        croprun=croprun,
+        name="concat_runs_wf",
+    )
+    workflow.connect([
+        (inputnode, concat_wf, [
+            ("bold_t1", "inputnode.bold_t1"),
+            ("boldref_t1", "inputnode.boldref_t1"),
+            ("boldmask_t1", "inputnode.boldmask_t1"),
+            ("confounds_file", "inputnode.confounds_file"),
+            ("confounds_metadata", "inputnode.confounds_metadata")
+        ])
+    ])
+    
     #LESION CONFOUNDS  #######################################################
     lesion_confounds_wf = init_confs_wf(
         mem_gb=mem_gb["largemem"],
@@ -207,6 +237,7 @@ effects of other kernels [@lanczos].
         freesurfer=freesurfer,
         ncomp_method=config.workflow.ncomp_method,
         ica_method=config.workflow.ica_method,
+        session_level=session_level,
         name="lesion_confounds_wf",
     )
     
@@ -215,11 +246,13 @@ effects of other kernels [@lanczos].
         (inputnode, lesion_confounds_wf, [
             ("t1w_tpms", "inputnode.t1w_tpms"),
             ("t1w_mask", "inputnode.t1w_mask"),
-            ("bold_t1", "inputnode.bold_t1"),
-            ("boldref_t1", "inputnode.boldref_t1"),
-            ("boldmask_t1", "inputnode.boldmask_t1"),
-            ("confounds_file","inputnode.confounds_file"),
             ("roi", "inputnode.roi"),
+        ]),
+        (concat_wf, lesion_confounds_wf, [
+            ("outputnode.bold_t1", "inputnode.bold_t1"),
+            ("outputnode.boldref_t1", "inputnode.boldref_t1"),
+            ("outputnode.boldmask_t1", "inputnode.boldmask_t1"),
+            ("outputnode.confounds_file","inputnode.confounds_file"),
         ]),
         
         (lesion_confounds_wf, outputnode, [
@@ -237,15 +270,19 @@ effects of other kernels [@lanczos].
     workflow.connect([
         # Connect bold_confounds_wf
         (inputnode, hemodynamics_wf, [
-            ("bold_t1", "inputnode.bold_t1"),
             ("roi", "inputnode.roi"),
             ("t1w_preproc", "inputnode.t1w_preproc"),
             ("t1w_mask", "inputnode.t1w_mask"),
             ("t1w_tpms", "inputnode.t1w_tpms"),
-            ("confounds_file","inputnode.confounds_file"),
             ("std2anat_xfm", "inputnode.std2anat_xfm"),
+            ("templates", "inputnode.template"),
             # undefined if freesurfer was not run
             ("t1w_aseg", "inputnode.t1w_aseg"),
+        ]),
+        (concat_wf, hemodynamics_wf, [
+            ("outputnode.bold_t1", "inputnode.bold_t1"),
+            ("outputnode.confounds_file","inputnode.confounds_file"),
+
         ]),
         (lesion_confounds_wf, hemodynamics_wf, [
             ("outputnode.boldmask", "inputnode.boldmask")
@@ -253,20 +290,6 @@ effects of other kernels [@lanczos].
         (hemodynamics_wf, outputnode, [
             ("outputnode.lagmaps", "lagmaps"),
         ]),
-    ])
-    
-    # REGISTRATION PLOT WORKFLOW   ###################################################
-    lesion_plot = init_lesionplot_wf(
-        mem_gb=mem_gb["largemem"],
-        name = "lesion_plot_wf"
-    )
-    workflow.connect([
-        (inputnode, lesion_plot, [
-            ("boldref_t1", "inputnode.boldref_t1"),
-            ("t1w_preproc", "inputnode.t1w"),
-            ("roi", "inputnode.t1w_roi"),
-            ("t1w_mask", "inputnode.t1w_mask")
-            ])
     ])
 
     # DENOISING WORKFLOW ########################################################
@@ -280,13 +303,14 @@ effects of other kernels [@lanczos].
     )
     workflow.connect([
         (inputnode, denoising_wf, [
-            ("bold_t1", "inputnode.bold_t1"),
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("templates", "inputnode.templates"),
-            ("confounds_metadata", "inputnode.confounds_metadata")
             ]),
         (lesion_confounds_wf, denoising_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file")
+        ]),
+        (concat_wf, denoising_wf, [
+                ("outputnode.bold_t1", "inputnode.bold_t1"),
         ]),
         (denoising_wf, outputnode, [
             ("outputnode.template", "template"),
@@ -296,17 +320,82 @@ effects of other kernels [@lanczos].
             ("outputnode.pipeline", "pipeline")
         ])
     ])
+    if session_level:
+        # Get confounds descriptor from newly computed compcor confounds
+        workflow.connect([
+            (lesion_confounds_wf, denoising_wf, [
+                ("outputnode.confounds_metadata_comp", "inputnode.confounds_metadata")
+                ]),
+        ])
+    else:
+        workflow.connect([
+            (inputnode, denoising_wf, [
+                ("confounds_metadata", "inputnode.confounds_metadata")
+                ]),
+        ])
+    
+    
+    # CARPET PLOT IF SESSION LEVEL ##########################################
+    if session_level:
+        def _last(inlist):
+            return inlist[-1]
+        
+        carpetplot_wf = init_carpetplot_wf(
+            mem_gb=mem_gb["resampled"],
+            metadata=metadata,
+            name="carpetplot_wf"
+        )
+        carpetplot_select_std = pe.Node(
+            KeySelect(fields=["std2anat_xfm"], key="MNI152NLin2009cAsym"),
+            name="carpetplot_select_std",
+            run_without_submitting=True,
+        )
+        workflow.connect([
+            (inputnode, carpetplot_select_std, [("std2anat_xfm", "std2anat_xfm"),
+                                                ("templates", "keys")]),
+            (carpetplot_select_std, carpetplot_wf, [
+                ("std2anat_xfm", "inputnode.std2anat_xfm"),
+            ]),
+            (concat_wf, carpetplot_wf, [
+                ("outputnode.bold_t1", "inputnode.bold"),
+            ]),
+            (lesion_confounds_wf, carpetplot_wf, [
+                ("outputnode.boldmask", "inputnode.bold_mask"),
+            ]),
+            (lesion_confounds_wf, carpetplot_wf, [
+                ("outputnode.confounds_file", "inputnode.confounds_file"),
+                ("outputnode.crown_mask", "inputnode.crown_mask"),
+                (("outputnode.acompcor_masks", _last), "inputnode.acompcor_mask"),
+            ]),
+        ])
     
     # REPORTING ############################################################
-
+    if session_level:
+        ref_file = combine_run_source(bold_file)
+    
     # Fill-in datasinks of reportlets seen so far
     for node in workflow.list_node_names():
         if node.split(".")[-1].startswith("ds_report"):
             workflow.get_node(node).inputs.base_directory = output_dir
             workflow.get_node(node).inputs.source_file = ref_file
 
-    return workflow
 
+    # REGISTRATION PLOT WORKFLOW   ###################################################
+    lesion_plot = init_lesionplot_wf(
+        listify(boldref_file),
+        mem_gb=mem_gb["largemem"],
+        output_dir=output_dir,
+        name = "lesion_plot_wf"
+    )
+    workflow.connect([
+        (inputnode, lesion_plot, [
+            ("t1w_preproc", "inputnode.t1w"),
+            ("roi", "inputnode.t1w_roi"),
+            ("t1w_mask", "inputnode.t1w_mask")
+            ])
+    ])
+    
+    return workflow
 
 def _create_mem_gb(bold_fname):
     img = nb.load(bold_fname)

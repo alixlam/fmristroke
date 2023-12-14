@@ -197,6 +197,19 @@ any spatial references. For further details, please check out \
 https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         % ("latest"),
     )
+    g_conf.add_argument(
+        "--session-level",
+        action="store_true",
+        dest="run_sessionlevel",
+        help="Run analysis at session level, when multiple run of same session and task, concatenate the runs together"
+    )
+    g_conf.add_argument(
+        "--croprun",
+        dest="croprun",
+        default=0,
+        type=int,
+        help="Crop beginning of run when session-level is true and runs are concatenated, crops the first n TR of fMRI before concatenating"
+    )
     
     g_pipe = parser.add_argument_group("Denoising pipeline configuration")
     g_pipe.add_argument(
@@ -230,6 +243,7 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
     g_lag = parser.add_argument_group("Specific options for hemodynmics analysis")
     g_lag.add_argument(
         "--maxlag",
+        dest="maxlag",
         default=10,
         type=int,
         help="Max lag for hemodynamic analysis",

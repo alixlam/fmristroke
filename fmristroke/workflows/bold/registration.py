@@ -16,7 +16,7 @@ from fmriprep import config
 from ...interfaces import DerivativesDataSink
 
 def init_lesionplot_wf(
-    mem_gb: float, name: str = "lesion_plot_wf"
+    boldref, mem_gb: float, output_dir=None,  name: str = "lesion_plot_wf"
 ):
     """
     Build a workflow to generate registration plots with lesions.
@@ -55,7 +55,6 @@ def init_lesionplot_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "boldref_t1",
                 "t1w",
                 "t1w_roi",
                 "t1w_mask",
@@ -64,7 +63,9 @@ def init_lesionplot_wf(
         name="inputnode",
     )
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=["out_regplot"]), name="outputnode")
+    iterablesource = pe.Node(niu.IdentityInterface(fields=["boldref_t1"]), name="iterbold")
+    # Generate regplot for every boldrun 
+    iterablesource.iterables = [("boldref_t1", boldref)]
     
     resample_bold = pe.Node(
         niu.Function(function=_resample_to_img), name="boldref_resamp")
@@ -78,27 +79,27 @@ def init_lesionplot_wf(
         name="reg_plot"
     )
     ds_report_reg = pe.Node(
-            DerivativesDataSink(datatype="figures", desc="reglesion", dismiss_entities=("echo",)),
+            DerivativesDataSink(datatype="figures", desc="reglesion", dismiss_entities=("echo","space"), suffix="bold"),
             name='ds_report_reg',
             run_without_submitting=True,
             dismiss_entities=("space",)
 
         )
+    ds_report_reg.inputs.base_directory = output_dir
 
     workflow = Workflow(name=name)
 
     # fmt:off
     workflow.connect([
-        (inputnode, resample_bold, [
-                            ("boldref_t1", "in_img"),
-                            ("t1w", "ref"),]),
+        (iterablesource, resample_bold, [("boldref_t1", "in_img"),]),
+        (inputnode, resample_bold, [("t1w", "ref")]),
         (inputnode, mask_img, [("t1w", "in_img"),
                                 ("t1w_mask", "in_mask")]),
         (mask_img, reg_plot, [("out", "reference_file")]),
         (inputnode, reg_plot, [("t1w_roi", "roi")]),
         (resample_bold, reg_plot, [("out", "moving_image")]),
         (reg_plot, ds_report_reg, [("out_report", "in_file")]),
-        (reg_plot, outputnode, [("out_report", "out_regplot")]),
+        (iterablesource, ds_report_reg, [("boldref_t1", "source_file")]),
     ])
     # fmt:on
     return workflow
