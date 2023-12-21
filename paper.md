@@ -30,7 +30,7 @@ To adress these consideration, we introduce fMRIStroke, a functional magnetic re
 # Statement of need
 Stroke, with its complex and varied impact on the brain's vascular supply, often results in damages that extend beyond the immediate lesion site, making functional connectivity analysis a promising tool to understand its immediate impact as well as network reorganizations during recovery. 
 
-However, while the Blood Oxygen Level Dependent (BOLD) signal obtained from fMRI data is typically mixed with non-neuronal sources of variability [@ref] in healthy subjects it is even more true for stroke patients `[@Siegel:2017]`, undermining reliability of connectivity analyses. 
+However, while the Blood Oxygen Level Dependent (BOLD) signal obtained from fMRI data is typically mixed with non-neuronal sources of variability [@ref] in healthy subjects it is even more true for stroke patients `[@Siegel:2017]`, compromising the reliability of connectivity analyses. 
 Recognizing these challenges, it is highly recommended, especially by `@Siegel2017`, to incorporate specific quality checks and strategies to address lesion-related confounds when working with stroke fMRI data. 
 
 Existing tools like fMRIprep `[@Esteban:2018]` have streamlined most of the preprocessing steps; however, they lack specificity for fMRI data from stroke patients. 
