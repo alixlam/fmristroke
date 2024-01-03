@@ -60,7 +60,8 @@ def build_workflow(config_file, retval):
         f"Participant list: {subject_list}.",
         f"Run identifier: {config.execution.run_uuid}.",
         f"Output spaces: {config.execution.output_spaces}.",
-        f"Denoising pipelines: {config.execution.output_pipelines}."
+        f"Denoising pipelines: {config.execution.output_pipelines}.",
+        f"Atlases: {config.execution.output_atlases}.",
     ]
 
     build_log.log(25, f"\n{' ' * 11}* ".join(init_msg))

@@ -292,6 +292,8 @@ class execution(_Config):
     the command line) as spatial references for outputs."""
     output_pipelines = None
     """List of pipelines designated (with the ``--output-pipelines`` flag of the comand line) as pipelines for denoising"""
+    output_atlases = None
+    """List of pipelines designated (with the ``--output-atlases`` flag of the comand line) as atlases for connectivity"""
     run_sessionlevel = False
     """Concatenate runs from the same session and task"""
     reports_only = False
@@ -388,9 +390,13 @@ class workflow(_Config):
     instance keeping standard and nonstandard spaces."""
     pipelines = None
     """Keeps the pipelines instances for denoising"""
+    atlases = None
+    """Keeps the atlases instances for connectivity"""
     croprun = None
     """Crops n first volumes in fMRI run before concatenating when session-level is true"""
-    
+    conn_measure = None
+    """Measure to use for connectivity"""
+
 
 
 class loggers:
@@ -519,6 +525,7 @@ def load(filename, skip=None, init=True):
             section.load(configs, ignore=ignore, init=initialize(sectionname))
     init_spaces()
     init_pipelines()
+    init_atlases()
 
 
 def get(flat=False):
@@ -587,3 +594,17 @@ def init_pipelines():
     
     # Make the Pipelines object available
     workflow.pipelines = pipelines
+
+def init_atlases():
+    """Initialize the :attr:`~workflow.pipelines` setting."""
+    from .utils.atlas import Atlas, Atlases
+    from pkg_resources import resource_filename as pkgrf
+    
+    atlases = execution.output_atlases or Atlases()
+    known_atlases = ["Scheafer"]
+    if not isinstance(atlases, Atlases):
+        atlases_filenames = [pkgrf("fmristroke", f"data/atlas/{s}.json") if s in known_atlases else s for s in atlases]
+        atlases = Atlases([Atlas.from_json(f) for f in atlases_filenames])
+    
+    # Make the Atlases object available
+    workflow.atlases = atlases
