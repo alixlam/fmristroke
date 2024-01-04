@@ -307,8 +307,8 @@ You can easily add a custom atlas by creating a .json file. This file should fol
     }
         
 
-   .. note::
-       The mask_file should be in the same directory as the json file.
+.. note::
+    The mask_file should be in the same directory as the json file.
 
 
 .. topic:: References
