@@ -24,6 +24,9 @@ from packaging import version as pver  # Avoid distutils.LooseVersion which is d
 sys.path.append(os.path.abspath("sphinxext"))
 sys.path.insert(0, os.path.abspath("../wrapper"))
 
+from github_link import make_linkcode_resolve
+
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -325,6 +328,10 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 # The following is used by sphinx.ext.linkcode to provide links to github
+linkcode_resolve = make_linkcode_resolve("fmristroke",
+                                         "https://github.com/alixlam/"
+                                         "fmristroke/blob/{revision}/"
+                                         "{package}/{path}#L{lineno}")
 html_context = {
     "display_github": True, # Integrate GitHub
     "github_user": "alixlam", # Username
