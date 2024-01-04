@@ -1,6 +1,6 @@
 """
-Denoising
-^^^^^^^^^^
+Connectivity
+^^^^^^^^^^^^
 
 .. autofunction:: init_connectivity_wf
 

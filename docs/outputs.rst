@@ -281,7 +281,7 @@ You can easily add a custom pipeline by creating a .json file. A file should fol
 
 Denoising is run using nilearn, refer to `nilearn doc (load_confounds) <https://nilearn.github.io/stable/modules/generated/nilearn.interfaces.fmriprep.load_confounds.html>`_ for list of possible confounds and corresponding arguments. To those you can add ``iclesion`` and ``wm_csf_lesion`` with argument ``wm_csf`` that can either be ``full``, ``basic``, ``power2``, ``derivatives``.
 
-connectivity
+Connectivity
 -------------
 **fmristroke** also outputs connectivity matrices computed on the denoised bold, computed using your choice of atlases and connectivity measures. By default, the [Scheafer2018]_ atlas is 
 used and the correlation is used to measure the functional connectivity. Multiple atlases can be used as well as multiple connectivity measures thanks to the tags ``--output-atlases`` and ``--conn-measure``.
@@ -292,9 +292,13 @@ Connectivity matrices will be saved as::
     func/
       sub-<subject_label>_[specifiers]_pipeline-[Pipeline]_atlas-[Atlas]_measure-[connectivity Measure]_desc-connectivity_mat.npy
 
+Measures
+~~~~~~~~~
 Connectivity measurement is run using nilearn, refer to `nilearn doc (ConnectivityMeasure) <https://nilearn.github.io/dev/modules/generated/nilearn.connectome.ConnectivityMeasure.html>`_ for
 the list of supported measures. 
 
+Atlas
+~~~~~
 You can easily add a custom atlas by creating a .json file. This file should follow the structure below.
 
 .. code-block:: json
