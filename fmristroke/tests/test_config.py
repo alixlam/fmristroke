@@ -25,11 +25,11 @@ def _reset_config():
 
 def test_reset_config():
     execution = config.execution
-    setattr(execution, 'bids_dir', 'TESTING')
-    assert config.execution.bids_dir == 'TESTING'
+    setattr(execution, "bids_dir", "TESTING")
+    assert config.execution.bids_dir == "TESTING"
     _reset_config()
     assert config.execution.bids_dir is None
     # Even though the config module was reset,
     # previous references to config classes
     # have not been touched.
-    assert execution.bids_dir == 'TESTING'
+    assert execution.bids_dir == "TESTING"

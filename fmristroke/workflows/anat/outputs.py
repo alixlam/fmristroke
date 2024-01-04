@@ -4,16 +4,14 @@ from __future__ import annotations
 import typing as ty
 
 import numpy as np
-from nipype.interfaces import utility as niu
-from nipype.pipeline import engine as pe
-
 from fmriprep import config
 from fmriprep.config import DEFAULT_MEMORY_MIN_GB
-from ...interfaces import DerivativesDataSink
-
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from smriprep.workflows.outputs import _bids_relative
 
+from ...interfaces import DerivativesDataSink
 
 if ty.TYPE_CHECKING:
     from niworkflows.utils.spaces import SpatialReferences
@@ -23,7 +21,7 @@ def init_anat_lesion_derivatives_wf(
     bids_root: str,
     output_dir: str,
     spaces: SpatialReferences,
-    name='anat_lesion_derivatives_wf',
+    name="anat_lesion_derivatives_wf",
 ):
     """
     Set up a battery of datasinks to store derivatives in the right location.
@@ -48,40 +46,48 @@ def init_anat_lesion_derivatives_wf(
     name : :obj:`str`
         This workflow's identifier (default: ``func_lesion_derivatives_wf``).
 
-    """    
+    """
     from niworkflows.interfaces.utility import KeySelect
+
     workflow = Workflow(name=name)
-    
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'roi_mask_std',
-                'source_file',
-                'all_source_files',
-                'spatial_reference',
-                'template'
+                "roi_mask_std",
+                "source_file",
+                "all_source_files",
+                "spatial_reference",
+                "template",
             ]
         ),
-        name='inputnode',
+        name="inputnode",
     )
 
-    raw_sources = pe.Node(niu.Function(function=_bids_relative), name='raw_sources')
+    raw_sources = pe.Node(
+        niu.Function(function=_bids_relative), name="raw_sources"
+    )
     raw_sources.inputs.bids_root = bids_root
-    
+
     # Store ROI resamplings in standard spaces when listed in --output-spaces
     if spaces.cached.references:
         from niworkflows.interfaces.space import SpaceDataSource
 
-        spacesource = pe.Node(SpaceDataSource(), name='spacesource', run_without_submitting=True)
+        spacesource = pe.Node(
+            SpaceDataSource(), name="spacesource", run_without_submitting=True
+        )
         spacesource.iterables = (
-            'in_tuple',
-            [(s.fullname, s.spec) for s in spaces.cached.get_standard(dim=(3,))],
+            "in_tuple",
+            [
+                (s.fullname, s.spec)
+                for s in spaces.cached.get_standard(dim=(3,))
+            ],
         )
 
-        fields = ['template', 'roi_mask_std']
+        fields = ["template", "roi_mask_std"]
         select_std = pe.Node(
             KeySelect(fields=fields),
-            name='select_std',
+            name="select_std",
             run_without_submitting=True,
             mem_gb=DEFAULT_MEMORY_MIN_GB,
         )
@@ -89,12 +95,12 @@ def init_anat_lesion_derivatives_wf(
         ds_roi_mask_std = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                desc='lesion',
-                suffix='roi',
+                desc="lesion",
+                suffix="roi",
                 compress=True,
                 dismiss_entities=("echo",),
             ),
-            name='ds_roi_mask_std',
+            name="ds_roi_mask_std",
             run_without_submitting=True,
             mem_gb=DEFAULT_MEMORY_MIN_GB,
         )
@@ -114,6 +120,5 @@ def init_anat_lesion_derivatives_wf(
             (raw_sources, ds_roi_mask_std, [('out', 'RawSources')]),
         ])
         # fmt:on
-
 
     return workflow
