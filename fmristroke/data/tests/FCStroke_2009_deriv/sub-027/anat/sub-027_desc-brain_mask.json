@@ -1,0 +1,9 @@
+{
+  "RawSources": [
+    "sub-027/ses-1week/anat/sub-027_ses-1week_T1w.nii.gz",
+    "sub-027/ses-1year/anat/sub-027_ses-1year_T1w.nii.gz",
+    "sub-027/ses-3months/anat/sub-027_ses-3months_run-01_T1w.nii.gz",
+    "sub-027/ses-3months/anat/sub-027_ses-3months_run-02_T1w.nii.gz"
+  ],
+  "Type": "Brain"
+}

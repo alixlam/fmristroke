@@ -29,7 +29,7 @@ def collect_bold_derivatives(
     layout_get_kwargs.update(bids_filters)
     
     derivs_cache = {
-        dtype: sorted(layout.get(**layout_get_kwargs, **query))
+        dtype: sorted(layout.get(**layout_get_kwargs, **query,  invalid_filters='allow'))
         for dtype, query in spec.items()
     }
 
