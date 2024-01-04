@@ -108,7 +108,6 @@ def init_denoise_wf(
     ), name="inputnode")
     
     iterablesource = pe.Node(niu.IdentityInterface(fields=["pipeline"]),name="iterablesource2")
-    # Generate conversion for every template+spec at the input
     iterablesource.iterables = [("pipeline", pipelines.pipelines)]
     
     if spaces.get_spaces(nonstandard=False, dim=(3,)):
