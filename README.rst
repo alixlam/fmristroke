@@ -53,6 +53,7 @@ Added outputs:
 
 - **ROI masks** in standardized space.
 - **Denoised fMRI**: Denoised BOLD series using the provided pipelines.
+- **Functional Connectiivty**: Connectivity matrix using provided atlases and connectivity measures.
 
 
 The *fMRIStroke* pipeline uses a combination of tools from well-known software
