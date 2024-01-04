@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.abspath("../wrapper"))
 
 from github_link import make_linkcode_resolve
 
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

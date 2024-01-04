@@ -19,8 +19,8 @@ from packaging.version import Version
 
 from .. import config
 from ..interfaces import DerivativesDataSink
-from .bold.base import init_lesion_preproc_wf
 from .anat.base import init_roi_preproc_wf
+from .bold.base import init_lesion_preproc_wf
 
 
 def init_fmristroke_wf():
@@ -35,14 +35,17 @@ def init_fmristroke_wf():
 
     ver = Version(config.environment.version)
 
-    fmriStroke_wf = Workflow(name=f'fmristroke_{ver.major}_{ver.minor}_wf')
+    fmriStroke_wf = Workflow(name=f"fmristroke_{ver.major}_{ver.minor}_wf")
     fmriStroke_wf.base_dir = config.execution.work_dir
 
     for subject_id in config.execution.participant_label:
         single_subject_wf = init_single_subject_wf(subject_id)
 
-        single_subject_wf.config['execution']['crashdump_dir'] = str(
-            config.execution.fmriprep_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
+        single_subject_wf.config["execution"]["crashdump_dir"] = str(
+            config.execution.fmriprep_dir
+            / f"sub-{subject_id}"
+            / "log"
+            / config.execution.run_uuid
         )
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)
@@ -50,10 +53,13 @@ def init_fmristroke_wf():
 
         # Dump a copy of the config file into the log directory
         log_dir = (
-            config.execution.fmriprep_dir / f"sub-{subject_id}" / 'log' / config.execution.run_uuid
+            config.execution.fmriprep_dir
+            / f"sub-{subject_id}"
+            / "log"
+            / config.execution.run_uuid
         )
         log_dir.mkdir(exist_ok=True, parents=True)
-        config.to_filename(log_dir / 'fmristroke.toml')
+        config.to_filename(log_dir / "fmristroke.toml")
 
     return fmriStroke_wf
 
@@ -82,8 +88,13 @@ def init_single_subject_wf(subject_id: str):
     from niworkflows.interfaces.bids import BIDSInfo
     from niworkflows.utils.spaces import Reference
     from smriprep.utils.bids import collect_derivatives
-    from ..utils.bids import collect_bold_derivatives, collect_roi_mask, group_runs
+
     from ..interfaces.bids import BIDSDerivativeDataGrabber
+    from ..utils.bids import (
+        collect_bold_derivatives,
+        collect_roi_mask,
+        group_runs,
+    )
 
     name = "single_subject_%s_wf" % subject_id
     fmriprep_dir = str(config.execution.fmriprep_dir)
@@ -93,22 +104,21 @@ def init_single_subject_wf(subject_id: str):
     if session_level:
         croprun = config.workflow.croprun
 
-
     bold_derivatives = collect_bold_derivatives(
         fmriprep_dir,
         subject_id,
         bids_filters=config.execution.bids_filters,
     )
     for imtype in ["bold_t1", "boldref_t1", "confounds_file"]:
-            if not bold_derivatives[imtype]:
-                config.loggers.workflow.warning(
+        if not bold_derivatives[imtype]:
+            config.loggers.workflow.warning(
                 f"""\
         A ttempted to access pre-existing bold derivatives at \
         <{config.execution.fmriprep_dir}>, however not all expectations of fMRIPrep \
         were met (for participant <{subject_id}>."""
             )
     std_spaces = spaces.get_spaces(nonstandard=False, dim=(3,))
-    
+
     anat_derivatives = collect_derivatives(
         fmriprep_dir,
         subject_id,
@@ -122,14 +132,11 @@ def init_single_subject_wf(subject_id: str):
         <{config.execution.fmriprep_dir}>, however not all expectations of fMRIPrep \
         were met (for participant <{subject_id}>, spaces <{', '.join(std_spaces)}>, \
         >)."""
-            )
-    
+        )
+
     # Get roi mask, currently fmriprep does not preprocess the mask,
     # it is not in the derivatives folder
-    roi = collect_roi_mask(
-        bids_dir=raw_data_dir,
-        subject_id=subject_id
-    )
+    roi = collect_roi_mask(bids_dir=raw_data_dir, subject_id=subject_id)
 
     workflow = Workflow(name=name)
 
@@ -139,7 +146,26 @@ def init_single_subject_wf(subject_id: str):
             anat_derivatives=anat_derivatives,
             subject_id=subject_id,
         ),
-        name='bidssrc',
+        name="bidssrc",
+    )
+
+    # ROI resampling
+    roi_anat_wf = init_roi_preproc_wf(name="roi_std_wf")
+    roi_anat_wf.inputs.inputnode.roi = roi["roi"][0]
+
+    workflow.connect(
+        [
+            (
+                bidssrc,
+                roi_anat_wf,
+                [
+                    ("t1w_preproc", "inputnode.t1w_preproc"),
+                    ("anat2std_xfm", "inputnode.anat2std_xfm"),
+                    ("std2anat_xfm", "inputnode.std2anat_xfm"),
+                    ("template", "inputnode.template"),
+                ],
+            )
+        ]
     )
 
     func_pre_desc = """
@@ -148,32 +174,52 @@ Functional data lesion specific data preprocessing
 : For each of the {num_bold} BOLD runs found per subject (across all
 tasks and sessions), the following lesion specific preprocessing was performed.
 """.format(
-        num_bold=len(bold_derivatives['bold_t1'])
+        num_bold=len(bold_derivatives["bold_t1"])
     )
 
     func_preproc_wfs = []
     if session_level:
-        bold_derivatives['bold_t1'] = group_runs(bold_derivatives['bold_t1'])
-        bold_derivatives['boldref_t1'] = group_runs(bold_derivatives['boldref_t1'])
-        bold_derivatives['boldmask_t1'] = group_runs(bold_derivatives['boldmask_t1'])
-        bold_derivatives['confounds_file'] = group_runs(bold_derivatives['confounds_file'])
-        bold_derivatives['confounds_metadata'] = group_runs(bold_derivatives['confounds_metadata'])
-        
-    for bold_file, boldref, boldmask, confounds_file, confounds_metadata in zip(
-        bold_derivatives['bold_t1'], 
-        bold_derivatives['boldref_t1'],
-        bold_derivatives['boldmask_t1'],
-        bold_derivatives['confounds_file'],
-        bold_derivatives['confounds_metadata']):
-        lesion_preproc_wf = init_lesion_preproc_wf(bold_file,
-                                                    boldref, boldmask,
-                                                    confounds_file,
-                                                    confounds_metadata,)
+        bold_derivatives["bold_t1"] = group_runs(bold_derivatives["bold_t1"])
+        bold_derivatives["boldref_t1"] = group_runs(
+            bold_derivatives["boldref_t1"]
+        )
+        bold_derivatives["boldmask_t1"] = group_runs(
+            bold_derivatives["boldmask_t1"]
+        )
+        bold_derivatives["confounds_file"] = group_runs(
+            bold_derivatives["confounds_file"]
+        )
+        bold_derivatives["confounds_metadata"] = group_runs(
+            bold_derivatives["confounds_metadata"]
+        )
+
+    for (
+        bold_file,
+        boldref,
+        boldmask,
+        confounds_file,
+        confounds_metadata,
+    ) in zip(
+        bold_derivatives["bold_t1"],
+        bold_derivatives["boldref_t1"],
+        bold_derivatives["boldmask_t1"],
+        bold_derivatives["confounds_file"],
+        bold_derivatives["confounds_metadata"],
+    ):
+        lesion_preproc_wf = init_lesion_preproc_wf(
+            bold_file,
+            boldref,
+            boldmask,
+            confounds_file,
+            confounds_metadata,
+        )
         if lesion_preproc_wf is None:
             continue
         lesion_preproc_wf.inputs.inputnode.roi = roi["roi"][0]
-        lesion_preproc_wf.__desc__ = func_pre_desc + (lesion_preproc_wf.__desc__ or "")
-        
+        lesion_preproc_wf.__desc__ = func_pre_desc + (
+            lesion_preproc_wf.__desc__ or ""
+        )
+
         # fmt:off
         workflow.connect([
             (bidssrc, lesion_preproc_wf, [
@@ -181,7 +227,7 @@ tasks and sessions), the following lesion specific preprocessing was performed.
                 ('t1w_mask', 'inputnode.t1w_mask'),
                 ('t1w_dseg', 'inputnode.t1w_dseg'),
                 ('t1w_tpms', 'inputnode.t1w_tpms'),
-                ('std2anat_xfm','inputnode.std2anat_xfm'),
+                ('std2anat_xfm', 'inputnode.std2anat_xfm'),
                 ('anat2std_xfm', 'inputnode.anat2std_xfm'),
                 ('template', 'inputnode.templates'),
                 # Undefined if freesurfer was not run
@@ -190,19 +236,15 @@ tasks and sessions), the following lesion specific preprocessing was performed.
             ]),
         ])
         # fmt:on
+        workflow.connect(
+            [
+                (
+                    roi_anat_wf,
+                    lesion_preproc_wf,
+                    [("outputnode.roi_mask_std", "inputnode.roi_std")],
+                )
+            ]
+        )
         func_preproc_wfs.append(lesion_preproc_wf)
-
-    # ROI resampling
-    roi_anat_wf = init_roi_preproc_wf(name="roi_std_wf")
-    roi_anat_wf.inputs.inputnode.roi = roi["roi"][0]
-    
-    workflow.connect([
-        (bidssrc, roi_anat_wf, [
-            ('t1w_preproc', 'inputnode.t1w_preproc'),
-            ('anat2std_xfm', 'inputnode.anat2std_xfm'),
-            ('std2anat_xfm', 'inputnode.std2anat_xfm'),
-            ('template', 'inputnode.template'),
-            ])
-    ])
 
     return workflow

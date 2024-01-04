@@ -1,16 +1,23 @@
 """The rapidtide module provides basic functions for interfacing with Rapidtide tools."""
-import os 
-
-from packaging.version import Version, parse
+import os
 
 from nipype import logging
-from nipype.interfaces.base import CommandLine, CommandLineInputSpec, traits, isdefined, PackageInfo
+from nipype.interfaces.base import (
+    CommandLine,
+    CommandLineInputSpec,
+    PackageInfo,
+    isdefined,
+    traits,
+)
+from packaging.version import Version, parse
 
 LOCAL_DEFAULT_NUMBER_OF_THREADS = 1
 
+
 class Info(PackageInfo):
     version_cmd = (
-        os.path.join(os.getenv("RAPIDTIDEPATH", ""), "rapidtide") + " --version"
+        os.path.join(os.getenv("RAPIDTIDEPATH", ""), "rapidtide")
+        + " --version"
     )
 
     @staticmethod
@@ -28,6 +35,7 @@ class Info(PackageInfo):
         version = parse(v_string)
 
         return version.base_version
+
 
 class RapidTideCommand(CommandLine):
     """Base class for ANTS interfaces"""

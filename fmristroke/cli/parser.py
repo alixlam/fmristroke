@@ -16,7 +16,6 @@ def _build_parser(**kwargs):
     from niworkflows.utils.spaces import OutputReferencesAction, Reference
     from packaging.version import Version
 
-
     def _path_exists(path, parser):
         """Ensure a given path exists."""
         if path is None or not Path(path).exists():
@@ -27,7 +26,9 @@ def _build_parser(**kwargs):
         """Ensure a given path exists and it is a file."""
         path = _path_exists(path, parser)
         if not path.is_file():
-            raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+            raise parser.error(
+                f"Path should point to a file (or symlink of file): <{path}>."
+            )
         return path
 
     def _min_one(value, parser):
@@ -50,7 +51,9 @@ def _build_parser(**kwargs):
         import bids
 
         return {
-            k: bids.layout.Query.NONE if v is None else (bids.layout.Query.ANY if v == "*" else v)
+            k: bids.layout.Query.NONE
+            if v is None
+            else (bids.layout.Query.ANY if v == "*" else v)
             for k, v in dct.items()
         }
 
@@ -60,14 +63,17 @@ def _build_parser(**kwargs):
         if value:
             if Path(value).exists():
                 try:
-                    return loads(Path(value).read_text(), object_hook=_filter_pybids_none_any)
+                    return loads(
+                        Path(value).read_text(),
+                        object_hook=_filter_pybids_none_any,
+                    )
                 except JSONDecodeError:
                     raise parser.error(f"JSON syntax error in: <{value}>.")
             else:
                 raise parser.error(f"Path does not exist: <{value}>.")
 
     currentv = Version(config.environment.version)
-    
+
     parser = ArgumentParser(
         description="fMRIStroke: fMRI Stroke workflows v{}".format(
             config.environment.version
@@ -119,7 +125,7 @@ def _build_parser(**kwargs):
         action="store",
         type=BIDSFilter,
         metavar="FILE",
-        help="A JSON file describing custom BIDS input filters using PyBIDS. "
+        help="A JSON file describing custom BIDS input filters using PyBIDS. ",
     )
     g_bids.add_argument(
         "--fmriprep_dir",
@@ -135,7 +141,7 @@ def _build_parser(**kwargs):
         "--nthreads",
         "--n_cpus",
         "--n-cpus",
-        dest='nprocs',
+        dest="nprocs",
         action="store",
         type=PositiveInt,
         help="Maximum number of threads across all processes",
@@ -170,7 +176,9 @@ def _build_parser(**kwargs):
         help="Nipype plugin configuration file",
     )
 
-    g_subset = parser.add_argument_group("Options for performing only a subset of the workflow")
+    g_subset = parser.add_argument_group(
+        "Options for performing only a subset of the workflow"
+    )
     g_subset.add_argument(
         "--reports-only",
         action="store_true",
@@ -201,30 +209,52 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         "--session-level",
         action="store_true",
         dest="run_sessionlevel",
-        help="Run analysis at session level, when multiple run of same session and task, concatenate the runs together"
+        help="Run analysis at session level, when multiple run of same session and task, concatenate the runs together",
     )
     g_conf.add_argument(
         "--croprun",
         dest="croprun",
         default=0,
         type=int,
-        help="Crop beginning of run when session-level is true and runs are concatenated, crops the first n TR of fMRI before concatenating"
+        help="Crop beginning of run when session-level is true and runs are concatenated, crops the first n TR of fMRI before concatenating",
     )
-    
+
     g_pipe = parser.add_argument_group("Denoising pipeline configuration")
     g_pipe.add_argument(
         "--output_pipelines",
         nargs="+",
-        help="Pipelines to use for denoising, space separated pipeline name, accepts either json file describing pipeline or name of pipeline from package."
+        help="Pipelines to use for denoising, space separated pipeline name, accepts either json file describing pipeline or name of pipeline from package.",
     )
-    
+
+    # Connectivity options
+    g_conn = parser.add_argument_group("Connectivity configuration")
+    g_conn.add_argument(
+        "--conn_measure",
+        dest="conn_measure",
+        choices=[
+            "covariance",
+            "correlation",
+            "partial correlation",
+            "tangent",
+            "precision",
+        ],
+        default=["correlation"],
+        nargs="+",
+        help="method to measure functional connectivity, space delimited",
+    )
+    g_conn.add_argument(
+        "--output_atlases",
+        nargs="+",
+        help="Atlases for connectivity estimation",
+    )
+
     g_confounds = parser.add_argument_group("Options relating to confounds")
     g_confounds.add_argument(
         "--ncomp_method",
         dest="ncomp_method",
         choices=["varexp", "aic", "kic", "mdl"],
         required=False,
-        default= "varexp",
+        default="varexp",
         type=str,
         help="method to estimate number of components for ICA lesion confounds",
     )
@@ -240,7 +270,9 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
     )
 
     # Hemodynamics options
-    g_lag = parser.add_argument_group("Specific options for hemodynmics analysis")
+    g_lag = parser.add_argument_group(
+        "Specific options for hemodynmics analysis"
+    )
     g_lag.add_argument(
         "--maxlag",
         dest="maxlag",
@@ -248,9 +280,11 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         type=int,
         help="Max lag for hemodynamic analysis",
     )
-    
+
     # FreeSurfer options
-    g_fs = parser.add_argument_group("Specific options for FreeSurfer preprocessing")
+    g_fs = parser.add_argument_group(
+        "Specific options for FreeSurfer preprocessing"
+    )
     g_fs.add_argument(
         "--fs-license-file",
         metavar="FILE",
@@ -330,20 +364,33 @@ def parse_args(args=None, namespace=None):
     if opts.config_file:
         skip = {} if opts.reports_only else {"execution": ("run_uuid",)}
         config.load(opts.config_file, skip=skip, init=False)
-        config.loggers.cli.info(f"Loaded previous configuration file {opts.config_file}")
+        config.loggers.cli.info(
+            f"Loaded previous configuration file {opts.config_file}"
+        )
 
-    config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-    config.from_dict(vars(opts), init=['nipype'])
+    config.execution.log_level = int(
+        max(25 - 5 * opts.verbose_count, logging.DEBUG)
+    )
+    config.from_dict(vars(opts), init=["nipype"])
 
     # Initialize --output-spaces if not defined
     if config.execution.output_spaces is None:
         config.execution.output_spaces = SpatialReferences(
             [Reference("MNI152NLin2009cAsym", {"res": "native"})]
         )
-    
+
     # Initialize --output-pipelines if not defined
     if config.execution.output_pipelines is None:
-        config.execution.output_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS"]
+        config.execution.output_pipelines = [
+            "SimpleGS",
+            "ICLesionGS",
+            "CompCorGS",
+            "SimpleLesionGS",
+        ]
+
+    # Initialize --output-atlases if not defined
+    if config.execution.output_atlases is None:
+        config.execution.output_atlases = ["Scheafer"]
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -358,8 +405,11 @@ def parse_args(args=None, namespace=None):
         if _plugin:
             config.nipype.plugin = _plugin
             config.nipype.plugin_args = plugin_settings.get("plugin_args", {})
-            config.nipype.nprocs = opts.nprocs or config.nipype.plugin_args.get(
-                "n_procs", config.nipype.nprocs
+            config.nipype.nprocs = (
+                opts.nprocs
+                or config.nipype.plugin_args.get(
+                    "n_procs", config.nipype.nprocs
+                )
             )
 
     # Resource management options
@@ -380,9 +430,13 @@ def parse_args(args=None, namespace=None):
     if opts.clean_workdir and work_dir.exists():
         from niworkflows.utils.misc import clean_directory
 
-        build_log.info(f"Clearing previous fMRIStroke working directory: {work_dir}")
+        build_log.info(
+            f"Clearing previous fMRIStroke working directory: {work_dir}"
+        )
         if not clean_directory(work_dir):
-            build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
+            build_log.warning(
+                f"Could not clear all contents of working directory: {work_dir}"
+            )
 
     # Update the config with an empty dict to trigger initialization of all config
     # sections (we used `init=False` above).
