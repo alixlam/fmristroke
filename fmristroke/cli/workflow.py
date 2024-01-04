@@ -14,13 +14,12 @@ def build_workflow(config_file, retval):
     """Create the Nipype Workflow that supports the whole execution graph."""
     from pathlib import Path
 
+    from fmriprep.reports.core import generate_reports
+    from fmriprep.utils.misc import check_deps
     from niworkflows.utils.bids import collect_participants
     from pkg_resources import resource_filename as pkgrf
 
-    from fmriprep.reports.core import generate_reports
-
     from .. import config
-    from fmriprep.utils.misc import check_deps
     from ..workflows.final import init_fmristroke_wf
 
     config.load(config_file)
@@ -33,16 +32,21 @@ def build_workflow(config_file, retval):
     retval["workflow"] = None
 
     banner = [f"Running fMRIStroke version {version}"]
-    
+
     build_log.log(25, f"\n{' ' * 9}".join(banner))
     # First check that bids_dir looks like a BIDS folder
     subject_list = collect_participants(
-        config.execution.layout, participant_label=config.execution.participant_label
+        config.execution.layout,
+        participant_label=config.execution.participant_label,
     )
-    
+
     # Called with reports only
     if config.execution.reports_only:
-        build_log.log(25, "Running --reports-only on participants %s", ", ".join(subject_list))
+        build_log.log(
+            25,
+            "Running --reports-only on participants %s",
+            ", ".join(subject_list),
+        )
         retval["return_code"] = generate_reports(
             config.execution.participant_label,
             config.execution.fmriprep_dir,
@@ -73,7 +77,10 @@ def build_workflow(config_file, retval):
     if missing:
         build_log.critical(
             "Cannot run fMRIStroke. Missing dependencies:%s",
-            "\n\t* ".join([""] + [f"{cmd} (Interface: {iface})" for iface, cmd in missing]),
+            "\n\t* ".join(
+                [""]
+                + [f"{cmd} (Interface: {iface})" for iface, cmd in missing]
+            ),
         )
         retval["return_code"] = 127  # 127 == command not found.
         return retval

@@ -1,33 +1,33 @@
 """Interfaces for handling BIDS-like neuroimaging structures."""
+import os
+import re
+import shutil
 from collections import defaultdict
 from contextlib import suppress
 from json import dumps, loads
 from pathlib import Path
-import shutil
-import os
-from pkg_resources import resource_filename as _pkgres
-import re
 
 import nibabel as nb
 import numpy as np
-
+import templateflow as tf
 from nipype import logging
 from nipype.interfaces.base import (
-    traits,
-    isdefined,
-    Undefined,
-    TraitedSpec,
     BaseInterfaceInputSpec,
+    Directory,
     DynamicTraitedSpec,
     File,
-    Directory,
     InputMultiObject,
     OutputMultiObject,
-    Str,
     SimpleInterface,
+    Str,
+    TraitedSpec,
+    Undefined,
+    isdefined,
+    traits,
 )
 from nipype.interfaces.io import add_traits
-import templateflow as tf
+from pkg_resources import resource_filename as _pkgres
+
 
 class _BIDSDerivativeDataGrabberInputSpec(BaseInterfaceInputSpec):
     bold_derivatives = traits.Dict(Str, traits.Any)
@@ -37,32 +37,47 @@ class _BIDSDerivativeDataGrabberInputSpec(BaseInterfaceInputSpec):
 
 class _BIDSDerivativeDataGrabberOutputSpec(TraitedSpec):
     out_dict = traits.Dict(desc="output data structure")
-    bold_t1 = OutputMultiObject(desc="output functional images in anatomical space")
-    boldref_t1 = OutputMultiObject(desc="output functional reference images in anatomical space")
+    bold_t1 = OutputMultiObject(
+        desc="output functional images in anatomical space"
+    )
+    boldref_t1 = OutputMultiObject(
+        desc="output functional reference images in anatomical space"
+    )
     boldmask_t1 = OutputMultiObject(desc="output bold mask in t1 space")
     confounds_file = OutputMultiObject(desc="confounds timeseries")
-    confounds_metadata = OutputMultiObject(desc="confounds timeseries description file")
+    confounds_metadata = OutputMultiObject(
+        desc="confounds timeseries description file"
+    )
     t1w_preproc = OutputMultiObject(desc="output T1w preprocessed images")
     t1w_mask = OutputMultiObject(desc="output T1w brain mask ")
     t1w_dseg = OutputMultiObject(desc="output T1w dseg")
     t1w_aseg = OutputMultiObject(desc="output T1w aseg")
     t1w_aparc = OutputMultiObject(desc="output T1w aparc")
     t1w_tpms = OutputMultiObject(desc="output T1w tissue probability masks")
-    std_preproc = traits.List(desc="output T1w preprocessed images in std spaces")
+    std_preproc = traits.List(
+        desc="output T1w preprocessed images in std spaces"
+    )
     std_mask = traits.List(desc="output T1w brain mask in std spaces")
     std_dseg = traits.List(desc="output T1w dseg in std spaces")
     std_aseg = traits.List(desc="output T1w aseg in std spaces")
     std_aparc = traits.List(desc="output T1w aparc in std spaces")
-    std_tpms = traits.List(desc="output T1w tissue probability masks in std spaces")
-    anat2std_xfm = traits.List(desc=" Transform from antomical space to std spaces")
-    std2anat_xfm = traits.List(desc=" transform from std spaces to anatomical space")
+    std_tpms = traits.List(
+        desc="output T1w tissue probability masks in std spaces"
+    )
+    anat2std_xfm = traits.List(
+        desc=" Transform from antomical space to std spaces"
+    )
+    std2anat_xfm = traits.List(
+        desc=" transform from std spaces to anatomical space"
+    )
     template = traits.List(desc="Templates")
     t1w2fsnative_xfm = OutputMultiObject(desc="t1w to fs native transform")
     fsnative2t1w_xfm = OutputMultiObject(desc="fs native to t1w transform")
     surfaces = OutputMultiObject(desc="Surfaces from freesurfer")
     morphometrics = OutputMultiObject(desc="morphometrics (freesurfer output)")
-    anat_ribbon = OutputMultiObject(desc="anotomical ribbon (freesurfer output)")
-
+    anat_ribbon = OutputMultiObject(
+        desc="anotomical ribbon (freesurfer output)"
+    )
 
 
 class BIDSDerivativeDataGrabber(SimpleInterface):
@@ -79,12 +94,17 @@ class BIDSDerivativeDataGrabber(SimpleInterface):
         self._results["out_dict"] = bids_dict
         self._results.update(bids_dict)
         return runtime
-    
-class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
+
+
+class _DerivativesDataSinkInputSpec(
+    DynamicTraitedSpec, BaseInterfaceInputSpec
+):
     base_directory = traits.Directory(
         desc="Path to the base directory for storing data."
     )
-    check_hdr = traits.Bool(True, usedefault=True, desc="fix headers of NIfTI outputs")
+    check_hdr = traits.Bool(
+        True, usedefault=True, desc="fix headers of NIfTI outputs"
+    )
     compress = InputMultiObject(
         traits.Either(None, traits.Bool),
         usedefault=True,
@@ -103,17 +123,26 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     in_file = InputMultiObject(
         File(exists=True), mandatory=True, desc="the object to be saved"
     )
-    meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
+    meta_dict = traits.DictStrAny(
+        desc="an input dictionary containing metadata"
+    )
     source_file = InputMultiObject(
-        File(exists=False), mandatory=True, desc="the source file(s) to extract entities from")
+        File(exists=False),
+        mandatory=True,
+        desc="the source file(s) to extract entities from",
+    )
 
 
 class _DerivativesDataSinkOutputSpec(TraitedSpec):
     out_file = OutputMultiObject(File(exists=True, desc="written file path"))
-    out_meta = OutputMultiObject(File(exists=True, desc="written JSON sidecar path"))
+    out_meta = OutputMultiObject(
+        File(exists=True, desc="written JSON sidecar path")
+    )
     compression = OutputMultiObject(
         traits.Either(None, traits.Bool),
         desc="whether ``in_file`` should be compressed (True), uncompressed (False) "
         "or left unmodified (None).",
     )
-    fixed_hdr = traits.List(traits.Bool, desc="whether derivative header was fixed")
+    fixed_hdr = traits.List(
+        traits.Bool, desc="whether derivative header was fixed"
+    )

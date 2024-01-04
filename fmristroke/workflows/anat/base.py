@@ -20,9 +20,8 @@ from ...interfaces import DerivativesDataSink
 
 # BOLD workflows
 from .outputs import init_anat_lesion_derivatives_wf
-from .resample import (
-    init_roi_std_trans_wf,
-)
+from .resample import init_roi_std_trans_wf
+
 
 def init_roi_preproc_wf(name="roi_std_wf"):
     """
@@ -68,7 +67,7 @@ def init_roi_preproc_wf(name="roi_std_wf"):
 
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    
+
     mem_gb = {"filesize": 1, "resampled": 1, "largemem": 1}
 
     # Have some options handy
@@ -111,20 +110,26 @@ effects of other kernels [@lanczos].
         ),
         name="outputnode",
     )
-    
+
     anat_lesion_derivatives_wf = init_anat_lesion_derivatives_wf(
         bids_root=layout.root,
         output_dir=output_dir,
         spaces=spaces,
     )
-    
-    workflow.connect([
-        (inputnode, anat_lesion_derivatives_wf, [
-            ("t1w_preproc", "inputnode.all_source_files"),
-            ("t1w_preproc", "inputnode.source_file")
-        ]),
-    ])
-    
+
+    workflow.connect(
+        [
+            (
+                inputnode,
+                anat_lesion_derivatives_wf,
+                [
+                    ("t1w_preproc", "inputnode.all_source_files"),
+                    ("t1w_preproc", "inputnode.source_file"),
+                ],
+            ),
+        ]
+    )
+
     # ROI RESAMPLING #######################################################
 
     if spaces.get_spaces(nonstandard=False, dim=(3,)):

@@ -5,7 +5,9 @@ import typing as ty
 from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
+from niworkflows.interfaces.fixes import (
+    FixHeaderApplyTransforms as ApplyTransforms,
+)
 
 from ...config import DEFAULT_MEMORY_MIN_GB
 
@@ -70,18 +72,20 @@ def init_roi_std_trans_wf(
         described outputs.
 
     """
+    from fmriprep.interfaces.maths import Clip
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from ...interfaces.pyants import ApplyTransforms
     from niworkflows.interfaces.nibabel import GenerateSamplingReference
     from niworkflows.interfaces.utility import KeySelect
     from niworkflows.utils.spaces import format_reference
 
-    from fmriprep.interfaces.maths import Clip
+    from ...interfaces.pyants import ApplyTransforms
 
     workflow = Workflow(name=name)
     output_references = spaces.cached.get_spaces(nonstandard=False, dim=(3,))
     std_vol_references = [
-        (s.fullname, s.spec) for s in spaces.references if s.standard and s.dim == 3
+        (s.fullname, s.spec)
+        for s in spaces.references
+        if s.standard and s.dim == 3
     ]
 
     if len(output_references) == 1:
@@ -110,7 +114,9 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
         name="inputnode",
     )
 
-    iterablesource = pe.Node(niu.IdentityInterface(fields=["std_target"]), name="iterablesource")
+    iterablesource = pe.Node(
+        niu.IdentityInterface(fields=["std_target"]), name="iterablesource"
+    )
     # Generate conversions for every template+spec at the input
     iterablesource.iterables = [("std_target", std_vol_references)]
 
@@ -137,9 +143,11 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
     )
 
     gen_ref = pe.Node(GenerateSamplingReference(), name="gen_ref", mem_gb=0.01)
-    
+
     mask_std_tfm = pe.Node(
-        ApplyTransforms(interpolation="multiLabel"), name="mask_std_tfm", mem_gb=1
+        ApplyTransforms(interpolation="multiLabel"),
+        name="mask_std_tfm",
+        mem_gb=1,
     )
 
     # Write corrected file in the designated output dir
@@ -180,7 +188,9 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
         "template",
     ]
 
-    poutputnode = pe.Node(niu.IdentityInterface(fields=output_names), name="poutputnode")
+    poutputnode = pe.Node(
+        niu.IdentityInterface(fields=output_names), name="poutputnode"
+    )
     # fmt:off
     workflow.connect([
         # Connecting outputnode
@@ -190,7 +200,6 @@ correspondingly generating the following *spatially-normalized, roi masks*: {tpl
         (select_std, poutputnode, [("key", "template")]),
     ])
     # fmt:on
-
 
     # Connect parametric outputs to a Join outputnode
     outputnode = pe.JoinNode(
@@ -210,6 +219,7 @@ def _split_spec(in_target):
     space, spec = in_target
     template = space.split(":")[0]
     return space, template, spec
+
 
 def _select_template(template):
     from niworkflows.utils.misc import get_template_specs
@@ -235,5 +245,9 @@ def _select_template(template):
 
     return out[0]
 
+
 def _is_native(in_value):
-    return in_value.get("resolution") == "native" or in_value.get("res") == "native"
+    return (
+        in_value.get("resolution") == "native"
+        or in_value.get("res") == "native"
+    )

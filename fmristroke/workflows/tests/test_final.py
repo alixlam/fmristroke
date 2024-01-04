@@ -13,6 +13,7 @@ from ... import config
 from ..final import init_fmristroke_wf
 from ..tests import mock_config
 
+
 @pytest.fixture(scope="module", autouse=True)
 def _quiet_logger():
     import logging
@@ -44,7 +45,7 @@ def _make_params(
         croprun,
         conn_measure,
         freesurfer,
-        bids_filters
+        bids_filters,
     )
 
 
@@ -98,4 +99,3 @@ def test_init_fmristroke_wf(
         wf = init_fmristroke_wf()
 
     generate_expanded_graph(wf._create_flat_graph())
-

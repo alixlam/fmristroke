@@ -42,7 +42,13 @@ def test_bids_filter_file(tmp_path, capsys):
     bids_path = tmp_path / "data"
     out_path = tmp_path / "out"
     bff = tmp_path / "filter.json"
-    args = [str(bids_path), str(out_path), "participant", "--bids-filter-file", str(bff)]
+    args = [
+        str(bids_path),
+        str(out_path),
+        "participant",
+        "--bids-filter-file",
+        str(bff),
+    ]
     bids_path.mkdir()
 
     parser = _build_parser()
@@ -61,4 +67,3 @@ def test_bids_filter_file(tmp_path, capsys):
     err = capsys.readouterr().err
     assert "JSON syntax error in:" in err
     _reset_config()
-

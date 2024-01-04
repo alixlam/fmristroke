@@ -174,7 +174,9 @@ class Loader:
         data multiple times, but the cache is sensitive to the specific
         argument(s) passed.
         """
-        return self.exit_stack.enter_context(as_file(self.files.joinpath(*segments)))
+        return self.exit_stack.enter_context(
+            as_file(self.files.joinpath(*segments))
+        )
 
     __call__ = cached
 
