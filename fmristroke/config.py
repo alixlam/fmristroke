@@ -34,7 +34,9 @@ import os
 from multiprocessing import set_start_method
 
 # Disable NiPype etelemetry always
-_disable_et = bool(os.getenv("NO_ET") is not None or os.getenv("NIPYPE_NO_ET") is not None)
+_disable_et = bool(
+    os.getenv("NO_ET") is not None or os.getenv("NIPYPE_NO_ET") is not None
+)
 os.environ["NIPYPE_NO_ET"] = "1"
 os.environ["NO_ET"] = "1"
 
@@ -47,26 +49,26 @@ except RuntimeError:
 finally:
     # Defer all custom import for after initializing the forkserver and
     # ignoring the most annoying warnings
+    import logging
     import random
     import sys
     from pathlib import Path
     from time import strftime
     from uuid import uuid4
 
+    from fmriprep import __version__ as _fmriprep_ver
     from nipype import __version__ as _nipype_ver
     from templateflow import __version__ as _tf_ver
-    from fmriprep import __version__ as _fmriprep_ver
 
     from . import __version__
-    import logging
-
 
 
 if not hasattr(sys, "_is_pytest_session"):
     sys._is_pytest_session = False  # Trick to avoid sklearn's FutureWarnings
 
 
-logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
+# Add a new level between INFO and WARNING
+logging.addLevelName(25, "IMPORTANT")
 logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 
 DEFAULT_MEMORY_MIN_GB = 0.01
@@ -88,7 +90,10 @@ _exec_env = os.name
 
 
 _templateflow_home = Path(
-    os.getenv("TEMPLATEFLOW_HOME", os.path.join(os.getenv("HOME"), ".cache", "templateflow"))
+    os.getenv(
+        "TEMPLATEFLOW_HOME",
+        os.path.join(os.getenv("HOME"), ".cache", "templateflow"),
+    )
 )
 
 try:
@@ -111,8 +116,13 @@ try:
             _proc_oc_kbytes = Path("/proc/sys/vm/overcommit_kbytes")
             if _proc_oc_kbytes.exists():
                 _oc_limit = _proc_oc_kbytes.read_text().strip()
-            if _oc_limit in ("0", "n/a") and Path("/proc/sys/vm/overcommit_ratio").exists():
-                _oc_limit = "{}%".format(Path("/proc/sys/vm/overcommit_ratio").read_text().strip())
+            if (
+                _oc_limit in ("0", "n/a")
+                and Path("/proc/sys/vm/overcommit_ratio").exists()
+            ):
+                _oc_limit = "{}%".format(
+                    Path("/proc/sys/vm/overcommit_ratio").read_text().strip()
+                )
 except Exception:
     pass
 
@@ -265,7 +275,9 @@ class nipype(_Config):
         )
 
         if cls.omp_nthreads is None:
-            cls.omp_nthreads = min(cls.nprocs - 1 if cls.nprocs > 1 else os.cpu_count(), 8)
+            cls.omp_nthreads = min(
+                cls.nprocs - 1 if cls.nprocs > 1 else os.cpu_count(), 8
+            )
 
 
 class execution(_Config):
@@ -292,6 +304,8 @@ class execution(_Config):
     the command line) as spatial references for outputs."""
     output_pipelines = None
     """List of pipelines designated (with the ``--output-pipelines`` flag of the comand line) as pipelines for denoising"""
+    output_atlases = None
+    """List of pipelines designated (with the ``--output-atlases`` flag of the comand line) as atlases for connectivity"""
     run_sessionlevel = False
     """Concatenate runs from the same session and task"""
     reports_only = False
@@ -358,9 +372,12 @@ class execution(_Config):
             # unserialize pybids Query enum values
             for acq, filters in cls.bids_filters.items():
                 cls.bids_filters[acq] = {
-                    k: getattr(Query, v[7:-4]) if not isinstance(v, Query) and "Query" in v else v
+                    k: getattr(Query, v[7:-4])
+                    if not isinstance(v, Query) and "Query" in v
+                    else v
                     for k, v in filters.items()
                 }
+
 
 # These variables are not necessary anymore
 del _exec_env
@@ -388,15 +405,20 @@ class workflow(_Config):
     instance keeping standard and nonstandard spaces."""
     pipelines = None
     """Keeps the pipelines instances for denoising"""
+    atlases = None
+    """Keeps the atlases instances for connectivity"""
     croprun = None
     """Crops n first volumes in fMRI run before concatenating when session-level is true"""
-    
+    conn_measure = None
+    """Measure to use for connectivity"""
 
 
 class loggers:
     """Keep loggers easily accessible (see :py:func:`init`)."""
 
-    _fmt = "%(asctime)s,%(msecs)d %(name)-2s " "%(levelname)-2s:\n\t %(message)s"
+    _fmt = (
+        "%(asctime)s,%(msecs)d %(name)-2s " "%(levelname)-2s:\n\t %(message)s"
+    )
     _datefmt = "%y%m%d-%H:%M:%S"
 
     default = logging.getLogger()
@@ -424,7 +446,9 @@ class loggers:
 
         if not cls.cli.hasHandlers():
             _handler = logging.StreamHandler(stream=sys.stdout)
-            _handler.setFormatter(logging.Formatter(fmt=cls._fmt, datefmt=cls._datefmt))
+            _handler.setFormatter(
+                logging.Formatter(fmt=cls._fmt, datefmt=cls._datefmt)
+            )
             cls.cli.addHandler(_handler)
         cls.default.setLevel(execution.log_level)
         cls.cli.setLevel(execution.log_level)
@@ -432,7 +456,12 @@ class loggers:
         cls.workflow.setLevel(execution.log_level)
         cls.utils.setLevel(execution.log_level)
         ncfg.update_config(
-            {"logging": {"log_directory": str(execution.log_dir), "log_to_file": True}}
+            {
+                "logging": {
+                    "log_directory": str(execution.log_dir),
+                    "log_to_file": True,
+                }
+            }
         )
 
 
@@ -482,10 +511,10 @@ def from_dict(settings, init=True, ignore=None):
     def initialize(x):
         return init if init in (True, False) else x in init
 
-    nipype.load(settings, init=initialize('nipype'), ignore=ignore)
-    execution.load(settings, init=initialize('execution'), ignore=ignore)
-    workflow.load(settings, init=initialize('workflow'), ignore=ignore)
-    seeds.load(settings, init=initialize('seeds'), ignore=ignore)
+    nipype.load(settings, init=initialize("nipype"), ignore=ignore)
+    execution.load(settings, init=initialize("execution"), ignore=ignore)
+    workflow.load(settings, init=initialize("workflow"), ignore=ignore)
+    seeds.load(settings, init=initialize("seeds"), ignore=ignore)
 
     loggers.init()
 
@@ -519,6 +548,7 @@ def load(filename, skip=None, init=True):
             section.load(configs, ignore=ignore, init=initialize(sectionname))
     init_spaces()
     init_pipelines()
+    init_atlases()
 
 
 def get(flat=False):
@@ -560,30 +590,66 @@ def init_spaces(checkpoint=True):
     spaces = execution.output_spaces or SpatialReferences()
     if not isinstance(spaces, SpatialReferences):
         spaces = SpatialReferences(
-            [ref for s in spaces.split(" ") for ref in Reference.from_string(s)]
+            [
+                ref
+                for s in spaces.split(" ")
+                for ref in Reference.from_string(s)
+            ]
         )
 
-    # Add the default standard space if not already present (required by several sub-workflows)
-    if "MNI152NLin2009cAsym" not in spaces.get_spaces(nonstandard=False, dim=(3,)):
+    # Add the default standard space if not already present (required by
+    # several sub-workflows)
+    if "MNI152NLin2009cAsym" not in spaces.get_spaces(
+        nonstandard=False, dim=(3,)
+    ):
         spaces.add(Reference("MNI152NLin2009cAsym", {}))
-    
+
     if checkpoint and not spaces.is_cached():
         spaces.checkpoint()
 
     # Make the SpatialReferences object available
     workflow.spaces = spaces
-    
+
+
 def init_pipelines():
     """Initialize the :attr:`~workflow.pipelines` setting."""
-    from .utils.pipelines import Pipeline, Pipelines
     from pkg_resources import resource_filename as pkgrf
-    
+
+    from .utils.pipelines import Pipeline, Pipelines
+
     pipelines = execution.output_pipelines or Pipelines()
     known_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS"]
     if not isinstance(pipelines, Pipelines):
-        pipelines_filenames = [pkgrf("fmristroke", f"data/denoising/{s}.json") if s in known_pipelines else s for s in pipelines]
-        pipelines = Pipelines([Pipeline.from_json(f) for f in pipelines_filenames])
-    
-    
+        pipelines_filenames = [
+            pkgrf("fmristroke", f"data/denoising/{s}.json")
+            if s in known_pipelines
+            else s
+            for s in pipelines
+        ]
+        pipelines = Pipelines(
+            [Pipeline.from_json(f) for f in pipelines_filenames]
+        )
+
     # Make the Pipelines object available
     workflow.pipelines = pipelines
+
+
+def init_atlases():
+    """Initialize the :attr:`~workflow.pipelines` setting."""
+    from pkg_resources import resource_filename as pkgrf
+
+    from .utils.atlas import Atlas, Atlases
+
+    atlases = execution.output_atlases or Atlases()
+    known_atlases = ["Scheafer"]
+    if not isinstance(atlases, Atlases):
+        atlases_filenames = [
+            pkgrf("fmristroke", f"data/atlas/{s}.json")
+            if s in known_atlases
+            else s
+            for s in atlases
+        ]
+        atlases = Atlases([Atlas.from_json(f) for f in atlases_filenames])
+
+    # Make the Atlases object available
+    workflow.atlases = atlases

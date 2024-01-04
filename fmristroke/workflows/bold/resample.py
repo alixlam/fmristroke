@@ -70,16 +70,18 @@ def init_bold_std_trans_wf(
 
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from ...interfaces.pyants import ApplyTransforms
     from niworkflows.interfaces.nibabel import GenerateSamplingReference
     from niworkflows.interfaces.utility import KeySelect
     from niworkflows.utils.spaces import format_reference
 
+    from ...interfaces.pyants import ApplyTransforms
 
     workflow = Workflow(name=name)
     output_references = spaces.cached.get_spaces(nonstandard=False, dim=(3,))
     std_vol_references = [
-        (s.fullname, s.spec) for s in spaces.references if s.standard and s.dim == 3
+        (s.fullname, s.spec)
+        for s in spaces.references
+        if s.standard and s.dim == 3
     ]
 
     if len(output_references) == 1:
@@ -108,7 +110,9 @@ correspondingly generating the following *spatially-normalized, Bold series*: {t
         name="inputnode",
     )
 
-    iterablesource = pe.Node(niu.IdentityInterface(fields=["std_target"]), name="iterablesource")
+    iterablesource = pe.Node(
+        niu.IdentityInterface(fields=["std_target"]), name="iterablesource"
+    )
     # Generate conversions for every template+spec at the input
     iterablesource.iterables = [("std_target", std_vol_references)]
 
@@ -135,9 +139,11 @@ correspondingly generating the following *spatially-normalized, Bold series*: {t
     )
 
     gen_ref = pe.Node(GenerateSamplingReference(), name="gen_ref", mem_gb=0.01)
-    
+
     bold_std_tfm = pe.Node(
-        ApplyTransforms(interpolation="lanczosWindowedSinc", imagetype=3), name="bold_std_tfm", mem_gb=1
+        ApplyTransforms(interpolation="lanczosWindowedSinc", imagetype=3),
+        name="bold_std_tfm",
+        mem_gb=1,
     )
 
     # Write corrected file in the designated output dir
@@ -178,7 +184,9 @@ correspondingly generating the following *spatially-normalized, Bold series*: {t
         "template",
     ]
 
-    poutputnode = pe.Node(niu.IdentityInterface(fields=output_names), name="poutputnode")
+    poutputnode = pe.Node(
+        niu.IdentityInterface(fields=output_names), name="poutputnode"
+    )
     # fmt:off
     workflow.connect([
         # Connecting outputnode
@@ -188,7 +196,6 @@ correspondingly generating the following *spatially-normalized, Bold series*: {t
         (select_std, poutputnode, [("key", "template")]),
     ])
     # fmt:on
-
 
     # Connect parametric outputs to a Join outputnode
     outputnode = pe.JoinNode(
@@ -208,6 +215,7 @@ def _split_spec(in_target):
     space, spec = in_target
     template = space.split(":")[0]
     return space, template, spec
+
 
 def _select_template(template):
     from niworkflows.utils.misc import get_template_specs
@@ -233,5 +241,9 @@ def _select_template(template):
 
     return out[0]
 
+
 def _is_native(in_value):
-    return in_value.get("resolution") == "native" or in_value.get("res") == "native"
+    return (
+        in_value.get("resolution") == "native"
+        or in_value.get("res") == "native"
+    )

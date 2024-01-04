@@ -1,16 +1,14 @@
-from nilearn import plotting
-import nibabel as nib
-from matplotlib import gridspec as mgs
-import numpy as np
-import matplotlib.pyplot as plt
-from nilearn.image import threshold_img, index_img
-import pandas as pd
-from niworkflows.viz.utils import (
-    extract_svg,
-)
 from uuid import uuid4
-from svgutils.transform import fromstring
 
+import matplotlib.pyplot as plt
+import nibabel as nib
+import numpy as np
+import pandas as pd
+from matplotlib import gridspec as mgs
+from nilearn import plotting
+from nilearn.image import index_img, threshold_img
+from niworkflows.viz.utils import extract_svg
+from svgutils.transform import fromstring
 
 
 def plot_multicomponents(
@@ -19,23 +17,33 @@ def plot_multicomponents(
     stat_map_nii,
     lesion_nii,
 ):
-    
-    ts = pd.read_csv(tseries, sep="\t") if isinstance(tseries, str) else tseries
+    ts = (
+        pd.read_csv(tseries, sep="\t") if isinstance(tseries, str) else tseries
+    )
     n_components = ts.shape[1]
-    
+
     if n_components == 0:
         return plt.figure()
-    
+
     anat = nib.load(anat_nii)
     stat_map = nib.load(stat_map_nii)
-    lesion =nib.load(lesion_nii)
-    
-    fig = plt.figure(figsize = (10,5 * n_components))
-    gs = mgs.GridSpec(nrows = n_components, ncols = 1, wspace=0.0, hspace=0.05)
+    lesion = nib.load(lesion_nii)
+
+    fig = plt.figure(figsize=(10, 5 * n_components))
+    gs = mgs.GridSpec(nrows=n_components, ncols=1, wspace=0.0, hspace=0.05)
     for j, IC in enumerate(ts):
-        plot_components(anat, index_img(stat_map, int(IC.split("_")[-1])), np.array(ts[IC]), gs=gs[j], contour = lesion, name=f"IC {IC.split('_')[-1]}", color = 'white')
+        plot_components(
+            anat,
+            index_img(stat_map, int(IC.split("_")[-1])),
+            np.array(ts[IC]),
+            gs=gs[j],
+            contour=lesion,
+            name=f"IC {IC.split('_')[-1]}",
+            color="white",
+        )
 
     return fig
+
 
 def plot_ts(
     tseries,
@@ -48,7 +56,7 @@ def plot_ts(
     nskip=0,
     cutoff=None,
     ylims=None,
-    tr = None,
+    tr=None,
 ):
     import seaborn as sns
 
@@ -61,7 +69,9 @@ def plot_ts(
     tseries = np.array(tseries)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0)
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
+    )
 
     ax_ts = plt.subplot(gs[1])
     ax_ts.grid(False)
@@ -128,7 +138,10 @@ def plot_ts(
     if nonnan.size > 0:
         # Calculate Y limits
         valrange = nonnan.max() - nonnan.min()
-        def_ylims = [nonnan.min() - 0.1 * valrange, nonnan.max() + 0.1 * valrange]
+        def_ylims = [
+            nonnan.min() - 0.1 * valrange,
+            nonnan.max() + 0.1 * valrange,
+        ]
         if ylims is not None:
             if ylims[0] is not None:
                 def_ylims[0] = min([def_ylims[0], ylims[0]])
@@ -190,10 +203,10 @@ def plot_components(
     plot_params=None,
     cuts=None,
     label=None,
-    name = None,
+    name=None,
     contour=None,
     color="white",
-    filled=False
+    filled=False,
 ):
     plot_params = {} if plot_params is None else plot_params
 
@@ -203,32 +216,40 @@ def plot_components(
     if contour:
         contour = nib.Nifti1Image.from_image(contour)
 
-    #figure = plt.gcf()
-    
-    # Create grid 
-    grid = mgs.GridSpecFromSubplotSpec(nrows = 2, ncols = 1, subplot_spec=gs, height_ratios=[1] + [0.4])
+    # figure = plt.gcf()
 
-    ## Components spatial map
+    # Create grid
+    grid = mgs.GridSpecFromSubplotSpec(
+        nrows=2, ncols=1, subplot_spec=gs, height_ratios=[1] + [0.4]
+    )
+
+    # Components spatial map
     ax = plt.subplot(grid[0])
 
     # Plot each cut axis
     plot_params["title"] = label
     # Generate nilearn figure
     d = plotting.plot_stat_map(
-        threshold_img(stat_map_nii, 1), display_mode = 'z', colorbar = False, cut_coords = 6,bg_img=anat_nii, axes=ax, draw_cross = False, **plot_params)
+        threshold_img(stat_map_nii, 1),
+        display_mode="z",
+        colorbar=False,
+        cut_coords=6,
+        bg_img=anat_nii,
+        axes=ax,
+        draw_cross=False,
+        **plot_params,
+    )
 
     if contour is not None:
         d.add_contours(
-            contour,
-            colors=color,
-            filled=filled,
-            levels=[0.5],
-            linewidths=1)
-    
-    ## ts of component
-    plot_ts(ts, grid[1], name = name)
+            contour, colors=color, filled=filled, levels=[0.5], linewidths=1
+        )
+
+    # ts of component
+    plot_ts(ts, grid[1], name=name)
 
     return grid
+
 
 def plot_lagmaps(
     anat_nii,
@@ -242,7 +263,7 @@ def plot_lagmaps(
     compress="auto",
     vmax=10,
     color="black",
-    filled=True
+    filled=True,
 ):
     """
     Plots the foreground and background views

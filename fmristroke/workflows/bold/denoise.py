@@ -13,13 +13,17 @@ import typing as ty
 from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
+from niworkflows.interfaces.fixes import (
+    FixHeaderApplyTransforms as ApplyTransforms,
+)
 
 from ...config import DEFAULT_MEMORY_MIN_GB
 
 if ty.TYPE_CHECKING:
     from niworkflows.utils.spaces import SpatialReferences
+
     from ..utils.pipelines import Pipelines
+
 
 def init_denoise_wf(
     mem_gb: float,
@@ -27,13 +31,13 @@ def init_denoise_wf(
     metadata: dict,
     pipelines: Pipelines,
     spaces: SpatialReferences,
-    name: str = "bold_denoise_wf"
+    name: str = "bold_denoise_wf",
 ):
     """
     Build a workflow to denoise BOLD series.
 
     This workflow denoises the BOLD series according to the specified denoising strategies.
-    
+
     Parameters
     ----------
     mem_gb : :obj:`float`
@@ -84,33 +88,38 @@ def init_denoise_wf(
         Template identifiers synchronized correspondingly to previously
         described outputs.
     spatial reference
-        Spatial reference 
+        Spatial reference
     pipeline
         Pipeline identifyers
 
     """
-    
+
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
     from ...interfaces.confounds import SelectConfounds
     from ...interfaces.nilearn import Denoise
-    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
     from .resample import init_bold_std_trans_wf
-    
+
     workflow = Workflow(name=name)
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=[
-            "bold_t1",
-            "boldmask",
-            "anat2std_xfm",
-            "templates",
-            "confounds_file",
-            "confounds_metadata",
-        ]
-    ), name="inputnode")
-    
-    iterablesource = pe.Node(niu.IdentityInterface(fields=["pipeline"]),name="iterablesource2")
-    # Generate conversion for every template+spec at the input
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "bold_t1",
+                "boldmask",
+                "anat2std_xfm",
+                "templates",
+                "confounds_file",
+                "confounds_metadata",
+            ]
+        ),
+        name="inputnode",
+    )
+
+    iterablesource = pe.Node(
+        niu.IdentityInterface(fields=["pipeline"]), name="iterablesource2"
+    )
     iterablesource.iterables = [("pipeline", pipelines.pipelines)]
-    
+
     if spaces.get_spaces(nonstandard=False, dim=(3,)):
         bold_std_trans_wf = init_bold_std_trans_wf(
             mem_gb=mem_gb,
@@ -127,49 +136,81 @@ def init_denoise_wf(
             ]),
         ])
         # fmt:on
-    
+
     # Get pipeline info
     pipeline_info = pe.Node(
-        niu.Function(function=_get_pipeline_info,
-        input_name=["in_pipeline"],
-        output_names=["pipeline", "confounds_spec", "demean", "clean_specs"]),
-        name="pipeline_info"
+        niu.Function(
+            function=_get_pipeline_info,
+            input_name=["in_pipeline"],
+            output_names=[
+                "pipeline",
+                "confounds_spec",
+                "demean",
+                "clean_specs",
+            ],
+        ),
+        name="pipeline_info",
     )
-    
-    # Select and prepare confounds for given strategy 
+
+    # Select and prepare confounds for given strategy
     select_confounds = pe.Node(SelectConfounds(), name="select_confounds")
-    
+
     # Denoise image
     denoise_t1 = pe.Node(Denoise(), name="denoise_t1")
     if "RepetitionTime" in metadata:
         denoise_t1.inputs.tr = metadata["RepetitionTime"]
-    
-    denoise_std = pe.MapNode(Denoise(), iterfield=["input_image"], name="denoise_std")
+
+    denoise_std = pe.MapNode(
+        Denoise(), iterfield=["input_image"], name="denoise_std"
+    )
     if "RepetitionTime" in metadata:
         denoise_std.inputs.tr = metadata["RepetitionTime"]
-    
-    workflow.connect([
-        (inputnode, select_confounds, [("confounds_file", "confounds"),
-                                        ("confounds_metadata", "confounds_metadata"),]),
-        (iterablesource, pipeline_info, [("pipeline", "in_pipeline")]),
-        (pipeline_info, select_confounds, [("pipeline", "pipeline"),
-                                            ("confounds_spec", "confounds_spec"),
-                                            ("demean", "demean")]),
-        (select_confounds, denoise_t1, [("selected_confounds", "confounds_file")]),
-        (select_confounds, denoise_std, [("selected_confounds", "confounds_file")]),
-        (pipeline_info, denoise_t1, [("clean_specs", "pipeline")]),
-        (pipeline_info, denoise_std, [("clean_specs", "pipeline")]),
-        (inputnode, denoise_t1, [("bold_t1", "input_image")]),
-        (bold_std_trans_wf, denoise_std, [("outputnode.bold_std", "input_image")])
-        
-    ])
 
-    output_names = [
-        "denoised_bold_t1",
-        "denoised_bold_std",
-        "pipeline"
+    workflow.connect(
+        [
+            (
+                inputnode,
+                select_confounds,
+                [
+                    ("confounds_file", "confounds"),
+                    ("confounds_metadata", "confounds_metadata"),
+                ],
+            ),
+            (iterablesource, pipeline_info, [("pipeline", "in_pipeline")]),
+            (
+                pipeline_info,
+                select_confounds,
+                [
+                    ("pipeline", "pipeline"),
+                    ("confounds_spec", "confounds_spec"),
+                    ("demean", "demean"),
+                ],
+            ),
+            (
+                select_confounds,
+                denoise_t1,
+                [("selected_confounds", "confounds_file")],
+            ),
+            (
+                select_confounds,
+                denoise_std,
+                [("selected_confounds", "confounds_file")],
+            ),
+            (pipeline_info, denoise_t1, [("clean_specs", "pipeline")]),
+            (pipeline_info, denoise_std, [("clean_specs", "pipeline")]),
+            (inputnode, denoise_t1, [("bold_t1", "input_image")]),
+            (
+                bold_std_trans_wf,
+                denoise_std,
+                [("outputnode.bold_std", "input_image")],
+            ),
         ]
-    poutputnode = pe.Node(niu.IdentityInterface(fields=output_names), name="poutputnode2")
+    )
+
+    output_names = ["denoised_bold_t1", "denoised_bold_std", "pipeline"]
+    poutputnode = pe.Node(
+        niu.IdentityInterface(fields=output_names), name="poutputnode2"
+    )
     # fmt:off
     workflow.connect([
         # Connecting outputnode
@@ -179,7 +220,6 @@ def init_denoise_wf(
         (denoise_t1, poutputnode, [("output_image", "denoised_bold_t1")]),
     ])
     # fmt:on
-    
 
     # Connect parametric outputs to a Join outputnode
     outputnode_denoise = pe.JoinNode(
@@ -196,7 +236,8 @@ def init_denoise_wf(
 
     outputnode = pe.Node(
         niu.IdentityInterface(
-            fields=output_names+["template", "spatial_reference"]),
+            fields=output_names + ["template", "spatial_reference"]
+        ),
         name="outputnode",
     )
     # fmt:off
@@ -206,8 +247,9 @@ def init_denoise_wf(
         (outputnode_denoise, outputnode, [(f, f) for f in output_names]),
     ])
     # fmt:on
-    
+
     return workflow
+
 
 def _get_pipeline_info(in_pipeline):
     pipeline = in_pipeline.pipeline
@@ -215,6 +257,7 @@ def _get_pipeline_info(in_pipeline):
     demean = in_pipeline.demean
     clean_specs = in_pipeline.clean_specs
     return pipeline, confounds_spec, demean, clean_specs
+
 
 def _get_pipeline_name(in_pipeline):
     return in_pipeline.pipeline
