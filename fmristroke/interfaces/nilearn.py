@@ -195,3 +195,46 @@ class Denoise(SimpleInterface):
         denoised_image.to_filename(self._results["output_image"])
         return runtime
 
+class _ConnectivityInputSpec(BaseInterfaceInputSpec):
+    input_image = traits.File(desc="denoised NifTi Bold series to compute connectivity on",
+                                        exists=True, mandatory=True)
+    output_image = traits.Str(desc="output file name", genfile=True, hash_files=False)
+    conn_measure = traits.Enum("covariance", "correlation", "partial correlation", "tangent", "precision", desc="connectivity measure", usedefault=True)
+    atlas = traits.File(desc="Atlas to compute connectivity on", exists=True, mandatory=True)
+    brain_mask = traits.File(desc="Brain mask, connectiivty is not computed outside this mask", exists=True,)
+
+
+class _ConnectivityOutputSpec(TraitedSpec):
+    output_conn = traits.File(
+        exists=True,
+        desc='Connectivity matrix',
+        mandatory=True)
+
+class Connectivity(SimpleInterface):
+    input_spec = _ConnectivityInputSpec
+    output_spec = _ConnectivityOutputSpec
+
+    def _gen_filename(self, name):
+        if name == "output_conn":
+            output = self.inputs.output_image
+            if not isdefined(output):
+                _, name, _ = split_filename(self.inputs.input_image)
+                output = name + ".npy"
+            return output
+        return None        
+
+    def _run_interface(self, runtime):
+        from nilearn.connectome import ConnectivityMeasure 
+        from nilearn.maskers import NiftiLabelsMasker
+        
+        masker = NiftiLabelsMasker(labels_img=self.inputs.atlas, mask_img = self.inputs.brain_mask, standardize=True)
+        time_series = masker.fit_transform(self.inputs.input_image, confounds=None)
+
+        corr_measure = ConnectivityMeasure(kind=self.inputs.conn_measure)
+        corr_mat = corr_measure.fit_transform([time_series])[0]
+
+        self._results["output_conn"] = os.path.abspath(self._gen_filename("output_conn"))
+
+        np.save(self._results["output_conn"], corr_mat)
+
+        return runtime

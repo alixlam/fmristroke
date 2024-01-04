@@ -218,6 +218,22 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         help="Pipelines to use for denoising, space separated pipeline name, accepts either json file describing pipeline or name of pipeline from package."
     )
     
+    # Connectivity options
+    g_conn = parser.add_argument_group("Connectivity configuration")
+    g_conn.add_argument(
+        "--conn_measure",
+        dest="conn_measure",
+        choices=["covariance", "correlation", "partial correlation", "tangent", "precision"],
+        default=["correlation"],
+        nargs="+",
+        help="method to measure functional connectivity, space delimited",
+    )
+    g_conn.add_argument(
+        "--output_atlases",
+        nargs="+",
+        help="Atlases for connectivity estimation"
+    )
+    
     g_confounds = parser.add_argument_group("Options relating to confounds")
     g_confounds.add_argument(
         "--ncomp_method",
@@ -345,6 +361,10 @@ def parse_args(args=None, namespace=None):
     if config.execution.output_pipelines is None:
         config.execution.output_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS"]
 
+    # Initialize --output-atlases if not defined
+    if config.execution.output_atlases is None:
+        config.execution.output_atlases = ["Scheafer"]
+    
     # Retrieve logging level
     build_log = config.loggers.cli
 

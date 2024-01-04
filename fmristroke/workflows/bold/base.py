@@ -24,6 +24,7 @@ from .outputs import init_func_lesion_derivatives_wf
 from .registration import init_lesionplot_wf
 from .denoise import init_denoise_wf
 from .concatenate import init_concat_wf
+from .connectivity import init_connectivity_wf
 
 from .lagmaps import init_hemodynamic_wf
 
@@ -108,6 +109,8 @@ def init_lesion_preproc_wf(bold_file, boldref_file, boldmask_file, confounds_fil
     freesurfer = config.workflow.freesurfer
     croprun = config.workflow.croprun
     session_level = config.execution.run_sessionlevel
+    atlases = config.workflow.atlases
+    conn_measure = config.workflow.conn_measure
 
     # Extract BIDS entities and metadata from BOLD file(s)
     entities = extract_entities(bold_file)
@@ -159,6 +162,7 @@ effects of other kernels [@lanczos].
                 "confounds_file",
                 "confounds_metadata",
                 "roi",
+                "roi_std",
                 "templates",
             ]
         ),
@@ -368,6 +372,28 @@ effects of other kernels [@lanczos].
                 (("outputnode.acompcor_masks", _last), "inputnode.acompcor_mask"),
             ]),
         ])
+    
+    # CONNECTIVITY WF ########################################################
+    connectivity_wf = init_connectivity_wf(
+        mem_gb=mem_gb,
+        atlases=atlases,
+        pipelines=pipelines,
+        conn_measure=conn_measure,
+        name="connectivity_wf"
+    )
+    
+    workflow.connect([
+        (denoising_wf, connectivity_wf, [
+            ("outputnode.template", "inputnode.templates"),
+            ("outputnode.denoised_bold_std", "inputnode.bold_denoised"),
+            ("outputnode.pipeline", "inputnode.pipelines")]),
+        (lesion_confounds_wf, connectivity_wf, [
+            ("outputnode.boldmask", "inputnode.boldmask")]),
+        (inputnode, connectivity_wf, [
+            ("anat2std_xfm", "inputnode.anat2std_xfm"),
+            ("roi_std", "inputnode.mask_lesion_std")
+        ])
+    ])
     
     # REPORTING ############################################################
     if session_level:

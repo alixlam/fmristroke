@@ -53,10 +53,11 @@ Added outputs:
 
 - **ROI masks** in standardized space.
 - **Denoised fMRI**: Denoised BOLD series using the provided pipelines.
+- **Functional Connectivity**: Connectivity matrix using provided atlases and connectivity measures.
 
 
 The *fMRIStroke* pipeline uses a combination of tools from well-known software
-packages, including ANTs_,  FreeSurfer_ and Rapidtide_
+packages, including ANTs_,  FreeSurfer_, Rapidtide_ and Nilearn_
 
 .. important::
   This pipeline was designed to run after fmriprep. Any other fMRI preprocessing tools might not provide the required derivatives for fMRIStroke to run properly. 
