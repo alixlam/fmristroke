@@ -305,7 +305,7 @@ You can easily add a custom atlas by creating a .json file. This file should fol
     "space": "Space in which the atlas is defined",
     "mask_file": "<filename>.nii.gz"
     }
-
+        
 
    .. note::
        The mask_file should be in the same directory as the json file.
