@@ -1,11 +1,5 @@
 VENV_PREFIX=$(shell python -c "if __import__('pathlib').Path('.venv/bin/pip').exists(): print('.venv/bin/')")
 
-
-.PHONY: run
-run: # Run code
-	@echo "Run code"
-	@$(VENV_PREFIX)python -m fmristroke.__main__
-
 .PHONY: venv
 venv: # Create virtual environment
 	@echo "Create virtual environment"
@@ -51,21 +45,6 @@ clean: # Clean unused files
 	@rm -rf htmlcov
 	@rm -rf .tox/
 	@rm -rf docs/_build
-
-.PHONY: docker-image
-docker-image: # Create Docker image
-	@echo "Creating docker image"
-	@docker build --rm -t  fmristroke\
-		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-		--build-arg VERSION=`python get_version.py` .
-
-.PHONY: docker-container
-docker-container:
-	@echo "Creating docker container"
-	@docker create -it  \
-		-v ${PWD}/fmristroke:/home/fmristroke \
-		-v ${PWD}/data:/home/data \
-		--name container-fmristroke fmristroke
 
 
 

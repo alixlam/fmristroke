@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import ants
 import nibabel as nib
 
-from pathlib import Path
 
-def apply_transform_ants(fixed, moving, transforms, interpolation, outdir, **args):
+def apply_transform_ants(
+    fixed, moving, transforms, interpolation, outdir, **args
+):
     fixed = ants.image_read(fixed)
     moving = ants.image_read(moving)
     transformed = ants.apply_transforms(
@@ -11,11 +14,11 @@ def apply_transform_ants(fixed, moving, transforms, interpolation, outdir, **arg
         moving=moving,
         transformlist=transforms,
         interpolator=interpolation,
-        float = 0,
+        float=0,
         defaultvalue=0,
         **args
     )
-    
+
     ants.image_write(transformed, outdir)
-    
+
     return outdir
