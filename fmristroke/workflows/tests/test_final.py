@@ -13,33 +13,6 @@ from ... import config
 from ..final import init_fmristroke_wf
 from ..tests import mock_config
 
-BASE_LAYOUT = {
-    "01": {
-        "anat": [
-            {"run": 1, "suffix": "T1w"},
-            {"run": 2, "suffix": "T1w"},
-            {"suffix": "roi"},
-        ],
-        "func": [
-            *(
-                {
-                    "task": "rest",
-                    "run": i,
-                    "metadata": {
-                        "RepetitionTime": 2.0,
-                        "PhaseEncodingDirection": "j",
-                        "TotalReadoutTime": 0.6,
-                        "EchoTime": 0.03,
-                        "SliceTiming": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8],
-                    },
-                }
-                for i in range(1, 2)
-            ),
-        ],
-    },
-}
-
-
 @pytest.fixture(scope="module", autouse=True)
 def _quiet_logger():
     import logging

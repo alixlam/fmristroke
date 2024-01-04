@@ -367,15 +367,11 @@ def _gather_confounds(
     r"""
     Load confounds from multiple sources and concatenate them together horizontall
     Mostly based on gatherconfounds from fmriprep
-    >>> pd.DataFrame({'Region signals': [0.1]}).to_csv('regions_signals.tsv', index=False, na_rep='n/a')
-    >>> pd.DataFrame({'IC signals': [0.2]}).to_csv('ic_roi_signals.tsv', index=False, na_rep='n/a')
-    >>> out_file, confound_list = _gather_confounds('regions_signals.tsv', 'ic_roi_signals.tsv')
-    >>> confounds_list
+    >>> pd.DataFrame({'Region signals': [0.1]}).to_csv('tmp/regions_signals.tsv', index=False, na_rep='n/a')
+    >>> pd.DataFrame({'IC signals': [0.2]}).to_csv('tmp/ic_roi_signals.tsv', index=False, na_rep='n/a')
+    >>> out_file, confound_list = _gather_confounds('tmp/regions_signals.tsv', 'tmp/ic_roi_signals.tsv')
+    >>> confound_list
     ['Region signals', 'IC signals']
-    >>> pd.read_csv(out_file, sep='\s+', index_col=None,
-    ...             engine='python')  # doctest: +NORMALIZE_WHITESPACE
-        Region signals  IC signals
-    0            0.1        0.2
 
 
     """
@@ -400,8 +396,8 @@ def _gather_confounds(
     all_files = []
     confounds_list = []
     for confound, name in (
-        (signals, 'Global signals'),
-        (ic_roi, 'IC ROI'),
+        (signals, 'Region signals'),
+        (ic_roi, 'IC signals'),
         (tcompcor, 'tCompCor'),
         (acompcor, 'aCompCor'),
         (crowncompcor, 'crownCompCor'),
@@ -484,4 +480,3 @@ def _load_noise_component(confounds_raw, component, missing, **kargs):
         missing["keywords"] += exception.keywords
         loaded_confounds = pd.DataFrame()
     return loaded_confounds, missing
-

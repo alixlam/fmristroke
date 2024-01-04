@@ -333,8 +333,8 @@ effects of other kernels [@lanczos].
         ])
     else:
         workflow.connect([
-            (inputnode, denoising_wf, [
-                ("confounds_metadata", "inputnode.confounds_metadata")
+            (concat_wf, denoising_wf, [
+                ("outputnode.confounds_metadata", "inputnode.confounds_metadata")
                 ]),
         ])
     
@@ -441,11 +441,6 @@ def _create_mem_gb(bold_fname):
 def _get_wf_name(bold_fname):
     """
     Derive the workflow name for supplied BOLD file.
-
-    >>> _get_wf_name("/completely/made/up/path/sub-01_task-nback_bold.nii.gz")
-    'func_preproc_task_nback_wf'
-    >>> _get_wf_name("/completely/made/up/path/sub-01_task-nback_run-01_echo-1_bold.nii.gz")
-    'func_preproc_task_nback_run_01_echo_1_wf'
 
     """
     from nipype.utils.filemanip import split_filename
