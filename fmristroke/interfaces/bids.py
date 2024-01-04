@@ -68,20 +68,6 @@ class _BIDSDerivativeDataGrabberOutputSpec(TraitedSpec):
 class BIDSDerivativeDataGrabber(SimpleInterface):
     """
     Collect derivative files from a BIDS directory structure.
-
-    .. testsetup::
-
-        >>> data_dir_canary()
-
-    >>> bids_src = _BIDSDerivativeDataGrabber()
-    >>> bids_src.inputs.bold_derivatives = bids_collect_bold_derivatives(
-    ...     str(datadir / 'ds114'), '01')
-    >>> bids_src.inputs.subject_id = '01'
-    >>> res = bids_src.run()
-    >>> res.outputs.t1w  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    ['.../ds114/sub-01/ses-retest/anat/sub-01_ses-retest_T1w.nii.gz',
-    '.../ds114/sub-01/ses-test/anat/sub-01_ses-test_T1w.nii.gz']
-
     """
 
     input_spec = _BIDSDerivativeDataGrabberInputSpec
