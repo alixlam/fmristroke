@@ -283,7 +283,7 @@ Denoising is run using nilearn, refer to `nilearn doc (load_confounds) <https://
 
 Connectivity
 -------------
-**fmristroke** also outputs connectivity matrices computed on the denoised bold, computed using your choice of atlases and connectivity measures. By default, the [Scheafer2018]_ atlas is 
+**fmristroke** also outputs connectivity matrices computed on the denoised bold, computed using your choice of atlases and connectivity measures. By default, the [Scheafer2018]_ atlas (with 400 ROIs ordered in the 17 Yeo Networks) is 
 used and the correlation is used to measure the functional connectivity. Multiple atlases can be used as well as multiple connectivity measures thanks to the tags ``--output-atlases`` and ``--conn-measure``.
 
 Connectivity matrices will be saved as::
@@ -305,14 +305,14 @@ You can easily add a custom atlas by creating a .json file. This file should fol
 
     {
     "atlas": "Atlas name",
-    "labels": [],
+    "labels": "<filename>.csv",
     "space": "Space in which the atlas is defined",
     "mask_file": "<filename>.nii.gz"
     }
         
 
 .. note::
-    The mask_file should be in the same directory as the json file.
+    The mask_file and labels files should be in the same directory as the json file.
 
 
 .. topic:: References
