@@ -18,7 +18,7 @@ from niworkflows.utils.connections import listify, pop_file
 from ... import config
 from ...interfaces import DerivativesDataSink
 
-# BOLD workflows
+# Anat workflows
 from .outputs import init_anat_lesion_derivatives_wf
 from .resample import init_roi_std_trans_wf
 
