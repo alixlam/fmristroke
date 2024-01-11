@@ -9,21 +9,33 @@ tags:
 authors:
   - name: Alix Lamouroux
     orcid: 
-    equal-contrib: true
     affiliation: "1, 2" 
+  - name: Giulia Lioi
+    orcid: 
+    affiliation: "1" 
+  - name: Julie Coloigner
+    orcid: 
+    affiliation: "2" 
+  - name: Pierre Maurel
+    orcid: 
+    affiliation: "2"
+  - name: Nicolas Farrugia
+    orcid: 
+    affiliation: "1"
+   
 
 affiliations:
  - name: IMT Atlantique, Lab-STICC UMR CNRS 6285 F-29238, France
    index: 1
- - name: Inria
+ - name: Univ Rennes, Inria, CNRS, Inserm
    index: 2
 date: 20 December 2023
 bibliography: paper.bib
 ---
 
 # Summary
-Functional Magnetic Resonance Imaging (fMRI) is a widely used neuroimaging technique for the analysis of neural activity and functional connectivity. However, fMRI signal is inherently noisy and susceptible to various artifacts, compromising the accuracy and reliability of derived analyses. This becomes particularly critical when dealing with stroke patients, given the added complexities associated with their neurological condition. Specific preprocessing and denoising are integral steps to identify the nuisance sources and mitigate their effect on fMRI analysis. 
-To address these consideration, we introduce fMRIStroke, a functional magnetic resonance imaging (fMRI) data quality checks and preprocessing pipeline tailored specifically for stroke data. fMRIStroke works as an add-on to typical preprocessing pipeline. Leveraging on a commonly used fMRI preprocessing tool outputs (fMRIprep), fMRIStroke generates new quality check plots, computes additional confounds, and executes confound regression (denoising), providing preprocessed fMRI ready for neural activity or connectivity analysis. 
+Functional Magnetic Resonance Imaging (fMRI) is a widely used neuroimaging technique for the analysis of neural activity and functional connectivity. However, fMRI signal is inherently noisy and susceptible to various artifacts, compromising the accuracy and reliability of derived analyses. This becomes particularly critical when dealing with stroke patients, given the added complexitiy associated with their neurological condition. Specific preprocessing and denoising are integral steps to identify the nuisance sources and mitigate their effect on fMRI analysis. 
+To address these considerations, we introduce fMRIStroke, a functional magnetic resonance imaging (fMRI) data quality checks and preprocessing pipeline tailored specifically for stroke data. fMRIStroke works as an add-on to typical preprocessing pipeline. Leveraging on a commonly used fMRI preprocessing tool outputs (fMRIprep), fMRIStroke generates new quality check plots, computes additional confounds, and executes confound regression (denoising), providing preprocessed fMRI ready for neural activity or connectivity analysis. 
 
 
 
@@ -40,7 +52,7 @@ To this end, we propose fMRIStroke, a fMRI preprocessing pipeline designed speci
 Concretely, novel quality checks include a hemodynamic lagmap. fMRIStroke assesses hemodynamic lag using cross-correlation with the global gray matter signal [@Siegel:2016] using the rapidTide  python library [@Rapidtide]. As stroke can introduce altered blood flow patterns a normal hemodynamic response cannot be assumed. [@Siegel:2016] investigated temporal delays (lag) in resting state functional magnetic resonance imaging signals and found that significant hemodynamic lag was observed in 30% of sub-acute stroke patients and approximately 10% of patients at one-year post-stroke. 
 Lags systematically alter measurements of functional connectivity from the affected nodes, and need to be taken into consideration when doing FC analysis [@Siegel:2017].
 
-Additionaly, signal in the lesion mask and signals in CSF and WM masks incorporating lesion masks are added to the confounds already computed by fMRIprep along with new ICA-based cofounds inspired by `@Yourganov:2018` proposed method. In their paper @Yourganov:2018 point out that the lesion introduces a particular artefact into the fMRI data which is not removed by standard preprocessing techniques. To mitigate this effect, they propose an ICA-based noise identification method. Independent components are calculated on the bold signal and components that overlap with the lesion (that is unlikely to include signal related to neuronal activity), are identified as potential noise components. Signals extracted from ICA components can be further regressed out from the fMRI data with a denoising procedure.
+Additionally, signal in the lesion mask and signals in CSF and WM masks incorporating lesion masks are added to the confounds already computed by fMRIprep along with new ICA-based cofounds inspired by `@Yourganov:2018` proposed method. In this paper the authors point out that the lesion introduces a particular artefact into the fMRI data which is not removed by standard preprocessing techniques. To mitigate this effect, they propose an ICA-based noise identification method. Independent components are calculated on the BOLD signal and those that overlap with the lesion (that is unlikely to include signal related to neuronal activity), are identified as potential noise components. Signals extracted from ICA components can be further regressed out from the fMRI data with a denoising procedure.
 
 Finally supplementary outputs include the lesion mask in standardized space and multiple denoised fMRI as there is currently no consensus in the fMRI community on an optimal denoising strategy.
 
