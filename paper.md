@@ -35,7 +35,7 @@ Recognizing these challenges, it is highly recommended, notably by @Siegel:2017,
 
 Existing tools like fMRIprep [@Esteban:2018] have streamlined most of the preprocessing steps; however, they lack specificity for fMRI data from stroke patients. 
 
-To this end, we propose fMRIStroke, a fMRI preprocessing pipeline designed specifically for stroke data that builds on the output derivatives of fMRIprep [@Esteban:2018]. It provides an interface requiring minimal user input while delivering easily interpretable and comprehensive reports. 
+To this end, we propose fMRIStroke, a fMRI preprocessing pipeline designed specifically for stroke data that builds on the output derivatives of fMRIprep [@Esteban:2018] when a lesion mask is given. It provides an interface requiring minimal user input while delivering easily interpretable and comprehensive reports. 
 
 Concretely, novel quality checks include a hemodynamic lagmap. fMRIStroke assesses hemodynamic lag using cross-correlation with the global gray matter signal [@Siegel:2016] using the rapidTide  python library [@Rapidtide]. As stroke can introduce altered blood flow patterns a normal hemodynamic response cannot be assumed. [@Siegel:2016] investigated temporal delays (lag) in resting state functional magnetic resonance imaging signals and found that significant hemodynamic lag was observed in 30% of sub-acute stroke patients and approximately 10% of patients at one-year post-stroke. 
 Lags systematically alter measurements of functional connectivity from the affected nodes, and need to be taken into consideration when doing FC analysis [@Siegel:2017].
