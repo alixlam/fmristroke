@@ -114,7 +114,7 @@ class ApplyTransforms(SimpleInterface):
         )
         transforms = (
             [self.inputs.transforms]
-            if isinstance(self.inputs.transforms, "str")
+            if isinstance(self.inputs.transforms, str)
             else self.inputs.transforms
         )
         apply_transform_ants(

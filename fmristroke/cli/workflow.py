@@ -4,7 +4,7 @@ The workflow builder factory method.
 All the checks and the construction of the workflow are done
 inside this function that has pickleable inputs and output
 dictionary (``retval``) to allow isolation using a
-``multiprocessing.Process`` that allows fmriprep to enforce
+``multiprocessing.Process`` that allows fmristroke to enforce
 a hard-limited memory-scope.
 
 """

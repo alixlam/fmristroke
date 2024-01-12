@@ -322,17 +322,19 @@ class Connectivity(SimpleInterface):
     output_spec = _ConnectivityOutputSpec
 
     def _gen_filename(self, name):
-        if name == "output_conn":
+        if name in  ["output_conn", "metadata_file"]:
             output = self.inputs.output_image
             if not isdefined(output):
-                _, name, _ = split_filename(self.inputs.input_image)
-                output = name + ".npy"
+                _, filename, _ = split_filename(self.inputs.input_image)
+                output = filename + ".npy" if name=="output_conn" else filename + ".json"
             return output
         return None
 
     def _run_interface(self, runtime):
         from nilearn.connectome import ConnectivityMeasure
         from nilearn.maskers import NiftiLabelsMasker
+        from ..utils.metrics import compute_FCC
+        import json
 
         masker = NiftiLabelsMasker(
             labels_img=self.inputs.atlas,
@@ -345,7 +347,7 @@ class Connectivity(SimpleInterface):
 
         corr_measure = ConnectivityMeasure(kind=self.inputs.conn_measure)
         corr_mat = corr_measure.fit_transform([time_series])[0]
-
+        
         self._results["output_conn"] = os.path.abspath(
             self._gen_filename("output_conn")
         )

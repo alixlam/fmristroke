@@ -56,6 +56,12 @@ def init_connectivity_wf(
     -------
     conn_mat
         connectivity matrice
+    pipelines
+        Pipelines
+    atlases
+        Atlases
+    conn_measure
+        Conn_measure
     """
 
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -79,18 +85,23 @@ def init_connectivity_wf(
         name="inputnode",
     )
 
-    iterablesource = pe.Node(
-        niu.IdentityInterface(fields=["atlas", "conn_measure", "pipeline"]),
-        name="iterablesource3",
+    iteratlas = pe.Node(
+        niu.IdentityInterface(fields=["atlas"]),
+        name="iteratlas",
     )
-    iterablesource.iterables = [
-        ("atlas", atlases.atlases),
-        (
-            "conn_measure",
-            conn_measure,
-        ),
-        ("pipeline", pipelines.get_pipelines()),
-    ]
+    iteratlas.iterables = [("atlas", atlases.atlases)]
+    
+    iterpipeline = pe.Node(
+        niu.IdentityInterface(fields=["pipeline"]),
+        name="iterpipe"
+    )
+    iterpipeline.iterables = [("pipeline", pipelines.get_pipelines())]
+    
+    iterconn = pe.Node(
+        niu.IdentityInterface(fields=["conn_measure"]),
+        name="iterconn"
+    )
+    iterconn.iterables = [("conn_measure", conn_measure)]
 
     # Get Atlas info
     atlas_info = pe.Node(
@@ -128,43 +139,19 @@ def init_connectivity_wf(
         run_without_submitting=True,
     )
     connectivity = pe.Node(Connectivity(), name="connectivity")
+        
 
-    # Save derivatives
-    ds_report_connectivity = pe.Node(
-        DerivativesDataSink(
-            desc="connectivity",
-            suffix="mat",
-            dismiss_entities=("echo"),
-            space=None,
-        ),
-        name="ds_report_connectivity",
-        run_without_submitting=True,
-        mem_gb=0.1,
-    )
+    # fmt:off
     workflow.connect(
         [
-            (iterablesource, atlas_info, [("atlas", "in_atlas")]),
-            (iterablesource, connectivity, [("conn_measure", "conn_measure")]),
-            (
-                inputnode,
-                select_pipeline,
-                [("bold_denoised", "bold_denoised"), ("pipelines", "keys")],
-            ),
-            (iterablesource, select_pipeline, [("pipeline", "key")]),
-            (
-                select_pipeline,
-                select_space,
-                [("bold_denoised", "bold_denoised")],
-            ),
-            (
-                inputnode,
-                select_space,
-                [
-                    ("mask_lesion_std", "mask_lesion_std"),
-                    ("anat2std_xfm", "anat2std_xfm"),
-                    ("templates", "keys"),
-                ],
-            ),
+            (iteratlas, atlas_info, [("atlas", "in_atlas")]),
+            (iterconn, connectivity, [("conn_measure", "conn_measure")]),
+            (inputnode, select_pipeline, [("bold_denoised", "bold_denoised"), ("pipelines", "keys")],),
+            (iterpipeline, select_pipeline, [("pipeline", "key")]),
+            (select_pipeline, select_space, [("bold_denoised", "bold_denoised")],),
+            (inputnode, select_space,[("mask_lesion_std", "mask_lesion_std"),
+                                    ("anat2std_xfm", "anat2std_xfm"),
+                                    ("templates", "keys"),],),
             (atlas_info, select_space, [("space", "key")]),
             (select_space, roi_resamp, [("mask_lesion_std", "input_image")]),
             (atlas_info, roi_resamp, [("mask_file", "reference_image")]),
@@ -176,23 +163,32 @@ def init_connectivity_wf(
             (atlas_info, atlas_roi, [("mask_file", "in_atlas")]),
             (atlas_roi, connectivity, [("out", "atlas")]),
             (select_space, connectivity, [("bold_denoised", "input_image")]),
-            (
-                connectivity,
-                ds_report_connectivity,
-                [("output_conn", "in_file")],
-            ),
-            (
-                iterablesource,
-                ds_report_connectivity,
-                [
-                    ("atlas", "atlas"),
-                    ("conn_measure", "measure"),
-                    ("pipeline", "pipeline"),
-                ],
-            ),
-        ]
-    )
+        ])
+    # fmt:on
 
+    # Handle outputs
+    output_names = ["conn_mat", "conn_measures", "pipelines", "atlases"]
+    output_connectivity = pe.Node(niu.IdentityInterface(fields=["conn_mat"]), name="output_connectivity")
+    output_measure = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "conn_measures"]), joinfield=["conn_mat", "conn_measures"], joinsource=iterconn, name="output_measure")
+    output_pipeline = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "pipelines"]), joinfield=["conn_mat", "pipelines"], joinsource=iterpipeline, name="output_pipeline")
+    output_atlas = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "atlases"]), joinfield=["conn_mat", "atlases"], joinsource=iteratlas, name="output_atlas")
+    outputnode = pe.Node(niu.IdentityInterface(fields=output_names), name="outputnode")
+    
+    # fmt:off
+    workflow.connect([
+        (connectivity, output_connectivity, [("output_conn", "conn_mat")]),
+        (output_connectivity, output_measure, [("conn_mat", "conn_mat")]),
+        (iterconn, output_measure, [("conn_measure", "conn_measures")]),
+        (output_measure, output_pipeline, [("conn_mat", "conn_mat")]),
+        (iterpipeline, output_pipeline, [("pipeline", "pipelines")]),
+        (output_pipeline, output_atlas, [("conn_mat", "conn_mat"),]),
+        (iteratlas, output_atlas, [(("atlas", _get_atlas_name), "atlases")]),
+        (output_atlas, outputnode, [("conn_mat", "conn_mat"),
+                                    ("atlases", "atlases")]),
+        (output_measure, outputnode, [("conn_measures", "conn_measures")]),
+        (output_pipeline, outputnode, [("pipelines", "pipelines")]),
+    ])
+    
     return workflow
 
 
@@ -234,6 +230,7 @@ def _get_atlas_info(in_atlas):
 
 def _get_atlas_name(in_atlas):
     return in_atlas.atlas
+
 
 
 def _get_conn_meta(in_atlas, measure):

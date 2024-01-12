@@ -16,6 +16,7 @@ if ty.TYPE_CHECKING:
     from niworkflows.utils.spaces import SpatialReferences
 
     from ...utils.pipelines import Pipelines
+    from ...utils.atlases import Atlases
 
 
 def init_func_lesion_derivatives_wf(
@@ -23,6 +24,8 @@ def init_func_lesion_derivatives_wf(
     output_dir: str,
     spaces: SpatialReferences,
     pipelines: Pipelines,
+    atlases: Atlases,
+    conn_measure: List[str],
     name="func_lesion_derivatives_wf",
 ):
     """
@@ -67,6 +70,10 @@ def init_func_lesion_derivatives_wf(
                 "denoised_bold_t1",
                 "denoised_bold_std",
                 "pipeline",
+                "pipelines",
+                "conn_mat",
+                "atlases",
+                "conn_measures",
             ]
         ),
         name="inputnode",
@@ -214,4 +221,78 @@ def init_func_lesion_derivatives_wf(
     ])
     # fmt:on
 
+    # Connectivity
+    atlassource = pe.Node(
+        niu.IdentityInterface(fields=["atlas"]), name="atlassource"
+    )
+    atlassource.iterables = [("atlas", atlases.get_atlases())]
+    
+    pipelinessource2 = pe.Node(
+        niu.IdentityInterface(fields=["pipeline"]), name="pipelinesource"
+    )
+    pipelinessource2.iterables = [("pipeline", pipelines.get_pipelines())]
+
+    connsource = pe.Node(
+        niu.IdentityInterface(fields=["conn_measure"]), name="measuresource"
+    )
+    connsource.iterables = [("conn_measure", conn_measure)]
+
+    fields = ["conn_mat"]
+
+    select_pipeline2 = pe.Node(
+        KeySelect(fields=fields),
+        name="select_pipeline2",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    
+    select_atlas = pe.Node(
+        KeySelect(fields=fields),
+        name="select_atlas",
+        run_without_submitting=True
+    )
+    
+    select_measure = pe.Node(
+        KeySelect(fields=fields),
+        name="select_measure",
+        run_without_submitting=True,
+    )
+    
+    ds_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivity",
+            suffix="mat",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_connectivity",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_connectivity, [("source_file", "source_file")],),
+        (atlassource, select_atlas, [("atlas", "key")]),
+        (pipelinessource2, select_pipeline2, [("pipeline", "key")]),
+        (connsource, select_measure, [("conn_measure", "key")]),
+        (inputnode, select_atlas, [("atlases", "keys"),]),
+        (inputnode, select_pipeline2, [("pipelines", "keys"),]),
+        (inputnode, select_measure, [("conn_measures", "keys")]),
+        # conn matrices are saved as [Atlas [Pipeline [Measure]]]
+        # First Select Atlas
+        (inputnode, select_atlas, [("conn_mat", "conn_mat")]),
+        # Select Pipeline
+        (select_atlas, select_pipeline2, [("conn_mat", "conn_mat")]),
+        # select Measure
+        (select_pipeline2, select_measure, [("conn_mat", "conn_mat")]),
+        
+        # Datasink
+        (select_measure, ds_connectivity, [("conn_mat", "in_file")]),
+        (atlassource, ds_connectivity, [("atlas", "atlas")]),
+        (pipelinessource2, ds_connectivity, [("pipeline", "pipeline")]),
+        (connsource, ds_connectivity, [("conn_measure", "measure")])
+    ])
+    # fmt:on
+    
     return workflow
