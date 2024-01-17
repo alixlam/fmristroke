@@ -193,7 +193,7 @@ effects of other kernels [@lanczos].
                 "atlases",
                 "pipelines",
                 "conn_measures",
-                "conn_mat"
+                "conn_mat",
             ]
         ),
         name="outputnode",

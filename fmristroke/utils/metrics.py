@@ -44,9 +44,9 @@ def _pearsonr(x, y, axis=0):
 
     Examples
     --------   
-    >>> X = np.array([[1, 2, 3, 4, 5, 6, 7] for _ in range(2)]
+    >>> X = np.array([[1, 2, 3, 4, 5, 6, 7] for _ in range(2)])
     >>> Y = np.array([[10, 9, 2.5, 6, 4, 3, 2] for _ in range(2)])
-    >>> r = pearsonr(X,Y, axis=1)
+    >>> r = _pearsonr(X,Y, axis=1)
     >>> r.shape
     (2,)
     >>> r[0]
@@ -85,18 +85,13 @@ def _get_WNE_BNE(connectivity_mat, atlas_labels):
     
     Examples
     ---------
-    >>> con_mat = np.array([
-        [1,2,3,4],
-        [2,1,2,3],
-        [3,2,1,2],
-        [4,3,2,1]
-    ])
-    >>> atlas_labels = pd.DataFrame({'Network'}: ['a', 'a', 'b', 'c'])
-    >>> WNE, BNE =  _get_WNE_BNE(conn_mat, atlas_labels)
+    >>> con_mat = np.array([[1,2,3,4],[2,1,2,3],[3,2,1,2],[4,3,2,1]])
+    >>> atlas_labels = pd.DataFrame({'Network': ['a', 'a', 'b', 'c']})
+    >>> WNE, BNE =  _get_WNE_BNE(con_mat, atlas_labels)
     >>> WNE
     [2]
     >>> BNE
-    [3,2,4,3,2]
+    [3, 2, 4, 3, 2]
     """
     # Get networks in atlas labels
     if isinstance(atlas_labels, str):
@@ -107,13 +102,12 @@ def _get_WNE_BNE(connectivity_mat, atlas_labels):
     networks = set(atlas_labels["Network"])
     WNE = []
     BNE = []
-    for net in networks:
-        for row, lab_row in zip(connectivity_mat.shape[0], atlas_labels["Network"]):
-            for col, lab_col in zip(connectivity_mat.shape[1], atlas_labels["Network"]):
-                if row > col:
-                    if lab_col == lab_row:
-                        WNE.append(connectivity_mat[row, col])
-                    else:
-                        BNE.append(connectivity_mat[row, col])
+    for row, lab_row in zip(range(connectivity_mat.shape[0]), atlas_labels["Network"]):
+        for col, lab_col in zip(range(connectivity_mat.shape[1]), atlas_labels["Network"]):
+            if row > col:
+                if lab_col == lab_row:
+                    WNE.append(connectivity_mat[row, col])
+                else:
+                    BNE.append(connectivity_mat[row, col])
     
     return WNE, BNE
