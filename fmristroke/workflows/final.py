@@ -62,7 +62,7 @@ def init_fmristroke_wf():
         )
         log_dir.mkdir(exist_ok=True, parents=True)
         config.to_filename(log_dir / "fmristroke.toml")
-    
+
     return fmriStroke_wf
 
 
@@ -157,7 +157,7 @@ def init_single_subject_wf(subject_id: str):
 
     # fmt:off
     workflow.connect([
-            (bidssrc, roi_anat_wf,[
+            (bidssrc, roi_anat_wf, [
                     ("t1w_preproc", "inputnode.t1w_preproc"),
                     ("anat2std_xfm", "inputnode.anat2std_xfm"),
                     ("std2anat_xfm", "inputnode.std2anat_xfm"),
@@ -234,29 +234,31 @@ tasks and sessions), the following lesion specific preprocessing was performed.
             ]),
         ])
         workflow.connect([
-            (roi_anat_wf, lesion_preproc_wf,[
+            (roi_anat_wf, lesion_preproc_wf, [
                 ("outputnode.roi_mask_std", "inputnode.roi_std")],)
         ])
         # fmt:on
 
         func_preproc_wfs.append(lesion_preproc_wf)
-    
+
     return workflow
+
 
 def _group_outputs(in_outputs, node_names):
     import re
     from itertools import groupby
+
     nodes = [(name, out) for name, out in zip(node_names, in_outputs)]
     # Sort by node name
     nodes.sort(key=lambda x: x[0])
-    
+
     def _grp_tasks(x):
         if "_task_" not in x[0]:
             return x
         task = re.search("_task_[a-zA-Z0-9]*", x[0]).group(0)
         run = re.search("_run_\\d*", x[0]).group(0)
         return x[0].replace(task, "_task_?").replace(run, "_run_?")
-    
+
     def _grp_runs(x):
         if "_run_" not in x[0]:
             return x
@@ -271,9 +273,26 @@ def _group_outputs(in_outputs, node_names):
             nodes = list(nodes)
             grouped.append(nodes)
         grouped_final.append(grouped)
-    grouped_outputs = [[[run[1] for run in task] for task in ses] for ses in grouped_final]
-    sessions = [re.search("_ses_[a-zA-Z0-9]*", ses[0][0][0]).group(0)[1:] for ses in grouped_final]
-    tasks = [[re.search("_task_[a-zA-Z0-9]*",task[0][0]).group(0)[1:] for task in ses] for ses in grouped_final]
-    runs = [[[ re.search("_run_\\d*", run[0]).group(0)[1:] for run in task] for task in ses] for ses in grouped_final]
-    
+    grouped_outputs = [
+        [[run[1] for run in task] for task in ses] for ses in grouped_final
+    ]
+    sessions = [
+        re.search("_ses_[a-zA-Z0-9]*", ses[0][0][0]).group(0)[1:]
+        for ses in grouped_final
+    ]
+    tasks = [
+        [
+            re.search("_task_[a-zA-Z0-9]*", task[0][0]).group(0)[1:]
+            for task in ses
+        ]
+        for ses in grouped_final
+    ]
+    runs = [
+        [
+            [re.search("_run_\\d*", run[0]).group(0)[1:] for run in task]
+            for task in ses
+        ]
+        for ses in grouped_final
+    ]
+
     return grouped_outputs, sessions, tasks, runs

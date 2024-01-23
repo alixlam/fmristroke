@@ -315,7 +315,10 @@ def plot_lagmaps(
 
     return out_files
 
-def plot_multilesionconn(anat_nii, lesion_nii, stat_map_nii, titles, **plot_params):
+
+def plot_multilesionconn(
+    anat_nii, lesion_nii, stat_map_nii, titles, **plot_params
+):
     """
     Plot representing lesion to voxels connectivity
     """
@@ -327,17 +330,24 @@ def plot_multilesionconn(anat_nii, lesion_nii, stat_map_nii, titles, **plot_para
     if lesion_nii is not None:
         lesion_nii = nib.load(lesion_nii)
         lesion_nii = nib.Nifti1Image.from_image(lesion_nii)
-    
+
     fig = plt.figure(figsize=(10, 5 * len(stat_map_nii)))
-    gs = mgs.GridSpec(nrows=len(stat_map_nii), ncols=1, wspace=0.0, hspace=0.05)
-    
+    gs = mgs.GridSpec(
+        nrows=len(stat_map_nii), ncols=1, wspace=0.0, hspace=0.05
+    )
+
     for i, (name, stat_map) in enumerate(zip(titles, stat_map_nii)):
         stat_map = nib.load(stat_map)
         stat_map = nib.Nifti1Image.from_image(stat_map)
 
-        
         display = plotting.plot_stat_map(
-            stat_map, bg_img=anat, threshold=0.1, cmap="jet", title=name, axes=plt.subplot(gs[i]), **plot_params
+            stat_map,
+            bg_img=anat,
+            threshold=0.1,
+            cmap="jet",
+            title=name,
+            axes=plt.subplot(gs[i]),
+            **plot_params,
         )
 
         if lesion_nii is not None:
@@ -350,23 +360,25 @@ def plot_multilesionconn(anat_nii, lesion_nii, stat_map_nii, titles, **plot_para
             )
     return fig
 
+
 def plot_kdeplot(data, title=None):
     """
     Plot representing voxels correlations with lesion
     """
-    
-    fig, ax = plt.subplots(1,1)
-    
+
+    fig, ax = plt.subplots(1, 1)
+
     for col in data:
         sns.kdeplot(data[col], shade=True, ax=ax, label=col)
-    ax.axvline(x=0, linestyle='dashed', color='k')
+    ax.axvline(x=0, linestyle="dashed", color="k")
     ax.set_title(title)
     ax.set_xlim([-1, 1])
     ax.set_ylabel("Probability density")
     ax.set_xlabel("Connection strength")
     ax.legend(bbox_to_anchor=(1.025, 1), borderaxespad=0)
-    
+
     return fig
+
 
 def plot_catplot(x, y, data, xlabel=None, ylabel=None):
     """
@@ -390,13 +402,13 @@ def plot_catplot(x, y, data, xlabel=None, ylabel=None):
         generated plot.
     """
 
-    fig = sns.catplot(x=x, y=y, kind='bar', data=data)
+    fig = sns.catplot(x=x, y=y, kind="bar", data=data)
     if xlabel:
         fig.ax.set_xlabel(xlabel)
     if ylabel:
         fig.ax.set_ylabel(ylabel)
 
     sns.despine(top=False, right=False)
-    fig.ax.axvline(x=0, color='k')
+    fig.ax.axvline(x=0, color="k")
 
     return fig

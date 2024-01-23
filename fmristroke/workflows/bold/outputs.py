@@ -15,8 +15,8 @@ from ...interfaces import DerivativesDataSink
 if ty.TYPE_CHECKING:
     from niworkflows.utils.spaces import SpatialReferences
 
-    from ...utils.pipelines import Pipelines
     from ...utils.atlases import Atlases
+    from ...utils.pipelines import Pipelines
 
 
 def init_func_lesion_derivatives_wf(
@@ -75,7 +75,7 @@ def init_func_lesion_derivatives_wf(
                 "atlases",
                 "conn_measures",
                 "lesion_conn",
-                "FCC"
+                "FCC",
             ]
         ),
         name="inputnode",
@@ -228,7 +228,7 @@ def init_func_lesion_derivatives_wf(
         niu.IdentityInterface(fields=["atlas"]), name="atlassource"
     )
     atlassource.iterables = [("atlas", atlases.get_atlases())]
-    
+
     pipelinessource2 = pe.Node(
         niu.IdentityInterface(fields=["pipeline"]), name="pipelinesource"
     )
@@ -247,19 +247,19 @@ def init_func_lesion_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    
+
     select_atlas = pe.Node(
         KeySelect(fields=fields),
         name="select_atlas",
-        run_without_submitting=True
+        run_without_submitting=True,
     )
-    
+
     select_measure = pe.Node(
         KeySelect(fields=fields),
         name="select_measure",
         run_without_submitting=True,
     )
-    
+
     ds_connectivity = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -284,7 +284,7 @@ def init_func_lesion_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    
+
     # fmt:off
     workflow.connect([
         (inputnode, ds_connectivity, [("source_file", "source_file"),],),
@@ -303,7 +303,7 @@ def init_func_lesion_derivatives_wf(
         (select_atlas, select_pipeline2, [("conn_mat", "conn_mat")]),
         # select Measure
         (select_pipeline2, select_measure, [("conn_mat", "conn_mat")]),
-        
+
         # Datasink
         (select_measure, ds_connectivity, [("conn_mat", "in_file")]),
         (atlassource, ds_connectivity, [("atlas", "atlas")]),
@@ -311,7 +311,7 @@ def init_func_lesion_derivatives_wf(
         (connsource, ds_connectivity, [("conn_measure", "measure")]),
     ])
     # fmt:on
-    
+
     # Lesion connectivity
     ds_lesion_conn = pe.Node(
         DerivativesDataSink(
@@ -325,7 +325,7 @@ def init_func_lesion_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    
+
     # fmt:off
     workflow.connect([
         (inputnode, ds_lesion_conn, [("lesion_conn", "in_file"),

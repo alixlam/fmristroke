@@ -195,7 +195,7 @@ effects of other kernels [@lanczos].
                 "conn_measures",
                 "conn_mat",
                 "FCC",
-                "lesion_conn"
+                "lesion_conn",
             ]
         ),
         name="outputnode",
@@ -221,14 +221,14 @@ effects of other kernels [@lanczos].
     else:
         # fmt:off
         workflow.connect([
-            (inputnode, func_lesion_derivatives_wf,[
-                (("bold_t1", combine_run_source),"inputnode.source_file",)],)
+            (inputnode, func_lesion_derivatives_wf, [
+                (("bold_t1", combine_run_source), "inputnode.source_file",)],)
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (outputnode, func_lesion_derivatives_wf,[
+        (outputnode, func_lesion_derivatives_wf, [
             ("confounds_file", "inputnode.confounds_file"),
             ("confounds_metadata", "inputnode.confounds_metadata"),
             ("lagmaps", "inputnode.lagmaps"),
@@ -254,7 +254,7 @@ effects of other kernels [@lanczos].
     )
     # fmt:off
     workflow.connect([
-        (inputnode, concat_wf,[
+        (inputnode, concat_wf, [
             ("bold_t1", "inputnode.bold_t1"),
             ("boldref_t1", "inputnode.boldref_t1"),
             ("boldmask_t1", "inputnode.boldmask_t1"),
@@ -277,16 +277,16 @@ effects of other kernels [@lanczos].
     # fmt:off
     workflow.connect([
         # Connect bold_confounds_wf
-        (inputnode, lesion_confounds_wf,[
+        (inputnode, lesion_confounds_wf, [
             ("t1w_tpms", "inputnode.t1w_tpms"),
             ("t1w_mask", "inputnode.t1w_mask"),
             ("roi", "inputnode.roi"),],),
-        (concat_wf, lesion_confounds_wf,[
+        (concat_wf, lesion_confounds_wf, [
             ("outputnode.bold_t1", "inputnode.bold_t1"),
             ("outputnode.boldref_t1", "inputnode.boldref_t1"),
             ("outputnode.boldmask_t1", "inputnode.boldmask_t1"),
             ("outputnode.confounds_file", "inputnode.confounds_file"),],),
-        (lesion_confounds_wf, outputnode,[
+        (lesion_confounds_wf, outputnode, [
             ("outputnode.confounds_file", "confounds_file"),
             ("outputnode.confounds_metadata", "confounds_metadata"),],),
     ])
@@ -302,7 +302,7 @@ effects of other kernels [@lanczos].
     # fmt:off
     workflow.connect([
         # Connect bold_confounds_wf
-        (inputnode, hemodynamics_wf,[
+        (inputnode, hemodynamics_wf, [
             ("roi", "inputnode.roi"),
             ("t1w_preproc", "inputnode.t1w_preproc"),
             ("t1w_mask", "inputnode.t1w_mask"),
@@ -311,12 +311,12 @@ effects of other kernels [@lanczos].
             ("templates", "inputnode.template"),
             # undefined if freesurfer was not run
             ("t1w_aseg", "inputnode.t1w_aseg"),],),
-        (concat_wf, hemodynamics_wf,[
+        (concat_wf, hemodynamics_wf, [
             ("outputnode.bold_t1", "inputnode.bold_t1"),
             ("outputnode.confounds_file", "inputnode.confounds_file"),],),
-        (lesion_confounds_wf, hemodynamics_wf,[
+        (lesion_confounds_wf, hemodynamics_wf, [
             ("outputnode.boldmask", "inputnode.boldmask")],),
-        (hemodynamics_wf, outputnode,[
+        (hemodynamics_wf, outputnode, [
             ("outputnode.lagmaps", "lagmaps"),],),
     ])
     # fmt:on
@@ -330,17 +330,17 @@ effects of other kernels [@lanczos].
         spaces=spaces,
         name="bold_denoise_wf",
     )
-    
+
     # fmt:off
     workflow.connect([
-        (inputnode, denoising_wf,[
+        (inputnode, denoising_wf, [
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("templates", "inputnode.templates"),],),
-        (lesion_confounds_wf, denoising_wf,[
+        (lesion_confounds_wf, denoising_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file")],),
-        (concat_wf, denoising_wf,[
+        (concat_wf, denoising_wf, [
             ("outputnode.bold_t1", "inputnode.bold_t1"),],),
-        (denoising_wf, outputnode,[
+        (denoising_wf, outputnode, [
             ("outputnode.template", "template"),
             ("outputnode.spatial_reference", "spatial_reference"),
             ("outputnode.denoised_bold_t1", "denoised_bold_t1"),
@@ -353,7 +353,7 @@ effects of other kernels [@lanczos].
         # Get confounds descriptor from newly computed compcor confounds
         # fmt:off
         workflow.connect([
-            (lesion_confounds_wf, denoising_wf,[
+            (lesion_confounds_wf, denoising_wf, [
                 ("outputnode.confounds_metadata_comp", "inputnode.confounds_metadata",)],),
         ])
         # fmt:on
@@ -381,15 +381,15 @@ effects of other kernels [@lanczos].
         )
         # fmt:off
         workflow.connect([
-            (inputnode, carpetplot_select_std,[
+            (inputnode, carpetplot_select_std, [
                 ("std2anat_xfm", "std2anat_xfm"), ("templates", "keys")],),
-            (carpetplot_select_std, carpetplot_wf,[
+            (carpetplot_select_std, carpetplot_wf, [
                 ("std2anat_xfm", "inputnode.std2anat_xfm"),],),
-            (concat_wf, carpetplot_wf,[
+            (concat_wf, carpetplot_wf, [
                 ("outputnode.bold_t1", "inputnode.bold"),],),
-            (lesion_confounds_wf, carpetplot_wf,[
+            (lesion_confounds_wf, carpetplot_wf, [
                 ("outputnode.boldmask", "inputnode.bold_mask"),],),
-            (lesion_confounds_wf, carpetplot_wf,[
+            (lesion_confounds_wf, carpetplot_wf, [
                 ("outputnode.confounds_file", "inputnode.confounds_file",),
                 ("outputnode.crown_mask", "inputnode.crown_mask"),
                 (("outputnode.acompcor_masks", _last), "inputnode.acompcor_mask", ),],),
@@ -404,16 +404,16 @@ effects of other kernels [@lanczos].
         conn_measure=conn_measure,
         name="connectivity_wf",
     )
-    
+
     # fmt:off
     workflow.connect([
         (denoising_wf, connectivity_wf, [
             ("outputnode.template", "inputnode.templates"),
             ("outputnode.denoised_bold_std", "inputnode.bold_denoised",),
             ("outputnode.pipeline", "inputnode.pipelines"),],),
-        (lesion_confounds_wf, connectivity_wf,[
+        (lesion_confounds_wf, connectivity_wf, [
             ("outputnode.boldmask", "inputnode.boldmask")],),
-        (inputnode, connectivity_wf,[
+        (inputnode, connectivity_wf, [
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("roi_std", "inputnode.mask_lesion_std"),],),
         (connectivity_wf, outputnode, [
@@ -424,7 +424,7 @@ effects of other kernels [@lanczos].
             ("outputnode.FCC", "FCC")])
     ])
     # fmt:on
-    
+
     # LESION CONNECTIVITY ##################################################
     lesion_conn = init_lesion_voxels_conn_wf(
         mem_gb=mem_gb["largemem"],
@@ -432,20 +432,19 @@ effects of other kernels [@lanczos].
         pipelines=pipelines,
         name="lesion_connectivity_wf",
     )
-    
+
     # fmt:off
     workflow.connect([
         (denoising_wf, lesion_conn, [
             ("outputnode.denoised_bold_t1", "inputnode.denoised_bold_t1",),
             ("outputnode.pipeline", "inputnode.pipeline"),],),
-        (inputnode, lesion_conn,[
+        (inputnode, lesion_conn, [
             ("roi", "inputnode.t1w_mask_lesion"),
             ("t1w_preproc", "inputnode.t1w")],),
         (lesion_conn, outputnode, [
             ("outputnode.output_conn_roi", "lesion_conn"),])
     ])
     # fmt:on
-
 
     # REPORTING ############################################################
     if session_level:
@@ -466,7 +465,7 @@ effects of other kernels [@lanczos].
     )
     # fmt:off
     workflow.connect([
-        (inputnode,lesion_plot,[
+        (inputnode, lesion_plot, [
             ("t1w_preproc", "inputnode.t1w"),
             ("roi", "inputnode.t1w_roi"),
             ("t1w_mask", "inputnode.t1w_mask"),],)

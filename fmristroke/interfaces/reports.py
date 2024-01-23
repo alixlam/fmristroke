@@ -232,18 +232,23 @@ class SessionSummary(SummaryInterface):
 
         return SESSION_TEMPLATE.format(final_run=final_length, n_runs=n_runs)
 
+
 class _ROIConnPlotInputSpecRPT(reporting.ReportCapableInputSpec):
     input_images = InputMultiPath(
         traits.File(
-        mandatory=True, desc="Input images to plot", exists=True,)
+            mandatory=True,
+            desc="Input images to plot",
+            exists=True,
+        )
     )
 
-    anat_img = traits.File(desc="T1w image to plot as a background", exists=True, mandatory=True)
-    
-    roi = traits.File(desc="ROI mask", exists=True)
-    
-    pipeline = InputMultiObject(traits.Str(desc="Denoising pipelines name"))
+    anat_img = traits.File(
+        desc="T1w image to plot as a background", exists=True, mandatory=True
+    )
 
+    roi = traits.File(desc="ROI mask", exists=True)
+
+    pipeline = InputMultiObject(traits.Str(desc="Denoising pipelines name"))
 
 
 class ROIConnPlot(reporting.ReportCapableInterface):
@@ -264,6 +269,6 @@ class ROIConnPlot(reporting.ReportCapableInterface):
             anat_nii=self.inputs.anat_img,
             lesion_nii=self.inputs.roi,
             stat_map_nii=self.inputs.input_images,
-            titles=self.inputs.pipeline
+            titles=self.inputs.pipeline,
         )
         fig.savefig(self._out_report, bbox_inches="tight")
