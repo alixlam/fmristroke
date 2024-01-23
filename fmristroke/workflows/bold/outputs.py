@@ -74,6 +74,8 @@ def init_func_lesion_derivatives_wf(
                 "conn_mat",
                 "atlases",
                 "conn_measures",
+                "lesion_conn",
+                "FCC"
             ]
         ),
         name="inputnode",
@@ -270,9 +272,24 @@ def init_func_lesion_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
+    ds_FCC = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivity",
+            suffix="FCC",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_FCC",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    
     # fmt:off
     workflow.connect([
-        (inputnode, ds_connectivity, [("source_file", "source_file")],),
+        (inputnode, ds_connectivity, [("source_file", "source_file"),],),
+        (inputnode, ds_FCC, [("source_file", "source_file"),
+                            ("FCC", "in_file")]),
         (atlassource, select_atlas, [("atlas", "key")]),
         (pipelinessource2, select_pipeline2, [("pipeline", "key")]),
         (connsource, select_measure, [("conn_measure", "key")]),
@@ -291,8 +308,29 @@ def init_func_lesion_derivatives_wf(
         (select_measure, ds_connectivity, [("conn_mat", "in_file")]),
         (atlassource, ds_connectivity, [("atlas", "atlas")]),
         (pipelinessource2, ds_connectivity, [("pipeline", "pipeline")]),
-        (connsource, ds_connectivity, [("conn_measure", "measure")])
+        (connsource, ds_connectivity, [("conn_measure", "measure")]),
     ])
     # fmt:on
     
+    # Lesion connectivity
+    ds_lesion_conn = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivity",
+            suffix="roi",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_lesion_connectivity",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_lesion_conn, [("lesion_conn", "in_file"),
+                                    ("source_file", "source_file")]),
+    ])
+    # fmt:on
+
     return workflow

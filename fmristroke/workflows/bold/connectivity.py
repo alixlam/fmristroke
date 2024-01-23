@@ -17,6 +17,7 @@ from ...utils.atlas import Atlases
 from ...utils.pipelines import Pipelines
 
 
+
 def init_connectivity_wf(
     mem_gb: float,
     atlases: Atlases,
@@ -139,7 +140,10 @@ def init_connectivity_wf(
         run_without_submitting=True,
     )
     connectivity = pe.Node(Connectivity(), name="connectivity")
-        
+    
+    # Compute FCC
+    conn_FCC = pe.Node(niu.Function(function=_get_FCC, output_names=["FCC"]), name="FCC")
+    concat_FCC = pe.Node(niu.Function(function=_concat_FCC, output_names=["FCC"]), name="concat_FCC")
 
     # fmt:off
     workflow.connect(
@@ -163,31 +167,192 @@ def init_connectivity_wf(
             (atlas_info, atlas_roi, [("mask_file", "in_atlas")]),
             (atlas_roi, connectivity, [("out", "atlas")]),
             (select_space, connectivity, [("bold_denoised", "input_image")]),
+            (connectivity, conn_FCC, [("output_conn", "conn_mat")]),
+            (iterpipeline, conn_FCC, [("pipeline", "pipeline")]),
+            (iteratlas, conn_FCC, [("atlas", "atlas")]),
+            (iterconn, conn_FCC, [("conn_measure", "measure")]),
         ])
     # fmt:on
 
     # Handle outputs
-    output_names = ["conn_mat", "conn_measures", "pipelines", "atlases"]
-    output_connectivity = pe.Node(niu.IdentityInterface(fields=["conn_mat"]), name="output_connectivity")
-    output_measure = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "conn_measures"]), joinfield=["conn_mat", "conn_measures"], joinsource=iterconn, name="output_measure")
-    output_pipeline = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "pipelines"]), joinfield=["conn_mat", "pipelines"], joinsource=iterpipeline, name="output_pipeline")
-    output_atlas = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "atlases"]), joinfield=["conn_mat", "atlases"], joinsource=iteratlas, name="output_atlas")
+    output_names = ["conn_mat", "FCC", "conn_measures", "pipelines", "atlases"]
+    output_connectivity = pe.Node(niu.IdentityInterface(fields=["conn_mat", "FCC"]), name="output_connectivity")
+    output_measure = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "FCC", "conn_measures"]), joinfield=["conn_mat", "FCC", "conn_measures"], joinsource=iterconn, name="output_measure")
+    output_pipeline = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "FCC","pipelines"]), joinfield=["conn_mat", "FCC", "pipelines"], joinsource=iterpipeline, name="output_pipeline")
+    output_atlas = pe.JoinNode(niu.IdentityInterface(fields=["conn_mat", "FCC", "atlases"]), joinfield=["conn_mat", "FCC", "atlases"], joinsource=iteratlas, name="output_atlas")
     outputnode = pe.Node(niu.IdentityInterface(fields=output_names), name="outputnode")
     
     # fmt:off
     workflow.connect([
         (connectivity, output_connectivity, [("output_conn", "conn_mat")]),
-        (output_connectivity, output_measure, [("conn_mat", "conn_mat")]),
+        (conn_FCC, output_connectivity, [("FCC", "FCC")]),
+        (output_connectivity, output_measure, [("conn_mat", "conn_mat"),
+                                                ("FCC", "FCC")]),
         (iterconn, output_measure, [("conn_measure", "conn_measures")]),
-        (output_measure, output_pipeline, [("conn_mat", "conn_mat")]),
+        (output_measure, output_pipeline, [("conn_mat", "conn_mat"),
+                                            ("FCC", "FCC")]),
         (iterpipeline, output_pipeline, [("pipeline", "pipelines")]),
-        (output_pipeline, output_atlas, [("conn_mat", "conn_mat"),]),
+        (output_pipeline, output_atlas, [("conn_mat", "conn_mat"),
+                                        ("FCC", "FCC")]),
         (iteratlas, output_atlas, [(("atlas", _get_atlas_name), "atlases")]),
+        (output_atlas, concat_FCC, [("FCC", "in_FCC")]),
+        (concat_FCC, outputnode, [("FCC", "FCC")]),
         (output_atlas, outputnode, [("conn_mat", "conn_mat"),
                                     ("atlases", "atlases")]),
         (output_measure, outputnode, [("conn_measures", "conn_measures")]),
         (output_pipeline, outputnode, [("pipelines", "pipelines")]),
     ])
+    
+    return workflow
+
+
+def init_lesion_voxels_conn_wf(
+    mem_gb: float,
+    omp_nthreads: int,
+    pipelines: Pipelines,
+    name: str = "bold_lesion_conn_wf",
+):
+    """
+    Build a workflow to compute lesion to voxels connectivity.
+
+    This workflow computes lesion to voxels connectivity according to the specified denoising strategies.
+
+    Parameters
+    ----------
+    mem_gb : :obj:`float`
+        Size of BOLD file in GB - please note that this size
+        should be calculated after resamplings that may extend
+        the FoV
+    pipelines : :py:class:`~fmristroke.utils.pipelines.Pipelines`
+        A container for storing denoising strategies.
+    name : :obj:`str`
+        Name of workflow (default: ``bold_lesion_conn_wf``)
+
+    Inputs
+    ------
+    denoised_bold_t1
+        BOLD image in T1 space, after the prescribed corrections (STC, HMC and SDC)
+        and denoising.
+    boldmask
+        Bold fov mask in t1 space
+    t1w_mask_lesion
+        Mask of the lesion in T1w space
+
+
+    Outputs
+    -------
+    output_conn_roi
+        Lesion to voxels connectivity
+    
+    """
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from niworkflows.interfaces.images import SignalExtraction
+    from ...interfaces.nilearn import ROI2VoxelConnectivity
+    from niworkflows.interfaces.utility import KeySelect
+    from ...interfaces.reports import ROIConnPlot
+
+    
+
+
+    workflow = Workflow(name=name)
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "denoised_bold_t1",
+                "t1w_mask_lesion",
+                "pipeline",
+                "t1w"
+            ]
+        ),
+        name="inputnode",
+    )
+
+    iterpipeline = pe.Node(
+        niu.IdentityInterface(fields=["pipeline"]), name="iterpipe"
+    )
+    iterpipeline.iterables = [("pipeline", pipelines.get_pipelines())]
+    
+    # Select pipeline
+    select_pipeline = pe.Node(
+        KeySelect(fields=["denoised_bold_t1"]),
+        name="select_pipeline",
+        run_without_submitting=True
+    )
+    
+    # ROI resamp
+    select_tmp = pe.Node(niu.Select(index=0), name="select_resamp_temp")
+    roi_resamp = pe.Node(
+        niu.Function(function=_resample_to_img), name="roi_resamp"
+    )
+    roi_resamp.inputs.interpolation = "nearest"
+
+    
+    # Extract ROI signal 
+    signal_roi = pe.Node(
+        SignalExtraction(class_labels=["lesion_roi"]),
+        name="signal_roi",
+        mem_gb=mem_gb,
+    )
+
+    # ROI to voxels connectivity
+    roi2voxelconn = pe.Node(
+        ROI2VoxelConnectivity(), name="roi2voxelconn"
+    )
+    
+    # fmt:off
+    workflow.connect([
+        (inputnode, select_pipeline, [("denoised_bold_t1", "denoised_bold_t1"),
+                                    ("pipeline", "keys")]),
+        (iterpipeline, select_pipeline, [("pipeline", "key")]),
+        (inputnode, roi_resamp, [("t1w_mask_lesion", "input_image")]),
+        (inputnode, select_tmp, [("denoised_bold_t1", "inlist")]),
+        (select_tmp, roi_resamp, [("out", "reference_image")]),
+        (roi_resamp, signal_roi, [("out", "label_files")]),
+        (select_pipeline, signal_roi, [("denoised_bold_t1", "in_file")]),
+        (select_pipeline, roi2voxelconn, [("denoised_bold_t1", "input_image")]),
+        (signal_roi, roi2voxelconn, [("out_file", "roi_ts")]),
+        (iterpipeline, roi2voxelconn, [("pipeline", "pipeline_name")]),
+    ])
+    # fmt:on
+    output_names = ["pipeline", "output_conn", "output_img"]
+    output_corr = pe.Node(niu.IdentityInterface(fields=output_names), name="output_corr")
+    join_out = pe.JoinNode(
+        niu.IdentityInterface(
+            fields=output_names,),
+            joinfield=output_names,
+            joinsource=iterpipeline,
+            name="join_conn")
+    
+    concat_lesion_corr = pe.Node(niu.Function(function=_concat_tsv), name="concat_pipelines")
+    
+    # Reporting 
+    lesion_conn_plot = pe.Node(ROIConnPlot(generate_report=True), name="lesion_conn_plot")
+    ds_report_lesioncorr = pe.Node(
+        DerivativesDataSink(
+            desc="lesioncorr",
+            datatype="figures",
+        ),
+        run_without_submitting=True,
+        name="ds_report_lesioncorr"
+    )
+
+    outputnode = pe.Node(niu.IdentityInterface(fields=["output_conn_roi"]), name="outputnode")
+
+    # fmt:off
+    workflow.connect([
+        (iterpipeline, output_corr, [("pipeline", "pipeline")]),
+        (roi2voxelconn, output_corr, [("output_conn", "output_conn"),
+                                    ("output_img", "output_img")]),
+        (output_corr, join_out, [(f, f) for f in output_names]),
+        (join_out, concat_lesion_corr, [("output_conn", "in_tsvs")]),
+        (join_out, lesion_conn_plot, [("output_img", "input_images"),
+                                      ("pipeline", "pipeline")]),
+        (inputnode, lesion_conn_plot, [("t1w", "anat_img"),
+                                        ("t1w_mask_lesion", "roi")]),
+        (lesion_conn_plot, ds_report_lesioncorr, [("out_report", "in_file")]),
+        (concat_lesion_corr, outputnode, [("out", "output_conn_roi")])
+    ])
+    # fmt:on
     
     return workflow
 
@@ -233,17 +398,58 @@ def _get_atlas_name(in_atlas):
 
 
 
-def _get_conn_meta(in_atlas, measure):
+def _get_FCC(conn_mat, atlas, measure, pipeline):
     import json
+    import numpy as np
     from pathlib import Path
+    from fmristroke.utils.metrics import compute_FCC
+
+    conn_mat = np.load(conn_mat)
+    FCC, _ = compute_FCC(conn_mat, atlas.labels)
 
     dic = {
-        "conn_measure": measure,
-        "atlas": in_atlas.atlas,
+        "pipeline": pipeline,
+        "atlas": atlas.atlas,
+        "measure": measure,
+        "FCC": FCC
     }
     json_object = json.dumps(dic, indent=4)
-    out_name = Path("conn_meta.json").absolute()
+    out_name = Path("conn_FCC.json").absolute()
 
     with open(out_name, "w") as outfile:
         outfile.write(json_object)
     return str(out_name)
+    # return dic
+
+def _concat_FCC(in_FCC):
+    from pathlib import Path
+    import pandas as pd
+    import json
+    out = Path("FCC.tsv").absolute()
+    
+    flatten_FCC = [item for atlas in in_FCC for pipeline in atlas for item in pipeline]
+    jsons = []
+    for FCC in  flatten_FCC:
+        with open(FCC, "r") as in_file:
+            jsons.append(json.load(in_file))
+    df = pd.DataFrame(jsons)
+    
+    df.to_csv(out, sep='\t', na_rep="n/a")
+    return str(out)    
+    
+
+def _concat_tsv(in_tsvs):
+    from pathlib import Path
+    import pandas as pd
+    out = Path("lesion_conn.tsv").absolute()
+    
+    final_df = pd.DataFrame()
+    for tsv in in_tsvs:
+        df = pd.read_table(tsv, sep='\t')
+        final_df = pd.concat((final_df, df), axis=1)
+    final_df.to_csv(out, sep='\t', na_rep="n/a")
+    return str(out)
+
+def _get_pipeline_name(in_pipeline):
+    return in_pipeline.pipeline
+

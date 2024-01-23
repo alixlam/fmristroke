@@ -21,7 +21,7 @@ from .concatenate import init_concat_wf
 
 # BOLD workflows
 from .confounds import init_carpetplot_wf, init_confs_wf
-from .connectivity import init_connectivity_wf
+from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
 from .denoise import init_denoise_wf
 from .lagmaps import init_hemodynamic_wf
 from .outputs import init_func_lesion_derivatives_wf
@@ -194,6 +194,8 @@ effects of other kernels [@lanczos].
                 "pipelines",
                 "conn_measures",
                 "conn_mat",
+                "FCC",
+                "lesion_conn"
             ]
         ),
         name="outputnode",
@@ -238,7 +240,9 @@ effects of other kernels [@lanczos].
             ("pipelines", "inputnode.pipelines"),
             ("atlases", "inputnode.atlases"),
             ("conn_mat", "inputnode.conn_mat"),
-            ("conn_measures", "inputnode.conn_measures")],),
+            ("conn_measures", "inputnode.conn_measures"),
+            ("lesion_conn", "inputnode.lesion_conn"),
+            ("FCC", "inputnode.FCC")],),
     ])
     # fmt:on
 
@@ -319,7 +323,7 @@ effects of other kernels [@lanczos].
 
     # DENOISING WORKFLOW #####################################################
     denoising_wf = init_denoise_wf(
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["largemem"],
         omp_nthreads=omp_nthreads,
         metadata=metadata,
         pipelines=pipelines,
@@ -394,7 +398,7 @@ effects of other kernels [@lanczos].
 
     # CONNECTIVITY WF ########################################################
     connectivity_wf = init_connectivity_wf(
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["largemem"],
         atlases=atlases,
         pipelines=pipelines,
         conn_measure=conn_measure,
@@ -416,7 +420,29 @@ effects of other kernels [@lanczos].
             ("outputnode.pipelines", "pipelines"),
             ("outputnode.atlases", "atlases"),
             ("outputnode.conn_measures", "conn_measures"),
-            ("outputnode.conn_mat", "conn_mat")])
+            ("outputnode.conn_mat", "conn_mat"),
+            ("outputnode.FCC", "FCC")])
+    ])
+    # fmt:on
+    
+    # LESION CONNECTIVITY ##################################################
+    lesion_conn = init_lesion_voxels_conn_wf(
+        mem_gb=mem_gb["largemem"],
+        omp_nthreads=omp_nthreads,
+        pipelines=pipelines,
+        name="lesion_connectivity_wf",
+    )
+    
+    # fmt:off
+    workflow.connect([
+        (denoising_wf, lesion_conn, [
+            ("outputnode.denoised_bold_t1", "inputnode.denoised_bold_t1",),
+            ("outputnode.pipeline", "inputnode.pipeline"),],),
+        (inputnode, lesion_conn,[
+            ("roi", "inputnode.t1w_mask_lesion"),
+            ("t1w_preproc", "inputnode.t1w")],),
+        (lesion_conn, outputnode, [
+            ("outputnode.output_conn_roi", "lesion_conn"),])
     ])
     # fmt:on
 

@@ -34,7 +34,7 @@ def compute_lesion_correlation(lesion_time_series, brain_time_series):
     )
     
     mean = np.tanh(
-        np.mean(np.arctanh(leion_to_voxel_correlations))
+        np.mean(np.arctanh(lesion_to_voxel_correlations))
     )
     return lesion_to_voxel_correlations, mean
 
@@ -77,7 +77,7 @@ def compute_FCC(connectivity_mat, atlas_labels):
     # H1: The distribution underlying WNEs is stochastically greater than the distribution underlying BNEs.
     # FCC defined as the Z-statistic of the Wilcoxon rank.
     z_stat, p_value = ranksums(WNE, BNE, 'greater')
-    return z_stat
+    return z_stat, p_value
 
 def _get_WNE_BNE(connectivity_mat, atlas_labels):
     """

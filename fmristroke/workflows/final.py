@@ -21,7 +21,6 @@ from .. import config
 from ..interfaces import DerivativesDataSink
 from .anat.base import init_roi_preproc_wf
 from .bold.base import init_lesion_preproc_wf
-from .metrics.base import init_QCmetric_wf
 
 
 def init_fmristroke_wf():
@@ -63,45 +62,6 @@ def init_fmristroke_wf():
         )
         log_dir.mkdir(exist_ok=True, parents=True)
         config.to_filename(log_dir / "fmristroke.toml")
-
-    # QC metrics
-    # Get all nodes outputs
-    merge_subjects_denoised = pe.Node(niu.Merge(len(single_subject_wfs), no_flatten=True), name="merge_subjects_denoised")
-    merge_subjects_conn = pe.Node(niu.Merge(len(single_subject_wfs), no_flatten=True), name="merge_subjects_conn")
-    merge_subjects_roi_masks = pe.Node(niu.Merge(len(single_subject_wfs), no_flatten=True), name="merge_subjects_roi_masks")
-    merge_subjects_sessions = pe.Node(niu.Merge(len(single_subject_wfs), no_flatten=True), name="merge_subjects_sessions")
-    merge_subjects_tasks = pe.Node(niu.Merge(len(single_subject_wfs), no_flatten=True), name="merge_subjects_tasks")
-    merge_subjects_runs = pe.Node(niu.Merge(len(single_subject_wfs), no_flatten=True), name="merge_subjects_runs")
-
-
-    for i, single_subject_wf in enumerate(single_subject_wfs):
-        # fmt:off
-        fmriStroke_wf.connect([
-            (single_subject_wf, merge_subjects_denoised, [("outputnode.denoised_bold_std", f"in{i}")]),
-            (single_subject_wf, merge_subjects_conn, [("outputnode.conn_mat", f"in{i}")]),
-            (single_subject_wf, merge_subjects_roi_masks, [("outputnode.roi_mask_std", f"in{i}")]),
-            (single_subject_wf, merge_subjects_sessions, [("outputnode.sessions", f"in{i}")]),
-            (single_subject_wf, merge_subjects_tasks, [("outputnode.tasks", f"in{i}")]),
-            (single_subject_wf, merge_subjects_runs, [("outputnode.runs", f"in{i}")]),
-            
-        ])
-        # fmt:on
-
-    QC_metric_wf = init_QCmetric_wf()
-    
-    # fmt:off
-    fmriStroke_wf.connect([
-        (merge_subjects_denoised, QC_metric_wf, [("out", "inputnode.denoised_bold_std")]),
-        (merge_subjects_conn, QC_metric_wf, [("out", "inputnode.conn_mat")]),
-        (merge_subjects_roi_masks, QC_metric_wf, [("out", "inputnode.roi_mask_std")]),
-        (merge_subjects_sessions, QC_metric_wf, [("out", "inputnode.sessions")]),
-        (merge_subjects_tasks, QC_metric_wf, [("out", "inputnode.tasks")]),
-        (merge_subjects_runs, QC_metric_wf, [("out", "inputnode.runs")]),
-        (single_subject_wfs[0], QC_metric_wf, [("outputnode.pipelines", "inputnode.pipelines"),
-                                               ("outputnode.conn_measures", "inputnode.conn_measures"),
-                                               ("outputnode.templates", "inputnode.templates"),
-                                               ("outputnode.atlases", "inputnode.atlases")]),
-    ])
     
     return fmriStroke_wf
 
@@ -280,54 +240,6 @@ tasks and sessions), the following lesion specific preprocessing was performed.
         # fmt:on
 
         func_preproc_wfs.append(lesion_preproc_wf)
-
-    # Prepare outputs
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=[
-            "roi_mask_std",
-            "conn_mat",
-            "denoised_bold_std",
-            "sessions",
-            "tasks",
-            "runs",
-            "templates",
-            "pipelines",
-            "atlases",
-            "conn_measures"
-        ]
-    ), name="outputnode")
-    # Denoised fmri in std spaces / conn matrices
-    merge_conn = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_conn_mat")
-    merge_denoised = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_denoised")
-    
-    group_outputs_conn = pe.Node(niu.Function(function=_group_outputs, output_names=["out", "sessions", "tasks", "runs"]), name="group_output_conn_mat")
-    group_outputs_conn.inputs.node_names = [lesion_preproc_wf.name for lesion_preproc_wf in func_preproc_wfs]
-    group_outputs_denoised = pe.Node(niu.Function(function=_group_outputs, output_names=["out", "sessions", "tasks", "runs"]), name="group_output_denoised")
-    group_outputs_denoised.inputs.node_names = [lesion_preproc_wf.name for lesion_preproc_wf in func_preproc_wfs]
-    for i, func_preproc in enumerate(func_preproc_wfs):
-        # fmt:off
-        workflow.connect([
-            (func_preproc, merge_conn, [("outputnode.conn_mat", f"in{i}")]),
-            (func_preproc, merge_denoised, [("outputnode.denoised_bold_std", f"in{i}")])
-        ])
-        # fmt:on
-    
-    # fmt: off
-    workflow.connect([
-        (merge_conn, group_outputs_conn, [("out", "in_outputs")]),
-        (merge_denoised, group_outputs_denoised, [("out", "in_outputs")]),
-        (group_outputs_conn, outputnode, [("out", "conn_mat"),
-                                            ("sessions", "sessions"),
-                                            ("tasks", "tasks"),
-                                            ("runs", "runs")]),
-        (group_outputs_denoised, outputnode, [("out", "denoised_bold_std")]),
-        (roi_anat_wf, outputnode, [("outputnode.roi_mask_std", "roi_mask_std")]),
-        (func_preproc_wfs[0], outputnode, [("outputnode.atlases", "atlases"),
-                                            ("outputnode.conn_measures","conn_measures"),
-                                            ("outputnode.pipelines", "pipelines"),
-                                            ("outputnode.template", "templates")])
-    ])
-    # fmt:on
     
     return workflow
 
