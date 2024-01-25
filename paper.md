@@ -8,7 +8,7 @@ tags:
   - functional connectivity
 authors:
   - name: Alix Lamouroux
-    orcid: 
+    orcid: 0009-0008-2046-3703
     affiliation: "1, 2" 
   - name: Giulia Lioi
     orcid: 
@@ -59,6 +59,6 @@ Finally supplementary outputs include the lesion mask in standardized space and 
 fMRIStroke pipeline is presented in more details in the following figure. 
 
 
-![fMRIStroke pipeline.](https://github.com/alixlam/fmristroke/blob/joss/docs/_static/fmristroke_pipeline.png)
+![fMRIStroke pipeline.](https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png)
 
 # References
