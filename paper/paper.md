@@ -59,6 +59,6 @@ Finally supplementary outputs include the lesion mask in standardized space and 
 fMRIStroke pipeline is presented in more details in the following figure. 
 
 
-![fMRIStroke pipeline.](https://github.com/alixlam/fmristroke/blob/main/docs/_static/pipeline.png)
+![fMRIStroke pipeline.](pipeline.png)
 
 # References
