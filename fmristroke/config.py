@@ -618,7 +618,7 @@ def init_pipelines():
     from .utils.pipelines import Pipeline, Pipelines
 
     pipelines = execution.output_pipelines or Pipelines()
-    known_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS"]
+    known_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS", "CompCorLesionGS", "ICLesionCompCorGS"]
     if not isinstance(pipelines, Pipelines):
         pipelines_filenames = [
             pkgrf("fmristroke", f"data/denoising/{s}.json")

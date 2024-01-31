@@ -141,6 +141,8 @@ temp*
 # Output dirctory 
 out/ 
 
+# Notebooks 
+*.ipynb
 
 # licence files
 .licenses/

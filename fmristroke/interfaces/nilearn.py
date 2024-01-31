@@ -373,7 +373,7 @@ class _ROI2VoxelConnectivityInputSpec(BaseInterfaceInputSpec):
         desc="output file name", genfile=True, hash_files=False
     )
     roi_ts = traits.File(desc="ROI time serie", exists=True)
-
+    
     brain_mask = traits.File(
         desc="Brain mask, connectivity is not computed outside this mask",
         exists=True,

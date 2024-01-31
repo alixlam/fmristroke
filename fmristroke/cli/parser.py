@@ -160,7 +160,7 @@ def _build_parser(**kwargs):
         action="store",
         type=_to_gb,
         metavar="MEMORY_MB",
-        help="Upper bound memory limit for fMRIPrep processes",
+        help="Upper bound memory limit for fMRIStroke processes",
     )
     g_perfm.add_argument(
         "--low-mem",
@@ -314,7 +314,7 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         action="store_true",
         default=False,
         help="Clears working directory of contents. Use of this flag is not "
-        "recommended when running concurrent processes of fMRIPrep.",
+        "recommended when running concurrent processes of fMRIStroke.",
     )
     g_other.add_argument(
         "--resource-monitor",
@@ -386,6 +386,8 @@ def parse_args(args=None, namespace=None):
             "ICLesionGS",
             "CompCorGS",
             "SimpleLesionGS",
+            "CompCorLesionGS",
+            "ICLesionCompCorGS"
         ]
 
     # Initialize --output-atlases if not defined
@@ -451,7 +453,7 @@ def parse_args(args=None, namespace=None):
             "Please modify the output path (suggestion: %s)."
             % bids_dir
             / "derivatives"
-            / ("fmriprep-%s" % version.split("+")[0])
+            / ("fmristroke-%s" % version.split("+")[0])
         )
 
     if bids_dir in work_dir.parents:

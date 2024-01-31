@@ -53,7 +53,7 @@ def main():
 
     # CRITICAL Load the config from the file. This is necessary because the ``build_workflow``
     # function executed constrained in a process may change the config (and thus the global
-    # state of fMRIPrep).
+    # state of fMRIStroke).
     config.load(config_file)
 
     if config.execution.reports_only:
@@ -99,7 +99,7 @@ def main():
             config.execution.output_dir,
             config.execution.run_uuid,
             config=pkgrf("fmristroke", "data/reports-specs.yml"),
-            packagename="fmriprep",
+            packagename="fmristroke",
         )
         write_derivative_description(
             config.execution.bids_dir, config.execution.fmriprep_dir
@@ -110,7 +110,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    """raise RuntimeError(
-        "fmriprep/cli/run.py should not be run directly;\n"
-        "Please `pip install` fmriprep and use the `fmriprep` command"
-    )"""

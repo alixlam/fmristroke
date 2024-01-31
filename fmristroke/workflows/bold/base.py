@@ -194,7 +194,9 @@ effects of other kernels [@lanczos].
                 "pipelines",
                 "conn_measures",
                 "conn_mat",
+                "conn_mat_roi",
                 "FCC",
+                "FCC_roi",
                 "lesion_conn",
             ]
         ),
@@ -242,7 +244,9 @@ effects of other kernels [@lanczos].
             ("conn_mat", "inputnode.conn_mat"),
             ("conn_measures", "inputnode.conn_measures"),
             ("lesion_conn", "inputnode.lesion_conn"),
-            ("FCC", "inputnode.FCC")],),
+            ("FCC", "inputnode.FCC"),
+            ("FCC_roi", "inputnode.FCC_roi"),
+            ("conn_mat_roi", "inputnode.conn_mat_roi")],),
     ])
     # fmt:on
 
@@ -337,6 +341,7 @@ effects of other kernels [@lanczos].
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("templates", "inputnode.templates"),],),
         (lesion_confounds_wf, denoising_wf, [
+            ("outputnode.boldmask", "inputnode.boldmask"),
             ("outputnode.confounds_file", "inputnode.confounds_file")],),
         (concat_wf, denoising_wf, [
             ("outputnode.bold_t1", "inputnode.bold_t1"),],),
@@ -421,7 +426,9 @@ effects of other kernels [@lanczos].
             ("outputnode.atlases", "atlases"),
             ("outputnode.conn_measures", "conn_measures"),
             ("outputnode.conn_mat", "conn_mat"),
-            ("outputnode.FCC", "FCC")])
+            ("outputnode.conn_mat_roi", "conn_mat_roi"),
+            ("outputnode.FCC", "FCC"),
+            ("outputnode.FCC_roi", "FCC_roi")])
     ])
     # fmt:on
 
@@ -441,8 +448,10 @@ effects of other kernels [@lanczos].
         (inputnode, lesion_conn, [
             ("roi", "inputnode.t1w_mask_lesion"),
             ("t1w_preproc", "inputnode.t1w")],),
+        (hemodynamics_wf, lesion_conn, [
+            ("outputnode.gm_mask", "inputnode.gm_mask")]),
         (lesion_conn, outputnode, [
-            ("outputnode.output_conn_roi", "lesion_conn"),])
+            ("outputnode.output_conn_roi", "lesion_conn"),]),
     ])
     # fmt:on
 
