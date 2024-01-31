@@ -9,6 +9,7 @@ from nipype.interfaces.base import (
     Directory,
     File,
     InputMultiObject,
+    InputMultiPath,
     SimpleInterface,
     Str,
     TraitedSpec,
@@ -230,3 +231,44 @@ class SessionSummary(SummaryInterface):
         final_length = sum(run_lengths)
 
         return SESSION_TEMPLATE.format(final_run=final_length, n_runs=n_runs)
+
+
+class _ROIConnPlotInputSpecRPT(reporting.ReportCapableInputSpec):
+    input_images = InputMultiPath(
+        traits.File(
+            mandatory=True,
+            desc="Input images to plot",
+            exists=True,
+        )
+    )
+
+    anat_img = traits.File(
+        desc="T1w image to plot as a background", exists=True, mandatory=True
+    )
+
+    roi = traits.File(desc="ROI mask", exists=True)
+
+    pipeline = InputMultiObject(traits.Str(desc="Denoising pipelines name"))
+
+
+class ROIConnPlot(reporting.ReportCapableInterface):
+    input_spec = _ROIConnPlotInputSpecRPT
+    output_spec = reporting.ReportCapableOutputSpec
+
+    def __init__(self, generate_report=True, **kwargs):
+        super().__init__(generate_report=generate_report, **kwargs)
+
+    def _run_interface(self, runtime):
+        return runtime
+
+    def _generate_report(self):
+        from ..utils.viz import plot_multilesionconn
+
+        self._out_report = os.path.abspath(self.inputs.out_report + ".svg")
+        fig = plot_multilesionconn(
+            anat_nii=self.inputs.anat_img,
+            lesion_nii=self.inputs.roi,
+            stat_map_nii=self.inputs.input_images,
+            titles=self.inputs.pipeline,
+        )
+        fig.savefig(self._out_report, bbox_inches="tight")

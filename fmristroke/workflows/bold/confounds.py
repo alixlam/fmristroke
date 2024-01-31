@@ -501,6 +501,7 @@ def init_confs_wf(
                                 ("boldmask_t1", "mask_files")]),
             (inputnode, signals_tcompcor, [("bold_t1", "in_file")]),
             (tcompcor, signals_tcompcor, [("high_variance_masks", "label_files")]),
+            (tcompcor, concat, [("pre_filter_file", "cosine")]),
             (signals_tcompcor, concat, [("out_file", "tcompcor")]),
             (rename_acompcor, concat, [("components_file", "acompcor")]),
             (crowncompcor, concat, [("components_file", "crowncompcor")]),

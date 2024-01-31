@@ -15,6 +15,7 @@ from ...interfaces import DerivativesDataSink
 if ty.TYPE_CHECKING:
     from niworkflows.utils.spaces import SpatialReferences
 
+    from ...utils.atlases import Atlases
     from ...utils.pipelines import Pipelines
 
 
@@ -23,6 +24,8 @@ def init_func_lesion_derivatives_wf(
     output_dir: str,
     spaces: SpatialReferences,
     pipelines: Pipelines,
+    atlases: Atlases,
+    conn_measure: List[str],
     name="func_lesion_derivatives_wf",
 ):
     """
@@ -67,6 +70,14 @@ def init_func_lesion_derivatives_wf(
                 "denoised_bold_t1",
                 "denoised_bold_std",
                 "pipeline",
+                "pipelines",
+                "conn_mat",
+                "conn_mat_roi",
+                "atlases",
+                "conn_measures",
+                "lesion_conn",
+                "FCC",
+                "FCC_roi",
             ]
         ),
         name="inputnode",
@@ -211,6 +222,154 @@ def init_func_lesion_derivatives_wf(
                                         ('resolution', 'resolution'),
                                         ('density', 'density')]),
         (pipelinessource, ds_denoised_std, [('pipeline', 'pipeline')])
+    ])
+    # fmt:on
+
+    # Connectivity
+    atlassource = pe.Node(
+        niu.IdentityInterface(fields=["atlas"]), name="atlassource"
+    )
+    atlassource.iterables = [("atlas", atlases.get_atlases())]
+
+    pipelinessource2 = pe.Node(
+        niu.IdentityInterface(fields=["pipeline"]), name="pipelinesource"
+    )
+    pipelinessource2.iterables = [("pipeline", pipelines.get_pipelines())]
+
+    connsource = pe.Node(
+        niu.IdentityInterface(fields=["conn_measure"]), name="measuresource"
+    )
+    connsource.iterables = [("conn_measure", conn_measure)]
+
+    fields = ["conn_mat", "conn_mat_roi"]
+
+    select_pipeline2 = pe.Node(
+        KeySelect(fields=fields),
+        name="select_pipeline2",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+
+    select_atlas = pe.Node(
+        KeySelect(fields=fields),
+        name="select_atlas",
+        run_without_submitting=True,
+    )
+
+    select_measure = pe.Node(
+        KeySelect(fields=fields),
+        name="select_measure",
+        run_without_submitting=True,
+    )
+
+    ds_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivity",
+            suffix="mat",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_connectivity",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+
+    ds_connectivity_roi = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivityroi",
+            suffix="mat",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_connectivity_roi",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+
+    ds_FCC = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivity",
+            suffix="FCC",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_FCC",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+
+    ds_FCC_roi = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivityroi",
+            suffix="FCC",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_FCC_roi",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_connectivity, [("source_file", "source_file"),],),
+        (inputnode, ds_connectivity_roi, [("source_file", "source_file"),],),
+        (inputnode, ds_FCC, [("source_file", "source_file"),
+                            ("FCC", "in_file")]),
+        (inputnode, ds_FCC_roi, [("source_file", "source_file"),
+                            ("FCC_roi", "in_file")]),
+        (atlassource, select_atlas, [("atlas", "key")]),
+        (pipelinessource2, select_pipeline2, [("pipeline", "key")]),
+        (connsource, select_measure, [("conn_measure", "key")]),
+        (inputnode, select_atlas, [("atlases", "keys"),]),
+        (inputnode, select_pipeline2, [("pipelines", "keys"),]),
+        (inputnode, select_measure, [("conn_measures", "keys")]),
+        # conn matrices are saved as [Atlas [Pipeline [Measure]]]
+        # First Select Atlas
+        (inputnode, select_atlas, [("conn_mat", "conn_mat"),
+                                    ("conn_mat_roi", "conn_mat_roi")]),
+        # Select Pipeline
+        (select_atlas, select_pipeline2, [("conn_mat", "conn_mat"),
+                                        ("conn_mat_roi", "conn_mat_roi")]),
+        # select Measure
+        (select_pipeline2, select_measure, [("conn_mat", "conn_mat"),
+                                            ("conn_mat_roi", "conn_mat_roi")]),
+
+        # Datasink
+        (select_measure, ds_connectivity, [("conn_mat", "in_file")]),
+        (atlassource, ds_connectivity, [("atlas", "atlas")]),
+        (pipelinessource2, ds_connectivity, [("pipeline", "pipeline")]),
+        (connsource, ds_connectivity, [("conn_measure", "measure")]),
+
+        (select_measure, ds_connectivity_roi, [("conn_mat_roi", "in_file")]),
+        (atlassource, ds_connectivity_roi, [("atlas", "atlas")]),
+        (pipelinessource2, ds_connectivity_roi, [("pipeline", "pipeline")]),
+        (connsource, ds_connectivity_roi, [("conn_measure", "measure")]),
+    ])
+    # fmt:on
+
+    # Lesion connectivity
+    ds_lesion_conn = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivity",
+            suffix="roi",
+            dismiss_entities=("echo"),
+            space=None,
+        ),
+        name="ds_lesion_connectivity",
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_lesion_conn, [("lesion_conn", "in_file"),
+                                    ("source_file", "source_file")]),
     ])
     # fmt:on
 

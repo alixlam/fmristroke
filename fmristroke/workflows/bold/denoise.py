@@ -166,46 +166,29 @@ def init_denoise_wf(
     if "RepetitionTime" in metadata:
         denoise_std.inputs.tr = metadata["RepetitionTime"]
 
-    workflow.connect(
-        [
-            (
-                inputnode,
-                select_confounds,
-                [
-                    ("confounds_file", "confounds"),
-                    ("confounds_metadata", "confounds_metadata"),
-                ],
-            ),
-            (iterablesource, pipeline_info, [("pipeline", "in_pipeline")]),
-            (
-                pipeline_info,
-                select_confounds,
-                [
-                    ("pipeline", "pipeline"),
-                    ("confounds_spec", "confounds_spec"),
-                    ("demean", "demean"),
-                ],
-            ),
-            (
-                select_confounds,
-                denoise_t1,
-                [("selected_confounds", "confounds_file")],
-            ),
-            (
-                select_confounds,
-                denoise_std,
-                [("selected_confounds", "confounds_file")],
-            ),
-            (pipeline_info, denoise_t1, [("clean_specs", "pipeline")]),
-            (pipeline_info, denoise_std, [("clean_specs", "pipeline")]),
-            (inputnode, denoise_t1, [("bold_t1", "input_image")]),
-            (
-                bold_std_trans_wf,
-                denoise_std,
-                [("outputnode.bold_std", "input_image")],
-            ),
-        ]
-    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, select_confounds, [
+            ("confounds_file", "confounds"),
+            ("confounds_metadata", "confounds_metadata"),],),
+        (inputnode, denoise_t1, [
+            ("boldmask", "mask_img")]),
+        (iterablesource, pipeline_info, [("pipeline", "in_pipeline")]),
+        (pipeline_info, select_confounds, [
+            ("pipeline", "pipeline"),
+            ("confounds_spec", "confounds_spec"),
+            ("demean", "demean"),],),
+        (select_confounds, denoise_t1, [
+            ("selected_confounds", "confounds_file")],),
+        (select_confounds, denoise_std, [
+            ("selected_confounds", "confounds_file")],),
+        (pipeline_info, denoise_t1, [("clean_specs", "pipeline")]),
+        (pipeline_info, denoise_std, [("clean_specs", "pipeline")]),
+        (inputnode, denoise_t1, [("bold_t1", "input_image")]),
+        (bold_std_trans_wf, denoise_std, [
+            ("outputnode.bold_std", "input_image")],),
+    ])
+    # fmt:on
 
     output_names = ["denoised_bold_t1", "denoised_bold_std", "pipeline"]
     poutputnode = pe.Node(

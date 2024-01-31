@@ -141,6 +141,8 @@ temp*
 # Output dirctory 
 out/ 
 
+# Notebooks 
+*.ipynb
 
 # licence files
 .licenses/
@@ -153,3 +155,4 @@ out/
 
 # Tools 
 tools/
+log/
