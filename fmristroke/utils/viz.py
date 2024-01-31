@@ -18,14 +18,14 @@ def plot_multicomponents(
     stat_map_nii,
     lesion_nii,
 ):
-    ts = (
-        pd.read_csv(tseries, sep="\t") if isinstance(tseries, str) else tseries
-    )
-    n_components = ts.shape[1]
-
-    if n_components == 0:
+    try:
+        ts = (
+            pd.read_csv(tseries, sep="\t") if isinstance(tseries, str) else tseries
+        )
+    except:
         return plt.figure()
 
+    n_components = ts.shape[1]
     anat = nib.load(anat_nii)
     stat_map = nib.load(stat_map_nii)
     lesion = nib.load(lesion_nii)
@@ -343,7 +343,7 @@ def plot_multilesionconn(
         display = plotting.plot_stat_map(
             stat_map,
             bg_img=anat,
-            threshold=0.1,
+            threshold=0.05,
             cmap="jet",
             title=name,
             axes=plt.subplot(gs[i]),
@@ -379,7 +379,6 @@ def plot_kdeplot(data, title=None):
 
     return fig
 
-
 def plot_catplot(x, y, data, xlabel=None, ylabel=None):
     """
     Plot representing quality measure value for each pipeline.
@@ -410,5 +409,55 @@ def plot_catplot(x, y, data, xlabel=None, ylabel=None):
 
     sns.despine(top=False, right=False)
     fig.ax.axvline(x=0, color="k")
+
+    return fig
+
+
+def make_motion_plot(
+    group_conf_summary: pd.DataFrame,
+    x=None,
+    y= None,):
+    """
+    Generates plot presenting number of subjects excluded with high motion
+    according specified thresholds.
+    Args:
+        group_conf_summary (DataFrame): dataframe, output from GroupConfounds
+        output_path (str): output path where plot is saved
+
+    Returns:
+        created figure, ready to save
+    """
+
+    sns.set_style("ticks")
+    colors = ['#00a074', '#fe6863']
+    palette = sns.set_palette(colors, 2)
+
+    fig, axes = plt.subplots(1, 1, figsize=(16, 7))
+    fig.subplots_adjust(wspace=0.4, hspace=0.4)
+
+
+    p = sns.swarmplot(
+        y=y,
+        x=x,
+        data=group_conf_summary,
+        alpha=0.8,
+        s=10,
+        palette=palette,
+        ax=axes,
+    )
+
+    p = sns.boxplot(
+        y=y,
+        x=x,
+        data=group_conf_summary,
+        showcaps=False,
+        boxprops={'facecolor': 'None'},
+        showfliers=False,
+        ax=axes,
+    )
+
+    p.set(xlabel='')
+    p.set(ylabel=y)
+    p.tick_params(axis='both', which='both', length=6, width=2.2)
 
     return fig
