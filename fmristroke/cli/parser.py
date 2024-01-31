@@ -387,7 +387,7 @@ def parse_args(args=None, namespace=None):
             "CompCorGS",
             "SimpleLesionGS",
             "CompCorLesionGS",
-            "ICLesionCompCorGS"
+            "ICLesionCompCorGS",
         ]
 
     # Initialize --output-atlases if not defined

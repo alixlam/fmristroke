@@ -135,13 +135,13 @@ def init_connectivity_wf(
         niu.Function(function=_resample_to_img), name="atlas_roi_resamp"
     )
     atlas_roi_resamp.inputs.interpolation = "nearest"
-    
+
     # atlas resamp
     atlas_resamp = pe.Node(
         niu.Function(function=_resample_to_img), name="atlas_resamp"
     )
     atlas_resamp.inputs.interpolation = "nearest"
-    
+
     # Compute connectivity
     select_pipeline = pe.Node(
         KeySelect(fields=["bold_denoised"]),
@@ -159,8 +159,8 @@ def init_connectivity_wf(
         niu.Function(function=_concat_FCC, output_names=["FCC"]),
         name="concat_FCC_roi",
     )
-    
-    # Compute FCC 
+
+    # Compute FCC
     conn_FCC = pe.Node(
         niu.Function(function=_get_FCC, output_names=["FCC"]), name="FCC"
     )
@@ -211,25 +211,53 @@ def init_connectivity_wf(
     # fmt:on
 
     # Handle outputs
-    output_names = ["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "conn_measures", "pipelines", "atlases"]
+    output_names = [
+        "conn_mat",
+        "FCC",
+        "conn_mat_roi",
+        "FCC_roi",
+        "conn_measures",
+        "pipelines",
+        "atlases",
+    ]
     output_connectivity = pe.Node(
-        niu.IdentityInterface(fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi"]),
+        niu.IdentityInterface(
+            fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi"]
+        ),
         name="output_connectivity",
     )
     output_measure = pe.JoinNode(
-        niu.IdentityInterface(fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "conn_measures"]),
-        joinfield=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "conn_measures"],
+        niu.IdentityInterface(
+            fields=[
+                "conn_mat",
+                "FCC",
+                "conn_mat_roi",
+                "FCC_roi",
+                "conn_measures",
+            ]
+        ),
+        joinfield=[
+            "conn_mat",
+            "FCC",
+            "conn_mat_roi",
+            "FCC_roi",
+            "conn_measures",
+        ],
         joinsource=iterconn,
         name="output_measure",
     )
     output_pipeline = pe.JoinNode(
-        niu.IdentityInterface(fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "pipelines"]),
+        niu.IdentityInterface(
+            fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "pipelines"]
+        ),
         joinfield=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "pipelines"],
         joinsource=iterpipeline,
         name="output_pipeline",
     )
     output_atlas = pe.JoinNode(
-        niu.IdentityInterface(fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "atlases"]),
+        niu.IdentityInterface(
+            fields=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "atlases"]
+        ),
         joinfield=["conn_mat", "FCC", "conn_mat_roi", "FCC_roi", "atlases"],
         joinsource=iteratlas,
         name="output_atlas",
@@ -326,7 +354,13 @@ def init_lesion_voxels_conn_wf(
     workflow = Workflow(name=name)
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["denoised_bold_t1", "t1w_mask_lesion", "pipeline", "t1w", "gm_mask"]
+            fields=[
+                "denoised_bold_t1",
+                "t1w_mask_lesion",
+                "pipeline",
+                "t1w",
+                "gm_mask",
+            ]
         ),
         name="inputnode",
     )
@@ -349,7 +383,7 @@ def init_lesion_voxels_conn_wf(
         niu.Function(function=_resample_to_img), name="roi_resamp"
     )
     roi_resamp.inputs.interpolation = "nearest"
-    
+
     # GM Mask resamp
     gm_resamp = pe.Node(
         niu.Function(function=_resample_to_img), name="gm_resamp"
