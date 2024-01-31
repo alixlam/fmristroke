@@ -7,9 +7,9 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 .. image:: https://readthedocs.org/projects/fmristroke/badge/?version=latest
     :target: https://fmristroke.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
-
-[![github actions pytest](https://github.com/alixlam/fmristroke/actions/main.yml/badge.svg)](https://github.com/alixlam/fmristroke/actions)
-
+.. image:: https://github.com/alixlam/fmristroke/actions/main.yml/badge.svg
+    :target: https://github.com/alixlam/fmristroke/actions
+    :alt: github actions pytest
 
 
 About
