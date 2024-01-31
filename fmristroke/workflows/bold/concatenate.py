@@ -209,6 +209,9 @@ def _concat_confounds(in_files, croprun):
         concat = concat.drop(
             [c for c in concat.columns if "comp" in c], axis=1
         )
+        concat = concat.drop(
+            [c for c in concat.columns if "cosine" in c], axis=1
+        )
     out_name = Path("concat_confounds.tsv").absolute()
     concat.to_csv(str(out_name), sep="\t")
     return str(out_name)

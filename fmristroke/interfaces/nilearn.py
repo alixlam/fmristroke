@@ -325,12 +325,14 @@ class Connectivity(SimpleInterface):
         if name == "output_conn":
             output = self.inputs.output_image
             if not isdefined(output):
-                _, name, _ = split_filename(self.inputs.input_image)
-                output = name + ".npy"
+                _, filename, _ = split_filename(self.inputs.input_image)
+                output = filename + ".npy"
+                
             return output
         return None
 
     def _run_interface(self, runtime):
+
         from nilearn.connectome import ConnectivityMeasure
         from nilearn.maskers import NiftiLabelsMasker
 
@@ -351,5 +353,95 @@ class Connectivity(SimpleInterface):
         )
 
         np.save(self._results["output_conn"], corr_mat)
+
+        return runtime
+
+
+class _ROI2VoxelConnectivityInputSpec(BaseInterfaceInputSpec):
+    input_image = traits.File(
+        desc="denoised NifTi Bold series to compute connectivity on",
+        exists=True,
+        mandatory=True,
+    )
+    output_image = traits.Str(
+        desc="output file name", genfile=True, hash_files=False
+    )
+    roi_ts = traits.File(desc="ROI time serie", exists=True)
+    
+    brain_mask = traits.File(
+        desc="Brain mask, connectivity is not computed outside this mask",
+        exists=True,
+    )
+
+    pipeline_name = traits.Str(desc="Name of denoising pipeline")
+
+
+class _ROI2VoxelConnectivityOutputSpec(TraitedSpec):
+    output_conn = traits.File(
+        exists=True, desc="Roi to voxel connectivity values", mandatory=True
+    )
+
+    output_img = traits.File(
+        exists=True, desc="Roi to voxel connectivity values in stat map"
+    )
+
+
+class ROI2VoxelConnectivity(SimpleInterface):
+    input_spec = _ROI2VoxelConnectivityInputSpec
+    output_spec = _ROI2VoxelConnectivityOutputSpec
+
+    def _gen_filename(self, name):
+        if name in ["output_conn", "output_img"]:
+            output = self.inputs.output_image
+            if not isdefined(output):
+                _, filename, _ = split_filename(self.inputs.input_image)
+                output = (
+                    filename + ".tsv"
+                    if name == "output_conn"
+                    else filename + ".nii.gz"
+                )
+            return output
+        return None
+
+    def _run_interface(self, runtime):
+        import pandas as pd
+        from nilearn.maskers import NiftiMasker
+
+        from ..utils.metrics import compute_lesion_correlation
+
+        brain_mask = (
+            self.inputs.brain_mask
+            if isdefined(self.inputs.brain_mask)
+            else None
+        )
+        brain_masker = NiftiMasker(
+            mask_img=brain_mask,
+            standardize=True,
+        )
+        time_series_brain = brain_masker.fit_transform(
+            self.inputs.input_image, confounds=None
+        )
+
+        lesion_ts = (
+            pd.read_table(self.inputs.roi_ts).iloc[:, 0].values.reshape(-1, 1)
+        )
+
+        corr, _ = compute_lesion_correlation(lesion_ts, time_series_brain)
+
+        roi_to_voxel_img = brain_masker.inverse_transform(corr.T)
+
+        corr = np.vstack(([self.inputs.pipeline_name], corr))
+
+        self._results["output_img"] = os.path.abspath(
+            self._gen_filename("output_img")
+        )
+
+        self._results["output_conn"] = os.path.abspath(
+            self._gen_filename("output_conn")
+        )
+        np.savetxt(
+            self._results["output_conn"], corr, fmt=b"%s", delimiter="\t"
+        )
+        roi_to_voxel_img.to_filename(self._results["output_img"])
 
         return runtime

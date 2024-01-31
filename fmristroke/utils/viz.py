@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import nibabel as nib
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib import gridspec as mgs
 from nilearn import plotting
 from nilearn.image import index_img, threshold_img
@@ -313,3 +314,101 @@ def plot_lagmaps(
         out_files.append(fromstring(svg))
 
     return out_files
+
+
+def plot_multilesionconn(
+    anat_nii, lesion_nii, stat_map_nii, titles, **plot_params
+):
+    """
+    Plot representing lesion to voxels connectivity
+    """
+    plot_params = {} if plot_params is None else plot_params
+
+    anat = nib.load(anat_nii)
+    anat = nib.Nifti1Image.from_image(anat)
+
+    if lesion_nii is not None:
+        lesion_nii = nib.load(lesion_nii)
+        lesion_nii = nib.Nifti1Image.from_image(lesion_nii)
+
+    fig = plt.figure(figsize=(10, 5 * len(stat_map_nii)))
+    gs = mgs.GridSpec(
+        nrows=len(stat_map_nii), ncols=1, wspace=0.0, hspace=0.05
+    )
+
+    for i, (name, stat_map) in enumerate(zip(titles, stat_map_nii)):
+        stat_map = nib.load(stat_map)
+        stat_map = nib.Nifti1Image.from_image(stat_map)
+
+        display = plotting.plot_stat_map(
+            stat_map,
+            bg_img=anat,
+            threshold=0.1,
+            cmap="jet",
+            title=name,
+            axes=plt.subplot(gs[i]),
+            **plot_params,
+        )
+
+        if lesion_nii is not None:
+            display.add_contours(
+                lesion_nii,
+                colors="black",
+                filled=True,
+                levels=[0.5],
+                linewidths=0.5,
+            )
+    return fig
+
+
+def plot_kdeplot(data, title=None):
+    """
+    Plot representing voxels correlations with lesion
+    """
+
+    fig, ax = plt.subplots(1, 1)
+
+    for col in data:
+        sns.kdeplot(data[col], shade=True, ax=ax, label=col)
+    ax.axvline(x=0, linestyle="dashed", color="k")
+    ax.set_title(title)
+    ax.set_xlim([-1, 1])
+    ax.set_ylabel("Probability density")
+    ax.set_xlabel("Connection strength")
+    ax.legend(bbox_to_anchor=(1.025, 1), borderaxespad=0)
+
+    return fig
+
+
+def plot_catplot(x, y, data, xlabel=None, ylabel=None):
+    """
+    Plot representing quality measure value for each pipeline.
+
+    Args:
+        x (str):
+            Column name of data corresponding to quality measure.
+        y (str):
+            Column name of data used to group values.
+        data (pd.DataFrame):
+            Table of quality measures. It should contain at least one one column
+            representing quality measure and one column for grouping variable.
+            Usually each row corresponds to one pipeline.
+        xlabel (str, optional):
+            Custom x-axis label.
+        ylabel (str, optional):
+            Custom y-axis label.
+
+    Returns:
+        generated plot.
+    """
+
+    fig = sns.catplot(x=x, y=y, kind="bar", data=data)
+    if xlabel:
+        fig.ax.set_xlabel(xlabel)
+    if ylabel:
+        fig.ax.set_ylabel(ylabel)
+
+    sns.despine(top=False, right=False)
+    fig.ax.axvline(x=0, color="k")
+
+    return fig

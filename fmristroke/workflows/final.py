@@ -37,7 +37,7 @@ def init_fmristroke_wf():
 
     fmriStroke_wf = Workflow(name=f"fmristroke_{ver.major}_{ver.minor}_wf")
     fmriStroke_wf.base_dir = config.execution.work_dir
-
+    single_subject_wfs = []
     for subject_id in config.execution.participant_label:
         single_subject_wf = init_single_subject_wf(subject_id)
 
@@ -50,6 +50,8 @@ def init_fmristroke_wf():
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)
         fmriStroke_wf.add_nodes([single_subject_wf])
+
+        single_subject_wfs.append(single_subject_wf)
 
         # Dump a copy of the config file into the log directory
         log_dir = (
@@ -153,20 +155,16 @@ def init_single_subject_wf(subject_id: str):
     roi_anat_wf = init_roi_preproc_wf(name="roi_std_wf")
     roi_anat_wf.inputs.inputnode.roi = roi["roi"][0]
 
-    workflow.connect(
-        [
-            (
-                bidssrc,
-                roi_anat_wf,
-                [
+    # fmt:off
+    workflow.connect([
+            (bidssrc, roi_anat_wf, [
                     ("t1w_preproc", "inputnode.t1w_preproc"),
                     ("anat2std_xfm", "inputnode.anat2std_xfm"),
                     ("std2anat_xfm", "inputnode.std2anat_xfm"),
                     ("template", "inputnode.template"),
                 ],
             )
-        ]
-    )
+    ])
 
     func_pre_desc = """
 Functional data lesion specific data preprocessing
@@ -235,16 +233,12 @@ tasks and sessions), the following lesion specific preprocessing was performed.
 
             ]),
         ])
+        workflow.connect([
+            (roi_anat_wf, lesion_preproc_wf, [
+                ("outputnode.roi_mask_std", "inputnode.roi_std")],)
+        ])
         # fmt:on
-        workflow.connect(
-            [
-                (
-                    roi_anat_wf,
-                    lesion_preproc_wf,
-                    [("outputnode.roi_mask_std", "inputnode.roi_std")],
-                )
-            ]
-        )
+
         func_preproc_wfs.append(lesion_preproc_wf)
 
     return workflow

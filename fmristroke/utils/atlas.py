@@ -20,7 +20,10 @@ class Atlas:
         mask_file_path = os.path.join(
             os.path.dirname(json_file), pipe["mask_file"]
         )
+        # Labels file
+        labels_file = os.path.join(os.path.dirname(json_file), pipe["labels"])
         pipe["mask_file"] = mask_file_path
+        pipe["labels"] = labels_file
         return cls(**pipe)
 
     def __str__(self):

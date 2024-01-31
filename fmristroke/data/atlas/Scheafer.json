@@ -1,6 +1,6 @@
 {
     "atlas": "Scheaffer",
-    "labels": [],
+    "labels": "Scheafer_labels.csv",
     "space": "MNI152NLin2009cAsym",
     "mask_file": "Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii.gz"
 }
