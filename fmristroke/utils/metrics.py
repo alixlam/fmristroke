@@ -214,6 +214,8 @@ def get_group_intersubconn(data_layout):
     for ses in tqdm.tqdm(sessions):
         for task in tqdm.tqdm(tasks):
             for pipeline in tqdm.tqdm(pipelines):
+                if pipeline not in ["SimpleLesionGS", "SimpleGS", "IClesionGS"]:
+                    pass
                 queries["session"] = ses
                 queries["task"] = task
                 queries["pipeline"] = pipeline

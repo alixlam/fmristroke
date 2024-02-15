@@ -648,6 +648,7 @@ def init_carpetplot_wf(
     ds_report_bold_conf = pe.Node(
         DerivativesDataSink(
             desc="carpetplot",
+            suffix="denoised",
             datatype="figures",
             extension="svg",
             dismiss_entities=("echo",),
@@ -683,8 +684,6 @@ def init_carpetplot_wf(
     # fmt:off
     workflow.connect([
         (inputnode, resample_parc, [("bold_mask", "reference_image")]),
-        (inputnode, parcels, [("crown_mask", "crown_mask")]),
-        (inputnode, parcels, [("acompcor_mask", "acompcor_mask")]),
         (inputnode, conf_plot, [("bold", "in_nifti"),
                                 ("confounds_file", "confounds_file"),]),
         (inputnode, resample_parc, [("std2anat_xfm", "transforms")]),
@@ -810,7 +809,7 @@ def _dict2json(dicti):
     return str(out_name)
 
 
-def _carpet_parcellation(segmentation, crown_mask, acompcor_mask):
+def _carpet_parcellation(segmentation):
     """Generate the union of two masks."""
     from pathlib import Path
 
@@ -826,10 +825,7 @@ def _carpet_parcellation(segmentation, crown_mask, acompcor_mask):
     lut[255] = 5  # Cerebellum
     # Apply lookup table
     seg = lut[np.uint16(img.dataobj)]
-    seg[np.bool_(nb.load(crown_mask).dataobj)] = 6
-    # Separate deep from shallow WM+CSF
-    seg[np.bool_(nb.load(acompcor_mask).dataobj)] = 4
-
+    
     outimg = img.__class__(seg.astype("uint8"), img.affine, img.header)
     outimg.set_data_dtype("uint8")
     out_file = Path("segments.nii.gz").absolute()

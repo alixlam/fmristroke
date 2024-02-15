@@ -20,7 +20,7 @@ from packaging.version import Version
 from .. import config
 from ..interfaces import DerivativesDataSink
 from .anat.base import init_roi_preproc_wf
-from .bold.base import init_lesion_preproc_wf
+from .bold.base import init_lesion_preproc_wf, init_lesion_connectivity_wf
 
 
 def init_fmristroke_wf():
@@ -176,20 +176,6 @@ tasks and sessions), the following lesion specific preprocessing was performed.
     )
 
     func_preproc_wfs = []
-    if session_level:
-        bold_derivatives["bold_t1"] = group_runs(bold_derivatives["bold_t1"])
-        bold_derivatives["boldref_t1"] = group_runs(
-            bold_derivatives["boldref_t1"]
-        )
-        bold_derivatives["boldmask_t1"] = group_runs(
-            bold_derivatives["boldmask_t1"]
-        )
-        bold_derivatives["confounds_file"] = group_runs(
-            bold_derivatives["confounds_file"]
-        )
-        bold_derivatives["confounds_metadata"] = group_runs(
-            bold_derivatives["confounds_metadata"]
-        )
 
     for (
         bold_file,
@@ -240,5 +226,123 @@ tasks and sessions), the following lesion specific preprocessing was performed.
         # fmt:on
 
         func_preproc_wfs.append(lesion_preproc_wf)
+    
+    # Merge nodes
+    merge_denoised_t1 = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_denoised_std")
+    merge_denoised_std = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_denoised_t1")
+    merge_boldmask = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_boldmask")
+    
+    for i, bold_wf in enumerate(func_preproc_wfs):
+        # fmt:off
+        bold_wf.connect([
+            (bold_wf, merge_boldmask, [("outputnode.boldmask", f"in{i}")]),
+            (bold_wf, merge_denoised_std, [("outputnode.bold_denoised_std", f"in{i}")]),
+            (bold_wf, merge_denoised_t1, [("outputnode.bold_denoised_t1", f"in{i}")]),
+        ])
+        # fmt:on
+
+    node_names = [func_preproc_wf.name for func_preproc_wf in func_preproc_wfs]
+    
+    if session_level:
+        bold_derivatives["bold_t1"] = group_runs(bold_derivatives["bold_t1"])
+    
+    grp_bold_denoised_t1 = pe.Node(niu.Function(function=_group_outputs), name="group_bold_denoised_t1")
+    grp_bold_denoised_t1.inputs.node_names = node_names
+    grp_bold_denoised_t1.inputs.session_level = session_level
+    grp_bold_denoised_std = pe.Node(niu.Function(function=_group_outputs), name="group_bold_denoised_std")
+    grp_bold_denoised_std.inputs.node_names = node_names
+    grp_bold_denoised_std.inputs.session_level = session_level
+    grp_bold_mask = pe.Node(niu.Function(function=_group_outputs), name="group_bold_denoised_std")
+    grp_bold_mask.inputs.node_names = node_names
+    grp_bold_mask.inputs.session_level = session_level
+
+    for i, bold_file in enumerate(bold_derivatives["bold_t1"]):
+        lesion_connectivity_wf = init_lesion_connectivity_wf(bold_file)
+
+        if lesion_connectivity_wf is None:
+            continue
+
+        lesion_connectivity_wf.inputs.inputnode.roi = roi["roi"][0]
+        
+        select_denoised_t1 = pe.Node(niu.Select(index=i), name=f"select_denoised_t1_{i}")
+        select_denoised_std = pe.Node(niu.Select(index=i), name=f"select_denoised_std_{i}")
+        select_boldmask = pe.Node(niu.Select(index=i), name=f"select_boldmask_{i}")
+
+
+        # fmt:off
+        workflow.connect([
+            (bidssrc, lesion_connectivity_wf, [
+                ('t1w_preproc', 'inputnode.t1w_preproc'),
+                ('t1w_mask', 'inputnode.t1w_mask'),
+                ('t1w_dseg', 'inputnode.t1w_dseg'),
+                ('t1w_tpms', 'inputnode.t1w_tpms'),
+                ('std2anat_xfm', 'inputnode.std2anat_xfm'),
+                ('anat2std_xfm', 'inputnode.anat2std_xfm'),
+                ('template', 'inputnode.templates'),
+                # Undefined if freesurfer was not run
+                ('t1w_aseg', 'inputnode.t1w_aseg')
+            ]),
+            (roi_anat_wf, lesion_connectivity_wf, [
+                ("outputnode.roi_mask_std", "inputnode.roi_std")],),
+            (merge_denoised_std, grp_bold_denoised_std, [
+                ("out","in_outputs")]),
+            (merge_denoised_t1, grp_bold_denoised_t1, [
+                ("out", "in_outputs")]),
+            (merge_boldmask, grp_bold_mask, [
+                ("out", "in_outputs")]),
+            (grp_bold_denoised_std, select_denoised_std, [
+                ("out", "inlist")]),
+            (grp_bold_denoised_t1, select_denoised_t1, [
+                ("out", "inlist")]),
+            (grp_bold_mask, select_boldmask, [
+                ("out", "inlist")]),
+            (select_denoised_std, lesion_connectivity_wf, [
+                ("out", "inputnode.bold_denoised_std")]),
+            (select_denoised_t1, lesion_connectivity_wf, [
+                ("out", "inputnode.bold_denoised_t1")])
+        ])
+        # fmt:on
+        
+        if session_level:
+            # fmt:off
+            inter_boldmask = pe.Node(niu.Function(_intersect_masks), name="inter_boldmask")
+            workflow.connect([
+                (select_boldmask, inter_boldmask, [
+                    ("out", "inter_boldmask")]),
+                (inter_boldmask, lesion_connectivity_wf, [
+                    ("out", "inputnode.boldmask_t1")])
+            ])
+            # fmt:on
+        else:
+            workflow.connect([
+                (select_boldmask, lesion_connectivity_wf, [
+                    ("out", "inputnode.boldmask_t1")]),
+            ])
 
     return workflow
+
+def _group_outputs(in_outputs, node_names, session_level=False):
+    import re
+    from itertools import groupby
+
+    nodes = [(name, out) for name, out in zip(node_names, in_outputs)]
+
+    # Sort by node name
+    nodes.sort(key=lambda x: x[0])
+
+    def _grp_runs(x):
+        if "_run_" not in x[0]:
+            return x
+        run = re.search("_run_\\d*", x[0]).group(0)
+        return x[0].replace(run, "_run_?")
+
+    grouped = []
+    for _, nodes in groupby(nodes, key=_grp_runs):
+        nodes = list(nodes)
+        grouped.append(nodes)
+    
+    if session_level:
+        grouped_outputs = [[run[1] for run in outputs] for outputs in grouped]
+    else:
+        grouped_outputs = [run[1] for run in outputs for outputs in grouped]
+    return grouped_outputs
