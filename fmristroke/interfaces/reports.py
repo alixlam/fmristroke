@@ -205,11 +205,9 @@ class RegisterLesionRPT(nrb.RegistrationRC):
 
 
 class _SessionSummaryInputSpec(BaseInterfaceInputSpec):
-    bold_t1 = InputMultiObject(
-        File(exists=True), desc="BOLD series from the same session and task"
-    )
-    croprun = traits.Int(
-        desc="Run are cropped by n volumes before concatenating"
+    bold_t1 = traits.List(desc="BOLD series from the same session and task")
+    concat_bold_t1 = InputMultiObject(
+        File(exists=True), desc="Concatenated BOLD series"
     )
 
 
@@ -223,12 +221,7 @@ class SessionSummary(SummaryInterface):
         import nibabel as nib
 
         n_runs = len(self.inputs.bold_t1)
-        croprun = self.inputs.croprun
-        run_lengths = [
-            nib.load(f).get_fdata()[:, :, :, croprun:].shape[-1]
-            for f in self.inputs.bold_t1
-        ]
-        final_length = sum(run_lengths)
+        final_length = nib.load(self.inputs.concat_bold_t1[0]).shape[-1]
 
         return SESSION_TEMPLATE.format(final_run=final_length, n_runs=n_runs)
 

@@ -18,7 +18,6 @@ def init_confs_wf(
     ica_method: str = "canica",
     freesurfer: bool = False,
     ncomp_method: str or int = "varexp",
-    session_level: bool = True,
     name: str = "confounds_wf",
 ):
     """
@@ -124,10 +123,6 @@ def init_confs_wf(
                 "confounds_file",
                 "confounds_metadata",
                 "boldmask",
-                # if recomputed compcors (session level)
-                "confounds_metadata_comp",
-                "acompcor_masks",
-                "crown_mask",
             ]
         ),
         name="outputnode",
@@ -257,178 +252,6 @@ def init_confs_wf(
         name="model_expansion",
     )
 
-    # Redo CompCor if session level code adapted from fmriprep repo
-    if session_level:
-        acompcor = pe.Node(
-            ACompCor(
-                components_file="acompcor.tsv",
-                header_prefix="a_comp_cor_",
-                pre_filter="cosine",
-                save_pre_filter=True,
-                save_metadata=True,
-                mask_names=["CSF", "WM", "combined"],
-                merge_method="none",
-                failure_mode="NaN",
-            ),
-            name="acompcor",
-            mem_gb=mem_gb,
-        )
-        # Create the crown mask
-        dilated_mask = pe.Node(BinaryDilation(), name="dilated_mask")
-        subtract_mask = pe.Node(BinarySubtraction(), name="subtract_mask")
-
-        crowncompcor = pe.Node(
-            ACompCor(
-                components_file="crown_compcor.tsv",
-                header_prefix="edge_comp_",
-                pre_filter="cosine",
-                save_pre_filter=True,
-                save_metadata=True,
-                mask_names=["Edge"],
-                merge_method="none",
-                failure_mode="NaN",
-                num_components=24,
-            ),
-            name="crowncompcor",
-            mem_gb=mem_gb,
-        )
-
-        tcompcor = pe.Node(
-            TCompCor(
-                components_file="tcompcor.tsv",
-                header_prefix="t_comp_cor_",
-                pre_filter="cosine",
-                save_pre_filter=True,
-                save_metadata=True,
-                percentile_threshold=0.02,
-                failure_mode="NaN",
-            ),
-            name="tcompcor",
-            mem_gb=mem_gb,
-        )
-
-        acompcor.inputs.variance_threshold = 0.5
-        tcompcor.inputs.variance_threshold = 0.5
-
-        # Set TR if present
-        if "RepetitionTime" in metadata:
-            tcompcor.inputs.repetition_time = metadata["RepetitionTime"]
-            acompcor.inputs.repetition_time = metadata["RepetitionTime"]
-            crowncompcor.inputs.repetition_time = metadata["RepetitionTime"]
-
-        # Split aCompCor results into a_comp_cor, c_comp_cor, w_comp_cor
-        rename_acompcor = pe.Node(RenameACompCor(), name="rename_acompcor")
-
-        # CompCor metadata
-        tcc_metadata_filter = pe.Node(
-            FilterDropped(), name="tcc_metadata_filter"
-        )
-        acc_metadata_filter = pe.Node(
-            FilterDropped(), name="acc_metadata_filter"
-        )
-        tcc_metadata_fmt = pe.Node(
-            TSV2JSON(
-                index_column="component",
-                drop_columns=["mask"],
-                output=None,
-                additional_metadata={"Method": "tCompCor"},
-                enforce_case=True,
-            ),
-            name="tcc_metadata_fmt",
-        )
-        acc_metadata_fmt = pe.Node(
-            TSV2JSON(
-                index_column="component",
-                output=None,
-                additional_metadata={"Method": "aCompCor"},
-                enforce_case=True,
-            ),
-            name="acc_metadata_fmt",
-        )
-        crowncc_metadata_fmt = pe.Node(
-            TSV2JSON(
-                index_column="component",
-                output=None,
-                additional_metadata={"Method": "EdgeRegressor"},
-                enforce_case=True,
-            ),
-            name="crowncc_metadata_fmt",
-        )
-        mrg_compcor = pe.Node(
-            niu.Merge(3, ravel_inputs=True),
-            name="mrg_compcor",
-            run_without_submitting=True,
-        )
-
-        # extract tcompcor
-        signals_tcompcor = pe.Node(
-            SignalExtraction(class_labels=["tcompcor"]),
-            name="signal_tcompcor",
-            mem_gb=mem_gb,
-        )
-
-        # Generate metadata file
-        mrg_conf_metadata = pe.Node(
-            niu.Merge(3),
-            name="merge_confound_metadata",
-            run_without_submitting=True,
-        )
-        mrg_conf_metadata.inputs.in3 = {
-            label: {"Method": "Mean"} for label in signals_class_labels
-        }
-        mrg_conf_metadata2 = pe.Node(
-            DictMerge(),
-            name="merge_confound_metadata2",
-            run_without_submitting=True,
-        )
-        out_meta = pe.Node(niu.Function(function=_dict2json), name="out_meta")
-
-        # Generate reportlet (ROIs)
-        mrg_compcor = pe.Node(
-            niu.Merge(3, ravel_inputs=True),
-            name="mrg_compcor",
-            run_without_submitting=True,
-        )
-        rois_plot = pe.Node(
-            ROIsPlot(colors=["b", "magenta", "g"], generate_report=True),
-            name="rois_plot",
-            mem_gb=mem_gb,
-        )
-
-        ds_report_bold_rois = pe.Node(
-            DerivativesDataSink(
-                desc="rois", datatype="figures", dismiss_entities=("echo",)
-            ),
-            name="ds_report_bold_rois",
-            run_without_submitting=True,
-            mem_gb=0.01,
-        )
-
-        # Generate reportlet (CompCor)
-        mrg_cc_metadata = pe.Node(
-            niu.Merge(2),
-            name="merge_compcor_metadata",
-            run_without_submitting=True,
-        )
-        compcor_plot = pe.Node(
-            CompCorVariancePlot(
-                variance_thresholds=(0.5, 0.7, 0.9),
-                metadata_sources=["tCompCor", "aCompCor", "crownCompCor"],
-            ),
-            name="compcor_plot",
-        )
-
-        ds_report_compcor = pe.Node(
-            DerivativesDataSink(
-                desc="compcorvar",
-                datatype="figures",
-                dismiss_entities=("echo",),
-            ),
-            name="ds_report_compcor",
-            run_without_submitting=True,
-            mem_gb=0.01,
-        )
-
     # Concatenate all confounds
     concat = pe.Node(
         GatherConfounds(),
@@ -484,58 +307,6 @@ def init_confs_wf(
         (inputnode, concat, [("confounds_file", "confounds_file")]),
     ])
 
-    if session_level:
-        workflow.connect([
-            # CompCor 
-            (inputnode, acompcor, [("bold_t1", "realigned_file")]),
-            (acc_msk_bin, acompcor, [("out_file", "mask_files")]),
-            (acompcor, rename_acompcor, [("components_file", "components_file"),
-                                        ("metadata_file", "metadata_file")]),
-            # crownCompCor
-            (intersect_mask, dilated_mask, [("out", "in_mask")]),
-            (intersect_mask, subtract_mask, [("out", "in_subtract")]),
-            (dilated_mask, subtract_mask, [("out_mask", "in_base")]),
-            (inputnode, crowncompcor, [("bold_t1", "realigned_file"),]),
-            (subtract_mask, crowncompcor, [("out_mask", "mask_files")]),
-            (inputnode, tcompcor, [("bold_t1", "realigned_file"),
-                                ("boldmask_t1", "mask_files")]),
-            (inputnode, signals_tcompcor, [("bold_t1", "in_file")]),
-            (tcompcor, signals_tcompcor, [("high_variance_masks", "label_files")]),
-            (tcompcor, concat, [("pre_filter_file", "cosine")]),
-            (signals_tcompcor, concat, [("out_file", "tcompcor")]),
-            (rename_acompcor, concat, [("components_file", "acompcor")]),
-            (crowncompcor, concat, [("components_file", "crowncompcor")]),
-
-            # Reporting
-            (inputnode, rois_plot, [("bold_t1", "in_file"),
-                                ("boldmask_t1", "in_mask")]),
-            (tcompcor, mrg_compcor, [("high_variance_masks", "in1")]),
-            (acc_msk_bin, mrg_compcor, [(("out_file", _last), "in2")]),
-            (subtract_mask, mrg_compcor, [("out_mask", "in3")]),
-            (mrg_compcor, rois_plot, [("out", "in_rois")]),
-            (rois_plot, ds_report_bold_rois, [("out_report", "in_file")]),
-            (tcompcor, mrg_cc_metadata, [("metadata_file", "in1")]),
-            (acompcor, mrg_cc_metadata, [("metadata_file", "in2")]),
-            (crowncompcor, mrg_cc_metadata, [("metadata_file", "in3")]),
-            (mrg_cc_metadata, compcor_plot, [("out", "metadata_files")]),
-            (compcor_plot, ds_report_compcor, [("out_file", "in_file")]),
-
-            # Outputs
-            (tcompcor, tcc_metadata_filter, [("metadata_file", "in_file")]),
-            (tcc_metadata_filter, tcc_metadata_fmt, [("out_file", "in_file")]),
-            (rename_acompcor, acc_metadata_filter, [("metadata_file", "in_file")]),
-            (acc_metadata_filter, acc_metadata_fmt, [("out_file", "in_file")]),
-            (crowncompcor, crowncc_metadata_fmt, [("metadata_file", "in_file")]),
-            (tcc_metadata_fmt, mrg_conf_metadata, [("output", "in1")]),
-            (acc_metadata_fmt, mrg_conf_metadata, [("output", "in2")]),
-            (crowncc_metadata_fmt, mrg_conf_metadata, [("output", "in3")]),
-            (mrg_conf_metadata, mrg_conf_metadata2, [("out", "in_dicts")]),
-            (mrg_conf_metadata2, out_meta, [("out_dict", "dicti")]),
-            (out_meta, outputnode, [("out", "confounds_metadata_comp")]),
-            (acc_msk_bin, outputnode, [("out_file", "acompcor_masks")]),
-            (subtract_mask, outputnode, [("out_mask", "crown_mask")]),
-
-        ])
 
     workflow.connect([
         # Expand model with derivatives
@@ -648,6 +419,7 @@ def init_carpetplot_wf(
     ds_report_bold_conf = pe.Node(
         DerivativesDataSink(
             desc="carpetplot",
+            suffix="denoised",
             datatype="figures",
             extension="svg",
             dismiss_entities=("echo",),
@@ -683,8 +455,6 @@ def init_carpetplot_wf(
     # fmt:off
     workflow.connect([
         (inputnode, resample_parc, [("bold_mask", "reference_image")]),
-        (inputnode, parcels, [("crown_mask", "crown_mask")]),
-        (inputnode, parcels, [("acompcor_mask", "acompcor_mask")]),
         (inputnode, conf_plot, [("bold", "in_nifti"),
                                 ("confounds_file", "confounds_file"),]),
         (inputnode, resample_parc, [("std2anat_xfm", "transforms")]),
@@ -810,7 +580,7 @@ def _dict2json(dicti):
     return str(out_name)
 
 
-def _carpet_parcellation(segmentation, crown_mask, acompcor_mask):
+def _carpet_parcellation(segmentation):
     """Generate the union of two masks."""
     from pathlib import Path
 
@@ -826,9 +596,6 @@ def _carpet_parcellation(segmentation, crown_mask, acompcor_mask):
     lut[255] = 5  # Cerebellum
     # Apply lookup table
     seg = lut[np.uint16(img.dataobj)]
-    seg[np.bool_(nb.load(crown_mask).dataobj)] = 6
-    # Separate deep from shallow WM+CSF
-    seg[np.bool_(nb.load(acompcor_mask).dataobj)] = 4
 
     outimg = img.__class__(seg.astype("uint8"), img.affine, img.header)
     outimg.set_data_dtype("uint8")

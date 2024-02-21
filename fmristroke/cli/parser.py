@@ -383,11 +383,9 @@ def parse_args(args=None, namespace=None):
     if config.execution.output_pipelines is None:
         config.execution.output_pipelines = [
             "SimpleGS",
-            "ICLesionGS",
-            "CompCorGS",
             "SimpleLesionGS",
-            "CompCorLesionGS",
             "ICLesionCompCorGS",
+            "Minimal",
         ]
 
     # Initialize --output-atlases if not defined
@@ -453,6 +451,7 @@ def parse_args(args=None, namespace=None):
             "Please modify the output path (suggestion: %s)."
             % bids_dir
             / "derivatives"
+            / ("fmristroke-%s" % version.split("+")[0])
             / ("fmristroke-%s" % version.split("+")[0])
         )
 
