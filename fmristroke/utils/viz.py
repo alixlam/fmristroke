@@ -415,7 +415,6 @@ def plot_catplot(x, y, data, xlabel=None, ylabel=None):
 
     return fig
 
-
 def make_motion_plot(
     group_conf_summary: pd.DataFrame,
     x=None,

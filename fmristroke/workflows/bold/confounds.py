@@ -307,7 +307,6 @@ def init_confs_wf(
         (inputnode, concat, [("confounds_file", "confounds_file")]),
     ])
 
-
     workflow.connect([
         # Expand model with derivatives
         (concat, model_expand, [("confounds_file", "confounds_file")]),

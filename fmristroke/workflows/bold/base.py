@@ -217,6 +217,7 @@ effects of other kernels [@lanczos].
             ("bold_denoised_t1", "inputnode.bold_denoised_t1"),
             ("bold_denoised_std", "inputnode.bold_denoised_std"),
             ("pipelines", "inputnode.pipelines"),],)
+
     ])
     # fmt:on
 
@@ -634,7 +635,6 @@ effects of other kernels [@lanczos].
         if node.split(".")[-1].startswith("ds_report"):
             workflow.get_node(node).inputs.base_directory = output_dir
             workflow.get_node(node).inputs.source_file = ref_file
-
     return workflow
 
 

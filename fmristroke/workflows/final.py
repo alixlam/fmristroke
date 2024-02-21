@@ -219,6 +219,10 @@ tasks and sessions), the following lesion specific preprocessing was performed.
 
             ]),
         ])
+        workflow.connect([
+            (roi_anat_wf, lesion_preproc_wf, [
+                ("outputnode.roi_mask_std", "inputnode.roi_std")],)
+        ])
         # fmt:on
 
         func_preproc_wfs.append(lesion_preproc_wf)

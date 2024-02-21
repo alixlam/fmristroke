@@ -198,7 +198,6 @@ def _get_WNE_BNE(connectivity_mat, atlas_labels):
 
     return WNE, BNE
 
-
 def get_group_intersubconn(data_layout):
     """
     Compute quality check values for group
