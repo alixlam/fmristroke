@@ -42,7 +42,7 @@ def init_concat_wf(
         List of BOLD images in T1w space from the same session and task
     boldmask_t1
         List of BOLD masks in T1w space from the same session and task
-    
+
     Outputs
     -------
     bold_denoised_t1
@@ -89,13 +89,12 @@ def init_concat_wf(
         niu.Function(function=_concat_bold), name="concat_bold_denoised_t1"
     )
     concat_bold_denoised_t1.inputs.croprun = croprun
-    
+
     concat_bold_denoised_std = pe.Node(
         niu.Function(function=_concat_bold), name="concat_bold_denoised_std"
     )
     concat_bold_denoised_std.inputs.croprun = croprun
     concat_bold_denoised_std.inputs.std = True
-    
 
     # Intersect boldmasks
     concat_boldmask = pe.Node(
@@ -123,8 +122,8 @@ def init_concat_wf(
         (concat_bold_denoised_t1, outputnode, [("out", "bold_denoised_t1")]),
 
         (concat_boldmask, outputnode, [("out", "boldmask_t1")]),
-        
-        #report
+
+        # report
         (concat_bold_denoised_t1, report_concat, [("out", "concat_bold_t1")]),
         (inputnode, report_concat, [("bold_denoised_t1", "bold_t1")]),
         (report_concat, ds_report_concat, [("out_report", "in_file")]),
@@ -137,8 +136,8 @@ def _concat_bold(in_files, croprun, std=False):
     from pathlib import Path
 
     import nibabel as nib
-    from nilearn.image import concat_imgs
     import numpy as np
+    from nilearn.image import concat_imgs
 
     if isinstance(in_files, str):
         in_files = [in_files]
@@ -159,15 +158,17 @@ def _concat_bold(in_files, croprun, std=False):
             else:
                 nii = nib.load(pipe)
                 croped_file = nib.Nifti1Image(
-                        nii.get_fdata()[:, :, :, croprun:], nii.affine
-                    )
+                    nii.get_fdata()[:, :, :, croprun:], nii.affine
+                )
                 pipelines.append([croped_file])
         cropped_files.append(pipelines)
     cropped_files = np.array(cropped_files)
 
     reshape_files = list(np.transpose(cropped_files, (1, 2, 0)))
-    concatenated_img = [[concat_imgs(space) for space in pipe] for pipe in reshape_files]
-    
+    concatenated_img = [
+        [concat_imgs(space) for space in pipe] for pipe in reshape_files
+    ]
+
     out = []
     for i, pipe in enumerate(concatenated_img):
         out_pipe = []

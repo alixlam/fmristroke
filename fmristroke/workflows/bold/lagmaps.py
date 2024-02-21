@@ -104,7 +104,9 @@ def init_hemodynamic_wf(
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["lagmaps", "lagmap_metadata", "gm_mask"]),
+        niu.IdentityInterface(
+            fields=["lagmaps", "lagmap_metadata", "gm_mask"]
+        ),
         name="outputnode",
     )
 

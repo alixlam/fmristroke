@@ -618,7 +618,15 @@ def init_pipelines():
     from .utils.pipelines import Pipeline, Pipelines
 
     pipelines = execution.output_pipelines or Pipelines()
-    known_pipelines = ["SimpleGS", "ICLesionGS", "CompCorGS", "SimpleLesionGS", "CompCorLesionGS", "ICLesionCompCorGS", "Minimal"]
+    known_pipelines = [
+        "SimpleGS",
+        "ICLesionGS",
+        "CompCorGS",
+        "SimpleLesionGS",
+        "CompCorLesionGS",
+        "ICLesionCompCorGS",
+        "Minimal",
+    ]
     if not isinstance(pipelines, Pipelines):
         pipelines_filenames = [
             pkgrf("fmristroke", f"data/denoising/{s}.json")
@@ -630,7 +638,11 @@ def init_pipelines():
             [Pipeline.from_json(f) for f in pipelines_filenames]
         )
         if "Minimal" not in pipelines.get_pipelines():
-            pipelines.add(Pipeline.from_json(pkgrf("fmristroke", f"data/denoising/Minimal.json")))
+            pipelines.add(
+                Pipeline.from_json(
+                    pkgrf("fmristroke", f"data/denoising/Minimal.json")
+                )
+            )
 
     # Make the Pipelines object available
     workflow.pipelines = pipelines

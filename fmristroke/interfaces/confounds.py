@@ -190,7 +190,7 @@ class _GatherConfoundsInputSpec(BaseInterfaceInputSpec):
     tcompcor = File(exists=True, desc="input tCompCorr")
     acompcor = File(exists=True, desc="input aCompCorr")
     crowncompcor = File(exists=True, desc="input crown-based regressors")
-    cosine = File(exists=True, desc='input cosine basis')
+    cosine = File(exists=True, desc="input cosine basis")
 
 
 class _GatherConfoundsOutputSpec(TraitedSpec):
@@ -215,7 +215,7 @@ class GatherConfounds(SimpleInterface):
             tcompcor=self.inputs.tcompcor,
             acompcor=self.inputs.acompcor,
             crowncompcor=self.inputs.crowncompcor,
-            cosine=self.inputs.cosine, 
+            cosine=self.inputs.cosine,
             newpath=runtime.cwd,
         )
         self._results["confounds_file"] = combined_out

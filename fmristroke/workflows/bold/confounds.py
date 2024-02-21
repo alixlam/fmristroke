@@ -307,7 +307,7 @@ def init_confs_wf(
         (inputnode, concat, [("confounds_file", "confounds_file")]),
     ])
 
-    
+
     workflow.connect([
         # Expand model with derivatives
         (concat, model_expand, [("confounds_file", "confounds_file")]),
@@ -596,7 +596,7 @@ def _carpet_parcellation(segmentation):
     lut[255] = 5  # Cerebellum
     # Apply lookup table
     seg = lut[np.uint16(img.dataobj)]
-    
+
     outimg = img.__class__(seg.astype("uint8"), img.affine, img.header)
     outimg.set_data_dtype("uint8")
     out_file = Path("segments.nii.gz").absolute()

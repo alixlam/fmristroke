@@ -206,7 +206,9 @@ class RegisterLesionRPT(nrb.RegistrationRC):
 
 class _SessionSummaryInputSpec(BaseInterfaceInputSpec):
     bold_t1 = traits.List(desc="BOLD series from the same session and task")
-    concat_bold_t1 = InputMultiObject(File(exists=True), desc="Concatenated BOLD series")
+    concat_bold_t1 = InputMultiObject(
+        File(exists=True), desc="Concatenated BOLD series"
+    )
 
 
 class SessionSummary(SummaryInterface):

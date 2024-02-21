@@ -24,7 +24,10 @@ from .confounds import init_carpetplot_wf, init_confs_wf
 from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
 from .denoise import init_denoise_wf
 from .lagmaps import init_hemodynamic_wf
-from .outputs import init_func_lesion_derivatives_wf, init_connectivity_derivatives_wf
+from .outputs import (
+    init_connectivity_derivatives_wf,
+    init_func_lesion_derivatives_wf,
+)
 from .registration import init_lesionplot_wf
 
 
@@ -93,7 +96,6 @@ def init_lesion_preproc_wf(
         SimpleBeforeAfterRPT as SimpleBeforeAfter,
     )
     from niworkflows.interfaces.utility import DictMerge, KeySelect
-
 
     img = nb.load(
         bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
@@ -325,8 +327,8 @@ effects of other kernels [@lanczos].
 
     return workflow
 
-def init_lesion_connectivity_wf(
-    bold_file):
+
+def init_lesion_connectivity_wf(bold_file):
     """
     This workflow controls the connectivity specific stages *fMRIStroke*.
 
@@ -377,7 +379,7 @@ def init_lesion_connectivity_wf(
     from niworkflows.interfaces.utility import DictMerge, KeySelect
 
     from ...utils.combine_runs import combine_run_source
-    
+
     img = nb.load(
         bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
     )
@@ -396,7 +398,7 @@ def init_lesion_connectivity_wf(
     session_level = config.execution.run_sessionlevel
     atlases = config.workflow.atlases
     conn_measure = config.workflow.conn_measure
-    
+
     # Extract BIDS entities and metadata from BOLD file(s)
     entities = extract_entities(bold_file)
     layout = config.execution.layout
@@ -455,7 +457,7 @@ effects of other kernels [@lanczos].
         name="inputnode",
     )
     inputnode.inputs.bold_t1 = bold_file
-    
+
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -481,7 +483,7 @@ effects of other kernels [@lanczos].
         conn_measure=conn_measure,
         atlases=atlases,
     )
-    
+
     conn_derivatives_wf.inputs.inputnode.all_source_files = bold_file
 
     if not session_level:
@@ -498,7 +500,7 @@ effects of other kernels [@lanczos].
                 (("bold_t1", combine_run_source), "inputnode.source_file",)],)
         ])
         # fmt:on
-    
+
     # fmt:off
     workflow.connect([
         (outputnode, conn_derivatives_wf, [
@@ -513,14 +515,14 @@ effects of other kernels [@lanczos].
             ("conn_mat_roi", "inputnode.conn_mat_roi")],),
     ])
     # fmt:on
-    
+
     # COMBINE RUNS  ##########################################################
     concat_wf = init_concat_wf(
         mem_gb=mem_gb["largemem"],
         croprun=croprun,
         name="concat_runs_wf",
     )
-    
+
     # fmt:off
     workflow.connect([
         (inputnode, concat_wf, [
@@ -529,7 +531,7 @@ effects of other kernels [@lanczos].
             ("bold_denoised_std", "inputnode.bold_denoised_std"),])
     ])
     # fmt:on
-    
+
     # HEMODYNAMIC WORKFLOW   #################################################
     hemodynamics_wf = init_hemodynamic_wf(
         mem_gb=mem_gb["largemem"],
@@ -537,11 +539,14 @@ effects of other kernels [@lanczos].
         maxlag=config.workflow.maxlag,
         name="hemodynamic_wf",
     )
-    
+
     # select pipeline lag
-    select_lag_pipeline = pe.Node(KeySelect(fields=["bold_denoised_t1"], key="Minimal"), name="select_pipeline_lag", run_without_submitting=True)
-    
-    
+    select_lag_pipeline = pe.Node(
+        KeySelect(fields=["bold_denoised_t1"], key="Minimal"),
+        name="select_pipeline_lag",
+        run_without_submitting=True,
+    )
+
     # fmt:off
     workflow.connect([
         # Connect bold_confounds_wf
@@ -559,14 +564,14 @@ effects of other kernels [@lanczos].
         (concat_wf, select_lag_pipeline, [
             ("outputnode.bold_denoised_t1", "bold_denoised_t1")]),
         (inputnode, select_lag_pipeline, [
-            ("pipelines","keys")]),
+            ("pipelines", "keys")]),
         (select_lag_pipeline, hemodynamics_wf, [
             ("bold_denoised_t1", "inputnode.bold_t1"),],),
         (hemodynamics_wf, outputnode, [
             ("outputnode.lagmaps", "lagmaps"),],),
     ])
     # fmt:on
-    
+
     # CONNECTIVITY WF ########################################################
     connectivity_wf = init_connectivity_wf(
         mem_gb=mem_gb["largemem"],
@@ -619,7 +624,7 @@ effects of other kernels [@lanczos].
             ("outputnode.output_conn_roi", "lesion_conn"),]),
     ])
     # fmt:on
-    
+
     # REPORTING ############################################################
     if session_level:
         ref_file = combine_run_source(bold_file)
@@ -629,8 +634,9 @@ effects of other kernels [@lanczos].
         if node.split(".")[-1].startswith("ds_report"):
             workflow.get_node(node).inputs.base_directory = output_dir
             workflow.get_node(node).inputs.source_file = ref_file
-    
+
     return workflow
+
 
 def _create_mem_gb(bold_fname):
     img = nb.load(bold_fname)
@@ -656,7 +662,7 @@ def _get_wf_name(bold_fname, conn=False):
 
     fname = split_filename(bold_fname)[1]
     fname_nosub = "_".join(fname.split("_")[1:])
-    
+
     if conn:
         name = "lesion_conn_" + fname_nosub.replace(".", "_").replace(
             " ", ""

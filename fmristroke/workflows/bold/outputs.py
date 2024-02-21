@@ -197,6 +197,7 @@ def init_func_lesion_derivatives_wf(
 
     return workflow
 
+
 def init_connectivity_derivatives_wf(
     bids_root: str,
     output_dir: str,
@@ -249,7 +250,7 @@ def init_connectivity_derivatives_wf(
                 "conn_measures",
                 "lesion_conn",
                 "FCC",
-                "FCC_roi"
+                "FCC_roi",
             ]
         ),
         name="inputnode",
@@ -259,7 +260,6 @@ def init_connectivity_derivatives_wf(
         niu.Function(function=_bids_relative), name="raw_sources"
     )
     raw_sources.inputs.bids_root = bids_root
-
 
     # Hemodynamics
     lagmap_select = pe.Node(niu.Select(index=0), name="lagmap_select")
@@ -331,7 +331,7 @@ def init_connectivity_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    
+
     ds_connectivity_roi = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -344,7 +344,7 @@ def init_connectivity_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    
+
     ds_FCC = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -357,7 +357,7 @@ def init_connectivity_derivatives_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    
+
     ds_FCC_roi = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -401,7 +401,7 @@ def init_connectivity_derivatives_wf(
         (atlassource, ds_connectivity, [("atlas", "atlas")]),
         (pipelinessource2, ds_connectivity, [("pipeline", "pipeline")]),
         (connsource, ds_connectivity, [("conn_measure", "measure")]),
-        
+
         (select_measure, ds_connectivity_roi, [("conn_mat_roi", "in_file")]),
         (atlassource, ds_connectivity_roi, [("atlas", "atlas")]),
         (pipelinessource2, ds_connectivity_roi, [("pipeline", "pipeline")]),

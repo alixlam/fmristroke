@@ -38,44 +38,44 @@ def test_lesion_preproc_wf(
     output_dir.mkdir()
 
     bold_series = str(
-            fmriprep_root
-            / "sub-027"
-            / "ses-1week"
-            / "func"
-            / f"sub-027_ses-1week_task-rest_run-02_desc-preproc_bold.nii.gz"
-        )
-    
+        fmriprep_root
+        / "sub-027"
+        / "ses-1week"
+        / "func"
+        / f"sub-027_ses-1week_task-rest_run-02_desc-preproc_bold.nii.gz"
+    )
+
     boldref_file = str(
-            fmriprep_root
-            / "sub-027"
-            / "ses-1week"
-            / "func"
-            / f"sub-027_ses-1week_task-rest_run-02_boldref.nii.gz"
-        )
-    
+        fmriprep_root
+        / "sub-027"
+        / "ses-1week"
+        / "func"
+        / f"sub-027_ses-1week_task-rest_run-02_boldref.nii.gz"
+    )
+
     boldmask_file = str(
-            fmriprep_root
-            / "sub-027"
-            / "ses-1week"
-            / "func"
-            / f"sub-027_ses-1week_task-rest_run-02_desc-brain_mask.nii.gz"
-        )
-    
+        fmriprep_root
+        / "sub-027"
+        / "ses-1week"
+        / "func"
+        / f"sub-027_ses-1week_task-rest_run-02_desc-brain_mask.nii.gz"
+    )
+
     confounds_file = str(
-            fmriprep_root
-            / "sub-027"
-            / "ses-1week"
-            / "func"
-            / f"sub-027_ses-1week_task-rest_run-02_desc-confounds_timeseries.tsv"
-        )
-    
+        fmriprep_root
+        / "sub-027"
+        / "ses-1week"
+        / "func"
+        / f"sub-027_ses-1week_task-rest_run-02_desc-confounds_timeseries.tsv"
+    )
+
     confounds_metadata = str(
-            fmriprep_root
-            / "sub-027"
-            / "ses-1week"
-            / "func"
-            / f"sub-027_ses-1week_task-rest_run-02_desc-confounds_timeseries.json"
-        )
+        fmriprep_root
+        / "sub-027"
+        / "ses-1week"
+        / "func"
+        / f"sub-027_ses-1week_task-rest_run-02_desc-confounds_timeseries.json"
+    )
 
     with mock_config():
         config.workflow.level = level

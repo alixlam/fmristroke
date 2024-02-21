@@ -20,7 +20,7 @@ from packaging.version import Version
 from .. import config
 from ..interfaces import DerivativesDataSink
 from .anat.base import init_roi_preproc_wf
-from .bold.base import init_lesion_preproc_wf, init_lesion_connectivity_wf
+from .bold.base import init_lesion_connectivity_wf, init_lesion_preproc_wf
 
 
 def init_fmristroke_wf():
@@ -222,14 +222,26 @@ tasks and sessions), the following lesion specific preprocessing was performed.
         # fmt:on
 
         func_preproc_wfs.append(lesion_preproc_wf)
-    
+
     node_names = [func_preproc_wf.name for func_preproc_wf in func_preproc_wfs]
-    
+
     # Merge nodes
-    merge_denoised_t1 = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_denoised_t1")
-    merge_denoised_std = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_denoised_std")
-    merge_boldmask = pe.Node(niu.Merge(len(func_preproc_wfs), no_flatten=True), name="merge_boldmask")
-    
+    merge_denoised_t1 = pe.Node(
+        niu.Merge(
+            len(func_preproc_wfs),
+            no_flatten=True),
+        name="merge_denoised_t1")
+    merge_denoised_std = pe.Node(
+        niu.Merge(
+            len(func_preproc_wfs),
+            no_flatten=True),
+        name="merge_denoised_std")
+    merge_boldmask = pe.Node(
+        niu.Merge(
+            len(func_preproc_wfs),
+            no_flatten=True),
+        name="merge_boldmask")
+
     for i, bold_wf in enumerate(func_preproc_wfs):
         # fmt:off
         workflow.connect([
@@ -239,17 +251,25 @@ tasks and sessions), the following lesion specific preprocessing was performed.
         ])
         # fmt:on
 
-    
     if session_level:
         bold_derivatives["bold_t1"] = group_runs(bold_derivatives["bold_t1"])
-    
-    grp_bold_denoised_t1 = pe.Node(niu.Function(function=_group_outputs), name="group_bold_denoised_t1")
+
+    grp_bold_denoised_t1 = pe.Node(
+        niu.Function(
+            function=_group_outputs),
+        name="group_bold_denoised_t1")
     grp_bold_denoised_t1.inputs.node_names = node_names
     grp_bold_denoised_t1.inputs.session_level = session_level
-    grp_bold_denoised_std = pe.Node(niu.Function(function=_group_outputs), name="group_bold_denoised_std")
+    grp_bold_denoised_std = pe.Node(
+        niu.Function(
+            function=_group_outputs),
+        name="group_bold_denoised_std")
     grp_bold_denoised_std.inputs.node_names = node_names
     grp_bold_denoised_std.inputs.session_level = session_level
-    grp_bold_mask = pe.Node(niu.Function(function=_group_outputs), name="group_boldmask")
+    grp_bold_mask = pe.Node(
+        niu.Function(
+            function=_group_outputs),
+        name="group_boldmask")
     grp_bold_mask.inputs.node_names = node_names
     grp_bold_mask.inputs.session_level = session_level
 
@@ -268,10 +288,16 @@ tasks and sessions), the following lesion specific preprocessing was performed.
             continue
 
         lesion_connectivity_wf.inputs.inputnode.roi = roi["roi"][0]
-        
-        select_denoised_t1 = pe.Node(niu.Select(index=i), name=f"select_denoised_t1_{i}")
-        select_denoised_std = pe.Node(niu.Select(index=i), name=f"select_denoised_std_{i}")
-        select_boldmask = pe.Node(niu.Select(index=i), name=f"select_boldmask_{i}")
+
+        select_denoised_t1 = pe.Node(
+            niu.Select(index=i), name=f"select_denoised_t1_{i}"
+        )
+        select_denoised_std = pe.Node(
+            niu.Select(index=i), name=f"select_denoised_std_{i}"
+        )
+        select_boldmask = pe.Node(
+            niu.Select(index=i), name=f"select_boldmask_{i}"
+        )
 
         # fmt:off
         workflow.connect([
@@ -305,9 +331,9 @@ tasks and sessions), the following lesion specific preprocessing was performed.
                 ("outputnode.roi_mask_std", "inputnode.roi_std")],)
         ])
         # fmt:on
-        
 
     return workflow
+
 
 def _group_outputs(in_outputs, node_names, session_level=False):
     import re
@@ -328,7 +354,7 @@ def _group_outputs(in_outputs, node_names, session_level=False):
     for _, nodes in groupby(nodes, key=_grp_runs):
         nodes = list(nodes)
         grouped.append(nodes)
-    
+
     if session_level:
         grouped_outputs = [[run[1] for run in outputs] for outputs in grouped]
     else:

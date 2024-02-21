@@ -20,9 +20,11 @@ def plot_multicomponents(
 ):
     try:
         ts = (
-            pd.read_csv(tseries, sep="\t") if isinstance(tseries, str) else tseries
+            pd.read_csv(tseries, sep="\t")
+            if isinstance(tseries, str)
+            else tseries
         )
-    except:
+    except BaseException:
         return plt.figure()
 
     n_components = ts.shape[1]
@@ -379,6 +381,7 @@ def plot_kdeplot(data, title=None):
 
     return fig
 
+
 def plot_catplot(x, y, data, xlabel=None, ylabel=None):
     """
     Plot representing quality measure value for each pipeline.
@@ -416,7 +419,8 @@ def plot_catplot(x, y, data, xlabel=None, ylabel=None):
 def make_motion_plot(
     group_conf_summary: pd.DataFrame,
     x=None,
-    y= None,):
+    y=None,
+):
     """
     Generates plot presenting number of subjects excluded with high motion
     according specified thresholds.
@@ -429,12 +433,11 @@ def make_motion_plot(
     """
 
     sns.set_style("ticks")
-    colors = ['#00a074', '#fe6863']
+    colors = ["#00a074", "#fe6863"]
     palette = sns.set_palette(colors, 2)
 
     fig, axes = plt.subplots(1, 1, figsize=(16, 7))
     fig.subplots_adjust(wspace=0.4, hspace=0.4)
-
 
     p = sns.swarmplot(
         y=y,
@@ -451,13 +454,13 @@ def make_motion_plot(
         x=x,
         data=group_conf_summary,
         showcaps=False,
-        boxprops={'facecolor': 'None'},
+        boxprops={"facecolor": "None"},
         showfliers=False,
         ax=axes,
     )
 
-    p.set(xlabel='')
+    p.set(xlabel="")
     p.set(ylabel=y)
-    p.tick_params(axis='both', which='both', length=6, width=2.2)
+    p.tick_params(axis="both", which="both", length=6, width=2.2)
 
     return fig
