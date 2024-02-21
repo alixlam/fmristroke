@@ -104,7 +104,6 @@ def init_concat_wf(
 
     # Report number of runs included in new bold run
     report_concat = pe.Node(SessionSummary(), name="concat_summary")
-    report_concat.inputs.croprun = croprun
 
     ds_report_concat = pe.Node(
         DerivativesDataSink(desc="concat", datatype="figures", space=None),
@@ -119,25 +118,27 @@ def init_concat_wf(
         (inputnode, concat_bold_denoised_t1, [("bold_denoised_t1", "in_files")]),
         (inputnode, concat_boldmask, [("boldmask_t1", "in_files")]),
 
-        #report
-        (inputnode, report_concat, [("bold_t1", "bold_t1")]),
-        (report_concat, ds_report_concat, [("out_report", "in_file")]),
-
         # outputs
         (concat_bold_denoised_std, outputnode, [("out", "bold_denoised_std")]),
         (concat_bold_denoised_t1, outputnode, [("out", "bold_denoised_t1")]),
 
         (concat_boldmask, outputnode, [("out", "boldmask_t1")]),
+        
+        #report
+        (concat_bold_denoised_t1, report_concat, [("out", "concat_bold_t1")]),
+        (inputnode, report_concat, [("bold_denoised_t1", "bold_t1")]),
+        (report_concat, ds_report_concat, [("out_report", "in_file")]),
     ])
 
     return workflow
 
 
-def _concat_bold(in_files, croprun, bold_std=False):
+def _concat_bold(in_files, croprun, std=False):
     from pathlib import Path
 
     import nibabel as nib
     from nilearn.image import concat_imgs
+    import numpy as np
 
     if isinstance(in_files, str):
         in_files = [in_files]
@@ -162,21 +163,22 @@ def _concat_bold(in_files, croprun, bold_std=False):
                     )
                 pipelines.append([croped_file])
         cropped_files.append(pipelines)
+    cropped_files = np.array(cropped_files)
 
-    reshape_files = list(np.array(cropped_files).T)
+    reshape_files = list(np.transpose(cropped_files, (1, 2, 0)))
     concatenated_img = [[concat_imgs(space) for space in pipe] for pipe in reshape_files]
     
-    n_pipeline = len(concatenated_img)
-    n_space = len(concatenated_img[0])
-    
     out = []
-    for i, pipe in concatenated_img:
+    for i, pipe in enumerate(concatenated_img):
         out_pipe = []
-        for j, space in pipe:
+        for j, space in enumerate(pipe):
             outname = Path(f"concat_bold_pipe_{i}_space_{j}.nii.gz").absolute()
-            j.to_filename(outname)
+            space.to_filename(outname)
             out_pipe.append(str(outname))
-        out.append(out_pipe)
+        if std:
+            out.append(out_pipe)
+        else:
+            out.append(out_pipe[0])
     return out
 
 

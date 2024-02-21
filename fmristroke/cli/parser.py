@@ -383,11 +383,9 @@ def parse_args(args=None, namespace=None):
     if config.execution.output_pipelines is None:
         config.execution.output_pipelines = [
             "SimpleGS",
-            "ICLesionGS",
-            "CompCorGS",
             "SimpleLesionGS",
-            "CompCorLesionGS",
-            "ICLesionCompCorGS"
+            "ICLesionCompCorGS",
+            "Minimal",
         ]
 
     # Initialize --output-atlases if not defined

@@ -62,22 +62,13 @@ def init_func_lesion_derivatives_wf(
             fields=[
                 "confounds_file",
                 "confounds_metadata",
-                "lagmaps",
                 "source_file",
                 "all_source_files",
                 "spatial_reference",
                 "template",
-                "denoised_bold_t1",
-                "denoised_bold_std",
-                "pipeline",
+                "bold_denoised_t1",
+                "bold_denoised_std",
                 "pipelines",
-                "conn_mat",
-                "conn_mat_roi",
-                "atlases",
-                "conn_measures",
-                "lesion_conn",
-                "FCC",
-                "FCC_roi"
             ]
         ),
         name="inputnode",
@@ -114,34 +105,13 @@ def init_func_lesion_derivatives_wf(
     if getattr(spaces, "_cached") is None:
         return workflow
 
-    # Hemodynamics
-    lagmap_select = pe.Node(niu.Select(index=0), name="lagmap_select")
-    ds_lagmap = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="maxtime",
-            suffix="map",
-            compress=True,
-        ),
-        name="ds_lagmap",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-    # fmt:off
-    workflow.connect([
-        (inputnode, lagmap_select, [('lagmaps', 'inlist')]),
-        (inputnode, ds_lagmap, [('source_file', 'source_file')]),
-        (lagmap_select, ds_lagmap, [('out', 'in_file')]),
-    ])
-    # fmt:on
-
     # Denoising
     pipelinessource = pe.Node(
         niu.IdentityInterface(fields=["pipeline"]), name="pipelineinter"
     )
     pipelinessource.iterables = [("pipeline", pipelines.get_pipelines())]
 
-    fields = ["denoised_bold_t1"]
+    fields = ["bold_denoised_t1"]
     select_pipeline = pe.Node(
         KeySelect(fields=fields),
         name="select_pipeline",
@@ -170,8 +140,8 @@ def init_func_lesion_derivatives_wf(
         [(s.fullname, s.spec) for s in spaces.cached.get_standard(dim=(3,))],
     )
 
-    fields_space = ["template", "denoised_bold_std"]
-    fields = ["denoised_bold_std"]
+    fields_space = ["template", "bold_denoised_std"]
+    fields = ["bold_denoised_std"]
     select_pipeline_std = pe.Node(
         KeySelect(fields=fields),
         name="select_pipeline_std",
@@ -201,175 +171,27 @@ def init_func_lesion_derivatives_wf(
     workflow.connect([
         # Denoised bold in T1w space
         (inputnode, ds_denoised_t1, [('source_file', 'source_file')]),
-        (inputnode, select_pipeline, [('denoised_bold_t1', 'denoised_bold_t1'),
-                                        ('pipeline', 'keys')]),
+        (inputnode, select_pipeline, [('bold_denoised_t1', 'bold_denoised_t1'),
+                                        ('pipelines', 'keys')]),
         (pipelinessource, select_pipeline, [('pipeline', 'key')]),
-        (select_pipeline, ds_denoised_t1, [('denoised_bold_t1', 'in_file')]),
+        (select_pipeline, ds_denoised_t1, [('bold_denoised_t1', 'in_file')]),
         (pipelinessource, ds_denoised_t1, [('pipeline', 'pipeline')]),
 
         # Denoised bold in std space
         (inputnode, ds_denoised_std, [('source_file', 'source_file')]),
-        (inputnode, select_pipeline_std, [('denoised_bold_std', 'denoised_bold_std'),
-                                            ('pipeline', 'keys')]),
+        (inputnode, select_pipeline_std, [('bold_denoised_std', 'bold_denoised_std'),
+                                            ('pipelines', 'keys')]),
         (pipelinessource, select_pipeline_std, [('pipeline', 'key')]),
         (inputnode, select_std, [('template', 'template'),
                                 ('spatial_reference', 'keys')]),
         (spacesourceiter, select_std, [('uid', 'key')]),
-        (select_pipeline_std, select_std, [('denoised_bold_std', 'denoised_bold_std')]),
-        (select_std, ds_denoised_std, [('denoised_bold_std', 'in_file')]),
+        (select_pipeline_std, select_std, [('bold_denoised_std', 'bold_denoised_std')]),
+        (select_std, ds_denoised_std, [('bold_denoised_std', 'in_file')]),
         (spacesourceiter, ds_denoised_std, [('space', 'space'),
                                         ('cohort', 'cohort'),
                                         ('resolution', 'resolution'),
                                         ('density', 'density')]),
         (pipelinessource, ds_denoised_std, [('pipeline', 'pipeline')])
-    ])
-    # fmt:on
-
-    # Connectivity
-    atlassource = pe.Node(
-        niu.IdentityInterface(fields=["atlas"]), name="atlassource"
-    )
-    atlassource.iterables = [("atlas", atlases.get_atlases())]
-
-    pipelinessource2 = pe.Node(
-        niu.IdentityInterface(fields=["pipeline"]), name="pipelinesource"
-    )
-    pipelinessource2.iterables = [("pipeline", pipelines.get_pipelines())]
-
-    connsource = pe.Node(
-        niu.IdentityInterface(fields=["conn_measure"]), name="measuresource"
-    )
-    connsource.iterables = [("conn_measure", conn_measure)]
-
-    fields = ["conn_mat", "conn_mat_roi"]
-
-    select_pipeline2 = pe.Node(
-        KeySelect(fields=fields),
-        name="select_pipeline2",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-
-    select_atlas = pe.Node(
-        KeySelect(fields=fields),
-        name="select_atlas",
-        run_without_submitting=True,
-    )
-
-    select_measure = pe.Node(
-        KeySelect(fields=fields),
-        name="select_measure",
-        run_without_submitting=True,
-    )
-
-    ds_connectivity = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivity",
-            suffix="mat",
-            dismiss_entities=("echo"),
-            space=None,
-        ),
-        name="ds_connectivity",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-    
-    ds_connectivity_roi = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivityroi",
-            suffix="mat",
-            dismiss_entities=("echo"),
-            space=None,
-        ),
-        name="ds_connectivity_roi",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-    
-    ds_FCC = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivity",
-            suffix="FCC",
-            dismiss_entities=("echo"),
-            space=None,
-        ),
-        name="ds_FCC",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-    
-    ds_FCC_roi = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivityroi",
-            suffix="FCC",
-            dismiss_entities=("echo"),
-            space=None,
-        ),
-        name="ds_FCC_roi",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_connectivity, [("source_file", "source_file"),],),
-        (inputnode, ds_connectivity_roi, [("source_file", "source_file"),],),
-        (inputnode, ds_FCC, [("source_file", "source_file"),
-                            ("FCC", "in_file")]),
-        (inputnode, ds_FCC_roi, [("source_file", "source_file"),
-                            ("FCC_roi", "in_file")]),
-        (atlassource, select_atlas, [("atlas", "key")]),
-        (pipelinessource2, select_pipeline2, [("pipeline", "key")]),
-        (connsource, select_measure, [("conn_measure", "key")]),
-        (inputnode, select_atlas, [("atlases", "keys"),]),
-        (inputnode, select_pipeline2, [("pipelines", "keys"),]),
-        (inputnode, select_measure, [("conn_measures", "keys")]),
-        # conn matrices are saved as [Atlas [Pipeline [Measure]]]
-        # First Select Atlas
-        (inputnode, select_atlas, [("conn_mat", "conn_mat"),
-                                    ("conn_mat_roi", "conn_mat_roi")]),
-        # Select Pipeline
-        (select_atlas, select_pipeline2, [("conn_mat", "conn_mat"),
-                                        ("conn_mat_roi", "conn_mat_roi")]),
-        # select Measure
-        (select_pipeline2, select_measure, [("conn_mat", "conn_mat"),
-                                            ("conn_mat_roi", "conn_mat_roi")]),
-
-        # Datasink
-        (select_measure, ds_connectivity, [("conn_mat", "in_file")]),
-        (atlassource, ds_connectivity, [("atlas", "atlas")]),
-        (pipelinessource2, ds_connectivity, [("pipeline", "pipeline")]),
-        (connsource, ds_connectivity, [("conn_measure", "measure")]),
-        
-        (select_measure, ds_connectivity_roi, [("conn_mat_roi", "in_file")]),
-        (atlassource, ds_connectivity_roi, [("atlas", "atlas")]),
-        (pipelinessource2, ds_connectivity_roi, [("pipeline", "pipeline")]),
-        (connsource, ds_connectivity_roi, [("conn_measure", "measure")]),
-    ])
-    # fmt:on
-
-    # Lesion connectivity
-    ds_lesion_conn = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivity",
-            suffix="roi",
-            dismiss_entities=("echo"),
-            space=None,
-        ),
-        name="ds_lesion_connectivity",
-        run_without_submitting=True,
-        mem_gb=DEFAULT_MEMORY_MIN_GB,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_lesion_conn, [("lesion_conn", "in_file"),
-                                    ("source_file", "source_file")]),
     ])
     # fmt:on
 

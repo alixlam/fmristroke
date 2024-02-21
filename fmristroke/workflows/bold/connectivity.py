@@ -297,7 +297,7 @@ def init_lesion_voxels_conn_wf(
 
     Inputs
     ------
-    denoised_bold_t1
+    bold_denoised_t1
         BOLD image in T1 space, after the prescribed corrections (STC, HMC and SDC)
         and denoising.
     boldmask
@@ -326,7 +326,7 @@ def init_lesion_voxels_conn_wf(
     workflow = Workflow(name=name)
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["denoised_bold_t1", "t1w_mask_lesion", "pipeline", "t1w", "gm_mask"]
+            fields=["bold_denoised_t1", "t1w_mask_lesion", "pipelines", "t1w", "gm_mask"]
         ),
         name="inputnode",
     )
@@ -338,7 +338,7 @@ def init_lesion_voxels_conn_wf(
 
     # Select pipeline
     select_pipeline = pe.Node(
-        KeySelect(fields=["denoised_bold_t1"]),
+        KeySelect(fields=["bold_denoised_t1"]),
         name="select_pipeline",
         run_without_submitting=True,
     )
@@ -368,18 +368,18 @@ def init_lesion_voxels_conn_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, select_pipeline, [("denoised_bold_t1", "denoised_bold_t1"),
-                                    ("pipeline", "keys")]),
+        (inputnode, select_pipeline, [("bold_denoised_t1", "bold_denoised_t1"),
+                                    ("pipelines", "keys")]),
         (iterpipeline, select_pipeline, [("pipeline", "key")]),
         (inputnode, roi_resamp, [("t1w_mask_lesion", "input_image")]),
-        (inputnode, select_tmp, [("denoised_bold_t1", "inlist")]),
+        (inputnode, select_tmp, [("bold_denoised_t1", "inlist")]),
         (select_tmp, roi_resamp, [("out", "reference_image")]),
         (roi_resamp, signal_roi, [("out", "label_files")]),
-        (select_pipeline, signal_roi, [("denoised_bold_t1", "in_file")]),
-        (select_pipeline, roi2voxelconn, [("denoised_bold_t1", "input_image")]),
+        (select_pipeline, signal_roi, [("bold_denoised_t1", "in_file")]),
+        (select_pipeline, roi2voxelconn, [("bold_denoised_t1", "input_image")]),
         (signal_roi, roi2voxelconn, [("out_file", "roi_ts")]),
         (inputnode, gm_resamp, [("gm_mask", "input_image")]),
-        (select_pipeline, gm_resamp, [("denoised_bold_t1", "reference_image")]),
+        (select_pipeline, gm_resamp, [("bold_denoised_t1", "reference_image")]),
         (gm_resamp, roi2voxelconn, [("out", "brain_mask")]),
         (iterpipeline, roi2voxelconn, [("pipeline", "pipeline_name")]),
     ])

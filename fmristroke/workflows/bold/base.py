@@ -24,7 +24,7 @@ from .confounds import init_carpetplot_wf, init_confs_wf
 from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
 from .denoise import init_denoise_wf
 from .lagmaps import init_hemodynamic_wf
-from .outputs import init_func_lesion_derivatives_wf
+from .outputs import init_func_lesion_derivatives_wf, init_connectivity_derivatives_wf
 from .registration import init_lesionplot_wf
 
 
@@ -94,7 +94,6 @@ def init_lesion_preproc_wf(
     )
     from niworkflows.interfaces.utility import DictMerge, KeySelect
 
-    from ...utils.combine_runs import combine_run_source
 
     img = nb.load(
         bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
@@ -110,8 +109,6 @@ def init_lesion_preproc_wf(
     pipelines = config.workflow.pipelines
     output_dir = str(config.execution.output_dir)
     freesurfer = config.workflow.freesurfer
-    croprun = config.workflow.croprun
-    session_level = config.execution.run_sessionlevel
     atlases = config.workflow.atlases
     conn_measure = config.workflow.conn_measure
 
@@ -165,7 +162,6 @@ effects of other kernels [@lanczos].
                 "confounds_file",
                 "confounds_metadata",
                 "roi",
-                "roi_std",
                 "templates",
             ]
         ),
@@ -182,19 +178,12 @@ effects of other kernels [@lanczos].
             fields=[
                 "confounds_file",
                 "confounds_metadata",
+                "boldmask",
                 "template",
                 "spatial_reference",
-                "denoised_bold_t1",
-                "denoised_bold_std",
-                "pipeline",
-                "atlases",
+                "bold_denoised_t1",
+                "bold_denoised_std",
                 "pipelines",
-                "conn_measures",
-                "conn_mat",
-                "conn_mat_roi",
-                "FCC",
-                "FCC_roi",
-                "lesion_conn",
             ]
         ),
         name="outputnode",
@@ -221,12 +210,11 @@ effects of other kernels [@lanczos].
         (outputnode, func_lesion_derivatives_wf, [
             ("confounds_file", "inputnode.confounds_file"),
             ("confounds_metadata", "inputnode.confounds_metadata"),
-            ("lagmaps", "inputnode.lagmaps"),
             ("template", "inputnode.template"),
             ("spatial_reference", "inputnode.spatial_reference"),
-            ("denoised_bold_t1", "inputnode.denoised_bold_t1"),
-            ("denoised_bold_std", "inputnode.denoised_bold_std"),
-            ("pipeline", "inputnode.pipeline"),],)
+            ("bold_denoised_t1", "inputnode.bold_denoised_t1"),
+            ("bold_denoised_std", "inputnode.bold_denoised_std"),
+            ("pipelines", "inputnode.pipelines"),],)
     ])
     # fmt:on
 
@@ -237,7 +225,6 @@ effects of other kernels [@lanczos].
         freesurfer=freesurfer,
         ncomp_method=config.workflow.ncomp_method,
         ica_method=config.workflow.ica_method,
-        session_level=session_level,
         name="lesion_confounds_wf",
     )
 
@@ -253,6 +240,7 @@ effects of other kernels [@lanczos].
             ("boldmask_t1", "inputnode.boldmask_t1"),
             ("confounds_file", "inputnode.confounds_file"),],),
         (lesion_confounds_wf, outputnode, [
+            ("outputnode.boldmask", "boldmask"),
             ("outputnode.confounds_file", "confounds_file"),
             ("outputnode.confounds_metadata", "confounds_metadata"),],),
     ])
@@ -273,20 +261,21 @@ effects of other kernels [@lanczos].
         (inputnode, denoising_wf, [
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("templates", "inputnode.templates"),
-            ("bold_t1", "inputnode.bold_t1"),],),
+            ("bold_t1", "inputnode.bold_t1"),
+            ("confounds_metadata", "inputnode.confounds_metadata")],),
         (lesion_confounds_wf, denoising_wf, [
             ("outputnode.boldmask", "inputnode.boldmask"),
             ("outputnode.confounds_file", "inputnode.confounds_file")],),
         (denoising_wf, outputnode, [
             ("outputnode.template", "template"),
             ("outputnode.spatial_reference", "spatial_reference"),
-            ("outputnode.denoised_bold_t1", "denoised_bold_t1"),
-            ("outputnode.denoised_bold_std", "denoised_bold_std"),
-            ("outputnode.pipeline", "pipeline"),],),
+            ("outputnode.bold_denoised_t1", "bold_denoised_t1"),
+            ("outputnode.bold_denoised_std", "bold_denoised_std"),
+            ("outputnode.pipeline", "pipelines"),],),
     ])
     # fmt:on
 
-    # CARPET PLOT DENOISED ##########################################
+    """# CARPET PLOT DENOISED ##########################################
     carpetplot_wf = init_carpetplot_wf(
         mem_gb=mem_gb["resampled"], metadata=metadata, name="carpetplot_wf"
     )
@@ -302,13 +291,13 @@ effects of other kernels [@lanczos].
         (carpetplot_select_std, carpetplot_wf, [
             ("std2anat_xfm", "inputnode.std2anat_xfm"),],),
         (denoising_wf, carpetplot_wf, [
-            ("outputnode.denoised_bold_t1", "inputnode.bold"),],),
+            ("outputnode.bold_denoised_t1", "inputnode.bold"),],),
         (lesion_confounds_wf, carpetplot_wf, [
             ("outputnode.boldmask", "inputnode.bold_mask"),],),
         (inputnode, carpetplot_wf, [
             ("confounds_file", "inputnode.confounds_file",),])
     ])
-    # fmt:on
+    # fmt:on"""
 
     # REPORTING ############################################################
 
@@ -422,7 +411,8 @@ def init_lesion_connectivity_wf(
     if os.path.isfile(ref_file):
         bold_tlen, mem_gb = _create_mem_gb(ref_file)
 
-    wf_name = _get_wf_name(ref_file)
+    wf_name = _get_wf_name(ref_file, conn=True)
+
     config.loggers.workflow.debug(
         "Creating lesion processing workflow for <%s> (%.2f GB / %d TRs). "
         "Memory resampled/largemem=%.2f/%.2f GB.",
@@ -450,6 +440,7 @@ effects of other kernels [@lanczos].
                 "bold_denoised_std",
                 "boldmask_t1",
                 "t1w_preproc",
+                "t1w_mask",
                 "t1w_tpms",
                 "t1w_aseg",
                 "templates",
@@ -457,6 +448,7 @@ effects of other kernels [@lanczos].
                 "std2anat_xfm",
                 "anat2std_xfm",
                 "roi",
+                "roi_std",
                 "gm_mask",
             ]
         ),
@@ -481,7 +473,7 @@ effects of other kernels [@lanczos].
         name="outputnode",
     )
 
-    conn_derivatives_wf = init_conn_derivatives_wf(
+    conn_derivatives_wf = init_connectivity_derivatives_wf(
         bids_root=layout.root,
         output_dir=output_dir,
         spaces=spaces,
@@ -509,7 +501,7 @@ effects of other kernels [@lanczos].
     
     # fmt:off
     workflow.connect([
-        (outputnode, func_lesion_derivatives_wf, [
+        (outputnode, conn_derivatives_wf, [
             ("lagmaps", "inputnode.lagmaps"),
             ("pipelines", "inputnode.pipelines"),
             ("atlases", "inputnode.atlases"),
@@ -532,6 +524,7 @@ effects of other kernels [@lanczos].
     # fmt:off
     workflow.connect([
         (inputnode, concat_wf, [
+            ("boldmask_t1", "inputnode.boldmask_t1"),
             ("bold_denoised_t1", "inputnode.bold_denoised_t1"),
             ("bold_denoised_std", "inputnode.bold_denoised_std"),])
     ])
@@ -559,11 +552,12 @@ effects of other kernels [@lanczos].
             ("t1w_tpms", "inputnode.t1w_tpms"),
             ("std2anat_xfm", "inputnode.std2anat_xfm"),
             ("templates", "inputnode.template"),
-            ("boldmask_t1", "inputnode.boldmask"),
             # undefined if freesurfer was not run
             ("t1w_aseg", "inputnode.t1w_aseg"),],),
+        (concat_wf, hemodynamics_wf, [
+            ("outputnode.boldmask_t1", "inputnode.boldmask")]),
         (concat_wf, select_lag_pipeline, [
-            ("ouputnode.bold_denoised_t1", "bold_denoised_t1")]),
+            ("outputnode.bold_denoised_t1", "bold_denoised_t1")]),
         (inputnode, select_lag_pipeline, [
             ("pipelines","keys")]),
         (select_lag_pipeline, hemodynamics_wf, [
@@ -585,13 +579,13 @@ effects of other kernels [@lanczos].
     # fmt:off
     workflow.connect([
         (inputnode, connectivity_wf, [
-            ("template", "inputnode.templates"),
+            ("templates", "inputnode.templates"),
             ("pipelines", "inputnode.pipelines"),
-            ("boldmask_t1", "inputnode.boldmask"),
             ("anat2std_xfm", "inputnode.anat2std_xfm"),
             ("roi_std", "inputnode.mask_lesion_std"),],),
         (concat_wf, connectivity_wf, [
-            ("outputnode.denoised_bold_std", "inputnode.bold_denoised",),]),
+            ("outputnode.boldmask_t1", "inputnode.boldmask"),
+            ("outputnode.bold_denoised_std", "inputnode.bold_denoised",),]),
         (connectivity_wf, outputnode, [
             ("outputnode.pipelines", "pipelines"),
             ("outputnode.atlases", "atlases"),
@@ -608,17 +602,17 @@ effects of other kernels [@lanczos].
         mem_gb=mem_gb["largemem"],
         omp_nthreads=omp_nthreads,
         pipelines=pipelines,
-        name="lesion_connectivity_wf",
+        name="lesion_conn_wf",
     )
 
     # fmt:off
     workflow.connect([
         (inputnode, lesion_conn, [
-            ("pipeline", "inputnode.pipeline"),
+            ("pipelines", "inputnode.pipelines"),
             ("roi", "inputnode.t1w_mask_lesion"),
             ("t1w_preproc", "inputnode.t1w")],),
         (concat_wf, lesion_conn, [
-            ("outputnode.bold_denoised_std", "inputnode.bold_denoised_std"),]),
+            ("outputnode.bold_denoised_t1", "inputnode.bold_denoised_t1"),]),
         (hemodynamics_wf, lesion_conn, [
             ("outputnode.gm_mask", "inputnode.gm_mask")]),
         (lesion_conn, outputnode, [
@@ -653,7 +647,7 @@ def _create_mem_gb(bold_fname):
     return bold_tlen, mem_gb
 
 
-def _get_wf_name(bold_fname):
+def _get_wf_name(bold_fname, conn=False):
     """
     Derive the workflow name for supplied BOLD file.
 
@@ -662,9 +656,15 @@ def _get_wf_name(bold_fname):
 
     fname = split_filename(bold_fname)[1]
     fname_nosub = "_".join(fname.split("_")[1:])
-    name = "lesion_preproc_" + fname_nosub.replace(".", "_").replace(
-        " ", ""
-    ).replace("-", "_").replace("_bold", "_wf")
+    
+    if conn:
+        name = "lesion_conn_" + fname_nosub.replace(".", "_").replace(
+            " ", ""
+        ).replace("-", "_").replace("_bold", "_wf")
+    else:
+        name = "lesion_preproc_" + fname_nosub.replace(".", "_").replace(
+            " ", ""
+        ).replace("-", "_").replace("_bold", "_wf")
 
     return name
 

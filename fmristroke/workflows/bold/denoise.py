@@ -80,9 +80,9 @@ def init_denoise_wf(
 
     Outputs
     -------
-    denoised_bold_t1
+    bold_denoised_t1
         BOLD image in T1 denoised
-    denoised_bold_std
+    bold_denoised_std
         BOLD image in std spaces denoised
     template
         Template identifiers synchronized correspondingly to previously
@@ -190,7 +190,7 @@ def init_denoise_wf(
     ])
     # fmt:on
 
-    output_names = ["denoised_bold_t1", "denoised_bold_std", "pipeline"]
+    output_names = ["bold_denoised_t1", "bold_denoised_std", "pipeline"]
     poutputnode = pe.Node(
         niu.IdentityInterface(fields=output_names), name="poutputnode2"
     )
@@ -199,8 +199,8 @@ def init_denoise_wf(
         # Connecting outputnode
         (iterablesource, poutputnode, [
             (("pipeline", _get_pipeline_name), "pipeline")]),
-        (denoise_std, poutputnode, [("output_image", "denoised_bold_std")]),
-        (denoise_t1, poutputnode, [("output_image", "denoised_bold_t1")]),
+        (denoise_std, poutputnode, [("output_image", "bold_denoised_std")]),
+        (denoise_t1, poutputnode, [("output_image", "bold_denoised_t1")]),
     ])
     # fmt:on
 
