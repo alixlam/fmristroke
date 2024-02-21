@@ -62,6 +62,12 @@ def init_connectivity_wf(
         Atlases
     conn_measure
         Conn_measure
+    pipelines
+        Pipelines
+    atlases
+        Atlases
+    conn_measure
+        Conn_measure
     """
 
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow

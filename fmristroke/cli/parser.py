@@ -452,6 +452,7 @@ def parse_args(args=None, namespace=None):
             % bids_dir
             / "derivatives"
             / ("fmristroke-%s" % version.split("+")[0])
+            / ("fmristroke-%s" % version.split("+")[0])
         )
 
     if bids_dir in work_dir.parents:

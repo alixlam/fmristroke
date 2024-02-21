@@ -22,6 +22,7 @@ from .concatenate import init_concat_wf
 # BOLD workflows
 from .confounds import init_carpetplot_wf, init_confs_wf
 from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
+from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
 from .denoise import init_denoise_wf
 from .lagmaps import init_hemodynamic_wf
 from .outputs import (

@@ -5,6 +5,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import seaborn as sns
 from matplotlib import gridspec as mgs
 from nilearn import plotting
 from nilearn.image import index_img, threshold_img
