@@ -156,3 +156,6 @@ out/
 # Tools 
 tools/
 log/
+
+# Data
+*bids_filter.json

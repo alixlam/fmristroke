@@ -99,7 +99,7 @@ def main():
             config.execution.output_dir,
             config.execution.run_uuid,
             config=pkgrf("fmristroke", "data/reports-specs.yml"),
-            packagename="fmristroke",
+            packagename="fmriprep",
         )
         write_derivative_description(
             config.execution.bids_dir, config.execution.fmriprep_dir
