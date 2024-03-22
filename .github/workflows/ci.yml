@@ -45,7 +45,6 @@ jobs:
         with:
           name: "coverage-data"
           path: .coverage.*
-          if-no-files-found: ignore
 
   coverage:
     name: "Combine and check coverage"
