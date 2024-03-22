@@ -46,26 +46,21 @@ jobs:
           if-no-files-found: ignore
 
   coverage:
-    name: "Combine and check coverage"
+    name: Combine & check coverage
     needs: tests
     runs-on: ubuntu-latest
+
     steps:
-      - name: "Check out the repo"
-        uses: "actions/checkout@v3"
-
-      - name: "Set up Python"
-        uses: "actions/setup-python@v4"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "${{ matrix.python-version }}"
-
-      - name: "Install dependencies"
-        run: |
-          python -Im pip install --upgrade coverage[toml]
-
-      - name: "Download coverage data"
-        uses: actions/download-artifact@v3
+          python-version-file: .python-version-default
+          cache: pip
+      - run: python -Im pip install --upgrade coverage[toml]
+      - uses: actions/download-artifact@v4
         with:
-          name: "coverage-data"
+          pattern: coverage-data
+          merge-multiple: true
 
       - name: "Combine coverage and fail it it’s under 100 %"
         run: |
