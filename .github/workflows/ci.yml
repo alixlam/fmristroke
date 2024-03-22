@@ -90,8 +90,8 @@ jobs:
       - name: "Create badge"
         uses: schneegans/dynamic-badges-action@v1.6.0
         with:
-          auth: ${{ secrets.GIST_TOKEN }}
-          gistID: YOUR_GIST_ID
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 76065cdb0e28e9ce276f32f5c5ac568f
           filename: covbadge.json
           label: Coverage
           message: ${{ env.total }}%
