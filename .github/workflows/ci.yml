@@ -42,7 +42,7 @@ jobs:
       - name: "Upload coverage data"
         uses: actions/upload-artifact@v3
         with:
-          name: "coverage-data-${{ matrix.python-version }}"
+          name: "coverage-data"
           path: .coverage.*
 
   coverage:
@@ -65,8 +65,7 @@ jobs:
       - name: "Download coverage data"
         uses: actions/download-artifact@v3
         with:
-          name: "coverage-data-${{ matrix.python-version }}"
-          merge-multiple: true
+          name: "coverage-data"
 
       - name: "Combine coverage and fail it it’s under 100 %"
         run: |
