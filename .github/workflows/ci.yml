@@ -21,7 +21,7 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - "3.10"
+          - "${{ matrix.python-version }}"
 
     steps:
       - name: "Check out the repo"
