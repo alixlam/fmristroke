@@ -1,12 +1,14 @@
-# Run CI
+# Run tests
 
-name: "CI"
+name: "Test"
 
 on:
   push:
-    branches: [main, tests]
   pull_request:
-    branches: [main]
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   tests:
@@ -25,10 +27,10 @@ jobs:
 
     steps:
       - name: "Check out the repo"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v2"
 
       - name: "Set up Python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@v2"
         with:
           python-version: "${{ matrix.python-version }}"
 
@@ -43,49 +45,37 @@ jobs:
       - name: "Upload coverage data"
         uses: actions/upload-artifact@v3
         with:
-          name: "coverage-data-${{ matrix.python-version }}"
+          name: covdata
           path: .coverage.*
 
   coverage:
-    name: "Combine and check coverage"
+    name: Coverage
     needs: tests
     runs-on: ubuntu-latest
     steps:
       - name: "Check out the repo"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v2"
 
       - name: "Set up Python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@v2"
         with:
-          python-version: "{{ matrix.python-version }}"
+          python-version: "3.10"
 
       - name: "Install dependencies"
         run: |
-          python -m pip install --upgrade coverage[toml]
+          python -m pip install tox tox-gh-actions
 
       - name: "Download coverage data"
         uses: actions/download-artifact@v3
         with:
-          name: "coverage-data-${{ matrix.python-version }}"
-          merge-multiple: true
+          name: covdata
 
-      - name: "Combine coverage and fail it it’s under 100 %"
+      - name: "Combine"
         run: |
-          python -m coverage combine
-          python -m coverage html --skip-covered --skip-empty
-
-          # Report and write to summary.
-          python -m coverage report | sed 's/^/    /' >> $GITHUB_STEP_SUMMARY
-
-          # Report again and fail if under 100%.
-          python -Im coverage report --fail-under=100
-
-      - name: "Upload HTML report if check failed"
-        uses: actions/upload-artifact@v3
-        with:
-          name: html-report
-          path: htmlcov
-        if: ${{ failure() }}
+          python -m tox -e coverage
+          export TOTAL=$(python -c "import json;print(json.load(open('coverage.json'))['totals']['percent_covered_display'])")
+          echo "total=$TOTAL" >> $GITHUB_ENV
+          echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
 
       - name: "Create badge"
         uses: schneegans/dynamic-badges-action@v1.6.0
