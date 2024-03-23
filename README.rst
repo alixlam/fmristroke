@@ -10,6 +10,10 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 .. image:: https://github.com/alixlam/fmristroke/workflows/Pytest/badge.svg
     :target: https://github.com/alixlam/fmristroke/actions/Pytest
     :alt: github actions pytest
+.. image:: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/alixlam/76065cdb0e28e9ce276f32f5c5ac568f/raw/covbadge.json
+    :target: https://github.com/alixlam/fmristroke/actions/CI
+    :alt: Python Coverage
+
 
 
 About
