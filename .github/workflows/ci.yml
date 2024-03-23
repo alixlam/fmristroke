@@ -88,7 +88,7 @@ jobs:
           gistID: 76065cdb0e28e9ce276f32f5c5ac568f
           filename: covbadge.json
           label: Coverage
-          message: ${{ env.total }}%
+          message: ${{ env.total }}
           minColorRange: 50
           maxColorRange: 90
           valColorRange: ${{ env.total }}
