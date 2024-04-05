@@ -25,9 +25,9 @@ authors:
    
 
 affiliations:
- - name: IMT Atlantique, Lab-STICC UMR CNRS 6285 F-29238, France
+ - name: IMT Atlantique, Lab-STICC UMR CNRS 6285 F-29238,Brest, France
    index: 1
- - name: Univ Rennes, Inria, CNRS, Inserm
+ - name: Univ Rennes, Inria, CNRS, Inserm, Rennes, France
    index: 2
 date: 20 December 2023
 bibliography: paper.bib
