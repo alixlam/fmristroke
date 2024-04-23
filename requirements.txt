@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements.in
 #
-antspyx==0.3.8
+antspyx==0.4.2
     # via -r requirements.in
 apscheduler==3.10.4
     # via fmriprep
