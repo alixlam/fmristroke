@@ -41,7 +41,7 @@ setup(
     package_data={'fmristroke': ['data/*', "data/atlas/*", "data/denoising/*", "data/tests/*"]},
     install_requires=read_requirements("requirements.txt"),
     extras_require={"test": read_requirements("requirements-test.txt")},
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     entry_points = {'console_scripts': [
         'fmristroke=fmristroke.cli.run:main'
     ]}
