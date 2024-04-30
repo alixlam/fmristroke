@@ -159,3 +159,6 @@ log/
 
 # Data
 *bids_filter.json
+
+# scripts
+scripts/
