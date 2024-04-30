@@ -77,13 +77,6 @@ Visual report includes the lagmaps along with the max correlation map (Correlati
 .. figure:: _static/sub-027_ses-1week_task-rest_run-02_space-T1w_desc-corrmap_bold.svg
 
 
-Run concatenation
-~~~~~~~~~~~~~~~~~~
-When the option ``--session-level`` is used, *fMRIStoke* adds a new **carpet**-plot to the report for the new concatenated run. 
-
-.. figure:: _static/sub-027_ses-1week_task-rest_space-T1w_desc-carpetplot_bold.svg
-
-
 
 Derivatives of *fMRIStroke* (preprocessed data)
 ---------------------------------------------
