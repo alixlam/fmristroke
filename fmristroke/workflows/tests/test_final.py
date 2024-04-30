@@ -76,6 +76,7 @@ def _make_params(
     ],
 )
 def test_init_fmristroke_wf(
+    level: str,
     session_level: bool,
     ncomp_method: str,
     ica_method: str,
@@ -86,6 +87,7 @@ def test_init_fmristroke_wf(
     bids_filters: dict,
 ):
     with mock_config():
+        config.workflow.level = level
         config.workflow.freesurfer = freesurfer
         config.execution.run_sessionlevel = session_level
         config.workflow.ncomp_method = ncomp_method
