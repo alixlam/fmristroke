@@ -26,7 +26,7 @@ def _quiet_logger():
 
 
 def _make_params(
-    session_level: bool | None = None,
+    session_level: bool | None,
     ncomp_method: str = "varexp",
     ica_method: str = "canica",
     maxlag: int = 10,
