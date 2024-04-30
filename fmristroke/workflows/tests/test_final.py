@@ -26,7 +26,7 @@ def _quiet_logger():
 
 
 def _make_params(
-    session_level: bool | None,
+    session_level: bool | None = None,
     ncomp_method: str = "varexp",
     ica_method: str = "canica",
     maxlag: int = 10,
@@ -77,7 +77,7 @@ def _make_params(
 )
 def test_init_fmristroke_wf(
     level: str,
-    session_level: bool | None,
+    session_level: bool | None = None,
     ncomp_method: str,
     ica_method: str,
     maxlag: int,
