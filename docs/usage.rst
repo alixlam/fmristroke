@@ -17,7 +17,7 @@ The common parts of the command follow the `BIDS-Apps
 <https://github.com/BIDS-Apps>`_ definition.
 Example: ::
 
-    fmristroke data/bids_root/ out/ participant -w work/ --fmriprep-dir derivatives/
+    fmristroke data/bids_root/ out/ participant -w work/ --fmriprep_dir derivatives/
 
 
 ROI mask in BIDS format
