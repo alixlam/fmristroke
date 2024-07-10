@@ -77,6 +77,11 @@ def init_connectivity_wf(
     from ...interfaces.pyants import ApplyTransforms
 
     workflow = Workflow(name=name)
+
+    workflow.__desc__ = f"""
+    Connectivity matrices are finally computed on the denoised BOLD signal in standard space using the following atlas : {atlases.get_atlases()} and the following
+    connectivity measures : {conn_measure} using the Nilearn package  [@nilearn]."""
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

@@ -101,6 +101,14 @@ def init_denoise_wf(
     from .resample import init_bold_std_trans_wf
 
     workflow = Workflow(name=name)
+
+    workflow.__desc__ = f"""
+    The BOLD time-series were denoised using the following strategies \n:
+    """
+    for pipeline in pipelines.pipelines:
+        workflow.__desc__ += f"""*{pipeline.pipeline}: {pipeline._desc} \n"""
+
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

@@ -83,7 +83,9 @@ def init_hemodynamic_wf(
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = f"""\\TO DO
+    workflow.__desc__ = f"""
+    Lagged cross-correlation analysis with reference to the global gray matter reference signal was performed for each voxel over 
+    the range ±{maxlag} TR to generate hemodynamic lagmaps using the rapidtide library [@rapidtide].
         """
 
     inputnode = pe.Node(

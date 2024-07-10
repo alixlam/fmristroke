@@ -80,14 +80,7 @@ def init_roi_preproc_wf(name="roi_std_wf"):
 
     # Build workflow
     workflow = Workflow(name=name)
-    workflow.__postdesc__ = """\
-All resamplings can be performed with *a single interpolation
-step* by composing all the pertinent transformations (i.e. co-registrations to anatomical and output spaces).
-Gridded (volumetric) resamplings were performed using `antsApplyTransforms` (ANTs),
-configured with Lanczos interpolation to minimize the smoothing
-effects of other kernels [@lanczos].
-"""
-
+    
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

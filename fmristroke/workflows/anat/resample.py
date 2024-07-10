@@ -88,21 +88,6 @@ def init_roi_std_trans_wf(
         if s.standard and s.dim == 3
     ]
 
-    if len(output_references) == 1:
-        workflow.__desc__ = """\
-The roi were resampled into standard space,
-generating a roi in {tpl} space*.
-""".format(
-            tpl=output_references[0]
-        )
-    elif len(output_references) > 1:
-        workflow.__desc__ = """\
-The roi were resampled into several standard spaces,
-correspondingly generating the following *spatially-normalized, roi masks*: {tpl}.
-""".format(
-            tpl=", ".join(output_references)
-        )
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

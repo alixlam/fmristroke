@@ -84,21 +84,6 @@ def init_bold_std_trans_wf(
         if s.standard and s.dim == 3
     ]
 
-    if len(output_references) == 1:
-        workflow.__desc__ = """\
-Bold series were resampled into standard space,
-generating a bold in {tpl} space*.
-""".format(
-            tpl=output_references[0]
-        )
-    elif len(output_references) > 1:
-        workflow.__desc__ = """\
-Bold series were resampled into several standard spaces,
-correspondingly generating the following *spatially-normalized, Bold series*: {tpl}.
-""".format(
-            tpl=", ".join(output_references)
-        )
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

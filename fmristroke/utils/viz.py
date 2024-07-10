@@ -26,7 +26,7 @@ def plot_multicomponents(
             else tseries
         )
     except BaseException:
-        return plt.figure()
+        return 
 
     n_components = ts.shape[1]
     anat = nib.load(anat_nii)

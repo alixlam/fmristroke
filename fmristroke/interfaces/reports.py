@@ -45,6 +45,15 @@ SESSION_TEMPLATE = """\
 \t\t</details>
 """
 
+IC_TEMPLATE = """\
+\t\t<details open>
+\t\t<summary>Summary</summary>
+\t\t<ul class="elem-desc">
+\t\t\t<li>Threshold chosen : 5%</li>
+\t\t\t<li>Number of ICs overlapping with ROI: {n_ics}</li>
+\t\t</ul>
+\t\t</details>
+"""
 
 class _ICPlotInputSpecRPT(reporting.ReportCapableInputSpec):
     in_file = File(
@@ -77,7 +86,8 @@ class ICPlot(reporting.ReportCapableInterface):
             stat_map_nii=self.inputs.in_ICs,
             tseries=self.inputs.in_ts,
         )
-        fig.savefig(self._out_report, bbox_inches="tight")
+        if fig:
+            fig.savefig(self._out_report, bbox_inches="tight")
 
 
 class HemodynamicsSummaryInputSpec(BaseInterfaceInputSpec):
@@ -114,6 +124,23 @@ class HemodynamicsSummary(SummaryInterface):
             hemimask=hemi_mask,
         )
         return HEMO_TEMPLATE.format(**hemo_results)
+
+class _ICSummaryInputSpec(BaseInterfaceInputSpec):
+    in_ts = File(exists=True, mandatory=True, desc="ICs to be plotted")
+
+class ICSummary(SummaryInterface):
+    input_spec = _ICSummaryInputSpec
+
+    def _run_interface(self, runtime):
+        return super()._run_interface(runtime)
+
+    def _generate_segment(self):
+        from pandas import read_csv
+        try:
+            n_ics = read_csv(self.inputs.in_ts, sep="\t").shape[1]
+        except:
+            n_ics = 0
+        return IC_TEMPLATE.format(n_ics=n_ics)
 
 
 class _HemoPlotInputSpecRPT(reporting.ReportCapableInputSpec):

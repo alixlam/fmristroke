@@ -96,11 +96,17 @@ def init_confs_wf(
 
     from ...interfaces.confounds import GatherConfounds, LesionMasks, ROIcomp
     from ...interfaces.nilearn import CanICAInterface
-    from ...interfaces.reports import ICPlot
+    from ...interfaces.reports import ICPlot, ICSummary
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = f"""\\TO DO
+    workflow.__desc__ = f"""
+    Several additional 'stroke specific' confounding time series were calculated based on the
+    *preprocessed BOLD*: Region-wise average signal excluding lesion signal, region-wise average signal in roi and
+    region-wise average signal including roi.
+    Additionally, a set of lesion related regressors are computed following the methods proposed by [@yourganov]. 
+    Independant Components are calculated on the bold signal and components that overlap with an ROI that is unlikely to 
+    include signal related to neuronal activity, such as lesion masks are identified as potential noise component. The remaining components are dropped from consideration.
         """
 
     inputnode = pe.Node(
@@ -203,6 +209,18 @@ def init_confs_wf(
 
     # Plot ROI ICs
     IC_plot = pe.Node(ICPlot(generate_report=True), name="ic_plots")
+
+    # Report
+    IC_report = pe.Node(ICSummary(), name="IC_report")
+
+    ds_report_ica_summ = pe.Node(
+        DerivativesDataSink(
+            desc="icaroi",
+            datatype="figures",
+        ),
+        run_without_submitting=True,
+        name="ds_report_ica_summ",
+    )
 
     ds_report_ica = pe.Node(
         DerivativesDataSink(
@@ -320,6 +338,7 @@ def init_confs_wf(
         (mrg_confic_metadata, mrg_confic_metadata2, [("out", "in_dicts")]),
 
         # Set outputs
+        (lesion_components, IC_report, [("out_signal", "in_ts")]),
         (lesion_components, IC_plot, [("out_signal", "in_ts")]),
         (inputnode, IC_plot, [("boldref_t1", "in_file")]),
         (canica, IC_plot, [("components_img_zscored", "in_ICs")]),
@@ -327,6 +346,7 @@ def init_confs_wf(
         (model_expand, outputnode, [("confounds_file", "confounds_file")]),
         (mrg_confic_metadata2, outputnode, [("out_dict", "confounds_metadata")]),
         (intersect_mask, outputnode, [("out", "boldmask")]),
+        (IC_report, ds_report_ica_summ, [("out_report", "in_file")]),
         (IC_plot, ds_report_ica, [("out_report", "in_file")])
 
     ])
