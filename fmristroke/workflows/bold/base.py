@@ -102,6 +102,11 @@ def init_lesion_preproc_wf(
         bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
     )
     nvols = 1 if img.ndim < 4 else img.shape[3]
+    if nvols * img.header["pixdim"][4]/2 <= 10:
+        config.loggers.workflow.warning(
+            f"Too short BOLD series (<= 10 timepoints). Skipping processing of <{bold_file}>."
+        )
+        return
 
     mem_gb = {"filesize": 1, "resampled": 1, "largemem": 1}
     bold_tlen = 10

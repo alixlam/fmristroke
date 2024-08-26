@@ -135,7 +135,7 @@ def init_single_subject_wf(subject_id: str):
         if not item:
             missing_derivatives.append(key)
     
-    if len(anat_derivatives) > 0:
+    if len(missing_derivatives) > 0:
         config.loggers.workflow.warning(
             f"""\
         Attempted to access pre-existing anatomical derivatives at \
@@ -206,6 +206,7 @@ tasks and sessions), the following lesion specific preprocessing was performed.
             confounds_file,
             confounds_metadata,
         )
+
         if lesion_preproc_wf is None:
             continue
         lesion_preproc_wf.inputs.inputnode.roi = roi["roi"][0]
