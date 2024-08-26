@@ -321,7 +321,7 @@ tasks and sessions), the following lesion specific preprocessing was performed.
                 # Undefined if freesurfer was not run
                 ('t1w_aseg', 'inputnode.t1w_aseg')
             ]),
-            (bold_wf, lesion_connectivity_wf, [
+            (func_preproc_wfs[0], lesion_connectivity_wf, [
                 ("outputnode.pipelines", "inputnode.pipelines")]),
             (grp_bold_denoised_std, select_denoised_std, [
                 ("out", "inlist")]),
