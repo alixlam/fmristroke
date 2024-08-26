@@ -102,9 +102,9 @@ def init_lesion_preproc_wf(
         bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
     )
     nvols = 1 if img.ndim < 4 else img.shape[3]
-    if nvols * img.header["pixdim"][4]/2 <= 10:
+    if nvols * img.header["pixdim"][4]/2 < config.workflow.maxlag:
         config.loggers.workflow.warning(
-            f"Too short BOLD series (<= 10 timepoints). Skipping processing of <{bold_file}>."
+            f"Too short BOLD series with chosen maxlag (<= {config.workflow.maxlag} timepoints). Skipping processing of <{bold_file}>."
         )
         return
 
