@@ -40,6 +40,8 @@ def init_fmristroke_wf():
     single_subject_wfs = []
     for subject_id in config.execution.participant_label:
         single_subject_wf = init_single_subject_wf(subject_id)
+        if single_subject_wf is None:
+            continue
 
         single_subject_wf.config["execution"]["crashdump_dir"] = str(
             config.execution.fmriprep_dir
@@ -93,6 +95,7 @@ def init_single_subject_wf(subject_id: str):
 
     from ..interfaces.bids import BIDSDerivativeDataGrabber
     from ..utils.bids import (
+        collect_anat_derivatives,
         collect_bold_derivatives,
         collect_roi_mask,
         group_runs,
@@ -121,21 +124,27 @@ def init_single_subject_wf(subject_id: str):
             )
     std_spaces = spaces.get_spaces(nonstandard=False, dim=(3,))
 
-    anat_derivatives = collect_derivatives(
+    anat_derivatives = collect_anat_derivatives(
         fmriprep_dir,
         subject_id,
         std_spaces,
         config.workflow.freesurfer,
     )
-    if anat_derivatives is None:
+    missing_derivatives = []
+    for key, item in anat_derivatives.items():
+        if not item:
+            missing_derivatives.append(key)
+    
+    if len(missing_derivatives) > 0:
         config.loggers.workflow.warning(
             f"""\
         Attempted to access pre-existing anatomical derivatives at \
         <{config.execution.fmriprep_dir}>, however not all expectations of fMRIPrep \
         were met (for participant <{subject_id}>, spaces <{', '.join(std_spaces)}>, \
-        >)."""
+        fMRIStroke cannot be run without these derivatives. \
+        >).\nMissing derivatives: {', '.join(missing_derivatives)}."""
         )
-
+        return
     # Get roi mask, currently fmriprep does not preprocess the mask,
     # it is not in the derivatives folder
     roi = collect_roi_mask(bids_dir=raw_data_dir, subject_id=subject_id)
@@ -197,6 +206,7 @@ tasks and sessions), the following lesion specific preprocessing was performed.
             confounds_file,
             confounds_metadata,
         )
+
         if lesion_preproc_wf is None:
             continue
         lesion_preproc_wf.inputs.inputnode.roi = roi["roi"][0]
@@ -311,7 +321,7 @@ tasks and sessions), the following lesion specific preprocessing was performed.
                 # Undefined if freesurfer was not run
                 ('t1w_aseg', 'inputnode.t1w_aseg')
             ]),
-            (bold_wf, lesion_connectivity_wf, [
+            (func_preproc_wfs[0], lesion_connectivity_wf, [
                 ("outputnode.pipelines", "inputnode.pipelines")]),
             (grp_bold_denoised_std, select_denoised_std, [
                 ("out", "inlist")]),
