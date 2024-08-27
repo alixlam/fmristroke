@@ -14,7 +14,8 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
     :target: https://github.com/alixlam/fmristroke/actions/CI
     :alt: Python Coverage
 
-
+Complete information and documentation can be found at
+https://fmristroke.readthedocs.io/
 
 About
 -----
@@ -77,9 +78,6 @@ In summary this tool allows you to easily do the following:
   subject, including meaningful errors.
 - Automate and parallelize processing steps, which provides a significant
   speed-up from manual processing or shell-scripted pipelines.
-
-More information and documentation can be found at
-https://fmristroke.readthedocs.io/
 
 
 Citation
