@@ -4,21 +4,30 @@
         "preproc": {
           "datatype": "anat",
           "desc": "preproc",
-          "suffix": "T1w"
+          "space": null,
+          "suffix": "T1w",
+          "extension": [".nii", ".nii.gz"]
         },
         "mask": {
           "datatype": "anat",
           "desc": "brain",
-          "suffix": "mask"
+          "space": null,
+          "suffix": "mask",
+          "extension": [".nii", ".nii.gz"]
         },
         "dseg": {
           "datatype": "anat",
-          "suffix": "dseg"
+          "suffix": "dseg",
+          "space": null,
+          "desc": null,
+          "extension": [".nii", ".nii.gz"]
         },
         "tpms": {
           "datatype": "anat",
           "label": ["GM", "WM", "CSF"],
-          "suffix": "probseg"
+          "suffix": "probseg",
+          "space": null,
+          "extension": [".nii", ".nii.gz"]
         }
       },
       "std_xfms": {
@@ -43,12 +52,14 @@
         "t1w_aseg": {
           "datatype": "anat",
           "desc": "aseg",
-          "suffix": "dseg"
+          "suffix": "dseg",
+          "extension": [".nii", ".nii.gz"]
         },
         "t1w_aparc": {
           "datatype": "anat",
           "desc": "aparcaseg",
-          "suffix": "dseg"
+          "suffix": "dseg",
+          "extension": [".nii", ".nii.gz"]
         },
         "t1w2fsnative_xfm": {
           "datatype": "anat",
