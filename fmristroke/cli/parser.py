@@ -462,7 +462,7 @@ def parse_args(args=None, namespace=None):
         )
 
     # Setup directories
-    config.execution.log_dir = config.execution.output_dir / "logs"
+    config.execution.log_dir = config.execution.output_dir / "logsfmristroke"
     # Check and create output and working directories
     config.execution.log_dir.mkdir(exist_ok=True, parents=True)
     work_dir.mkdir(exist_ok=True, parents=True)

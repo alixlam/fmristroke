@@ -98,7 +98,7 @@ def build_boilerplate(config_file, workflow):
     from fmristroke import config
 
     config.load(config_file)
-    logs_path = config.execution.fmriprep_dir / "logsfmristroke"
+    logs_path = config.execution.output_dir / "logsfmristroke"
     boilerplate = workflow.visit_desc()
     citation_files = {
         ext: logs_path / ("CITATION.%s" % ext) for ext in ("bib", "tex", "md", "html")

@@ -223,9 +223,6 @@ sections:
       in green; noise components in red.
     subtitle: ICA Components classified by AROMA
 - name: About
-  reportlets:
-  - bids: {datatype: figures, desc: about, suffix: T1w}
-- name: About
   nested: true
   reportlets:
   - bids: {datatype: figures, desc: about, suffix: T1w}
