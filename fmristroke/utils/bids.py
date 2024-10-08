@@ -24,55 +24,36 @@ def collect_anat_derivatives(
 
     derivs_cache = defaultdict(list, {})
     derivatives_dir = Path(derivatives_dir)
-
-    def _check_item(item):
-        if not item:
-            return None
-
-        if isinstance(item, str):
-            item = [item]
-
-        result = []
-        for i in item:
-            if not (derivatives_dir / i).exists():
-                i = i.rstrip(".gz")
-                if not (derivatives_dir / i).exists():
-                    return result
-            result.append(str(derivatives_dir / i))
-
-        return result
-
+    layout = BIDSLayout(derivatives_dir, validate=False)
+    
     for space in [None] + std_spaces:
         for k, q in spec["baseline"].items():
             q["subject"] = subject_id
             if space is not None:
                 q["space"] = space
-            item = _check_item(build_path(q, patterns, strict=True))
+            item = layout.get(return_type="filename", **q)
             if space:
                 derivs_cache["std_%s" % k] += item if len(item) == 1 else [item]
             else:
                 derivs_cache["t1w_%s" % k] = item[0] if len(item) == 1 else item
-
     for space in std_spaces:
         for k, q in spec["std_xfms"].items():
             q["subject"] = subject_id
             q["from"] = q["from"] or space
             q["to"] = q["to"] or space
-            item = _check_item(build_path(q, patterns))
+            item = layout.get(return_type="filename", **q)
             if not item:
-                return None
+                continue
             derivs_cache[k] += item
-
     derivs_cache = dict(derivs_cache)  # Back to a standard dictionary
 
     if freesurfer:
         for k, q in spec["surfaces"].items():
             q["subject"] = subject_id
-            item = _check_item(build_path(q, patterns))
+            item = layout.get(return_type="filename", **q)
             if len(item) == 1:
                 item = item[0]
             derivs_cache[k] = item
-
     derivs_cache["template"] = std_spaces
     return derivs_cache
 
