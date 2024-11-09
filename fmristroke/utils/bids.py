@@ -8,13 +8,21 @@ from bids.layout import Query
 from bids.layout.writing import build_path
 from pkg_resources import resource_filename as pkgrf
 
+
 def collect_anat_derivatives(
-    derivatives_dir, subject_id, std_spaces, freesurfer, spec=None, patterns=None
+    derivatives_dir,
+    subject_id,
+    std_spaces,
+    freesurfer,
+    spec=None,
+    patterns=None,
 ):
     """Gather existing derivatives and compose a cache."""
     if spec is None or patterns is None:
         _spec, _patterns = tuple(
-            loads(Path(pkgrf("fmristroke", "data/io_spec_anat.json")).read_text()).values()
+            loads(
+                Path(pkgrf("fmristroke", "data/io_spec_anat.json")).read_text()
+            ).values()
         )
 
         if spec is None:
@@ -25,7 +33,7 @@ def collect_anat_derivatives(
     derivs_cache = defaultdict(list, {})
     derivatives_dir = Path(derivatives_dir)
     layout = BIDSLayout(derivatives_dir, validate=False)
-    
+
     for space in [None] + std_spaces:
         for k, q in spec["baseline"].items():
             q["subject"] = subject_id
@@ -33,9 +41,13 @@ def collect_anat_derivatives(
                 q["space"] = space
             item = layout.get(return_type="filename", **q)
             if space:
-                derivs_cache["std_%s" % k] += item if len(item) == 1 else [item]
+                derivs_cache["std_%s" % k] += (
+                    item if len(item) == 1 else [item]
+                )
             else:
-                derivs_cache["t1w_%s" % k] = item[0] if len(item) == 1 else item
+                derivs_cache["t1w_%s" % k] = (
+                    item[0] if len(item) == 1 else item
+                )
     for space in std_spaces:
         for k, q in spec["std_xfms"].items():
             q["subject"] = subject_id

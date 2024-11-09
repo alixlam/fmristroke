@@ -80,7 +80,7 @@ def init_roi_preproc_wf(name="roi_std_wf"):
 
     # Build workflow
     workflow = Workflow(name=name)
-    
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

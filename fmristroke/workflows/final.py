@@ -12,6 +12,7 @@ import sys
 import warnings
 from copy import deepcopy
 
+import nibabel as nb
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.utils.connections import listify
@@ -134,7 +135,7 @@ def init_single_subject_wf(subject_id: str):
     for key, item in anat_derivatives.items():
         if not item:
             missing_derivatives.append(key)
-    
+
     if len(missing_derivatives) > 0:
         config.loggers.workflow.warning(
             f"""\
@@ -292,6 +293,25 @@ tasks and sessions), the following lesion specific preprocessing was performed.
     # fmt:on
 
     for i, bold_file in enumerate(bold_derivatives["bold_t1"]):
+        # Check if we have a valid BOLD file ie long enough
+        if not session_level:
+            img = nb.load(bold_file)
+            nvols = img.shape[3]
+            if nvols * img.header["pixdim"][4] / 2 < config.workflow.maxlag:
+                continue
+        else:
+            nvols = [nb.load(bold_file).shape[3] for bold_file in bold_file]
+            nvols_tot = sum(nvols) - config.workflow.croprun * len(nvols)
+            pixdim = nb.load(bold_file[0]).header["pixdim"][4]
+            if (
+                nvols_tot * pixdim  / 2
+                < config.workflow.maxlag
+            ):
+                config.loggers.workflow.warning(
+                    f"Too short BOLD series with chosen maxlag (<= {config.workflow.maxlag} timepoints). Skipping processing of <{bold_file}>"
+                )
+                continue
+
         lesion_connectivity_wf = init_lesion_connectivity_wf(bold_file)
 
         if lesion_connectivity_wf is None:
