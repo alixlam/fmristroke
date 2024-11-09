@@ -55,6 +55,7 @@ IC_TEMPLATE = """\
 \t\t</details>
 """
 
+
 class _ICPlotInputSpecRPT(reporting.ReportCapableInputSpec):
     in_file = File(
         exists=True, mandatory=True, desc="the volume where ROIs are defined"
@@ -125,8 +126,10 @@ class HemodynamicsSummary(SummaryInterface):
         )
         return HEMO_TEMPLATE.format(**hemo_results)
 
+
 class _ICSummaryInputSpec(BaseInterfaceInputSpec):
     in_ts = File(exists=True, mandatory=True, desc="ICs to be plotted")
+
 
 class ICSummary(SummaryInterface):
     input_spec = _ICSummaryInputSpec
@@ -136,9 +139,10 @@ class ICSummary(SummaryInterface):
 
     def _generate_segment(self):
         from pandas import read_csv
+
         try:
             n_ics = read_csv(self.inputs.in_ts, sep="\t").shape[1]
-        except:
+        except BaseException:
             n_ics = 0
         return IC_TEMPLATE.format(n_ics=n_ics)
 

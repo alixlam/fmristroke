@@ -104,8 +104,8 @@ def init_confs_wf(
     Several additional 'stroke specific' confounding time series were calculated based on the
     *preprocessed BOLD*: Region-wise average signal excluding lesion signal, region-wise average signal in roi and
     region-wise average signal including roi.
-    Additionally, a set of lesion related regressors are computed following the methods proposed by [@yourganov]. 
-    Independant Components are calculated on the bold signal and components that overlap with an ROI that is unlikely to 
+    Additionally, a set of lesion related regressors are computed following the methods proposed by [@yourganov].
+    Independant Components are calculated on the bold signal and components that overlap with an ROI that is unlikely to
     include signal related to neuronal activity, such as lesion masks are identified as potential noise component. The remaining components are dropped from consideration.
         """
 
