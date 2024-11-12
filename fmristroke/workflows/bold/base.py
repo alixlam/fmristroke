@@ -22,7 +22,6 @@ from .concatenate import init_concat_wf
 # BOLD workflows
 from .confounds import init_carpetplot_wf, init_confs_wf
 from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
-from .connectivity import init_connectivity_wf, init_lesion_voxels_conn_wf
 from .denoise import init_denoise_wf
 from .lagmaps import init_hemodynamic_wf
 from .outputs import (
@@ -102,9 +101,12 @@ def init_lesion_preproc_wf(
         bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
     )
     nvols = 1 if img.ndim < 4 else img.shape[3]
-    if nvols * img.header["pixdim"][4]/2 < config.workflow.maxlag:
+    if (
+        nvols * img.header["pixdim"][4] / 2 < config.workflow.maxlag
+        and not config.execution.run_sessionlevel
+    ):
         config.loggers.workflow.warning(
-            f"Too short BOLD series with chosen maxlag (<= {config.workflow.maxlag} timepoints). Skipping processing of <{bold_file}>."
+            f"Too short BOLD series with chosen maxlag (<= {config.workflow.maxlag} timepoints). Skipping processing of <{bold_file}>. To add this bold serie, consider decreasing the maxlag parameter or use the --session-level argument if you have multiple runs from the same session/task."
         )
         return
 
@@ -385,11 +387,6 @@ def init_lesion_connectivity_wf(bold_file):
     from niworkflows.interfaces.utility import DictMerge, KeySelect
 
     from ...utils.combine_runs import combine_run_source
-
-    img = nb.load(
-        bold_file[0] if isinstance(bold_file, (list, tuple)) else bold_file
-    )
-    nvols = 1 if img.ndim < 4 else img.shape[3]
 
     mem_gb = {"filesize": 1, "resampled": 1, "largemem": 1}
     bold_tlen = 10

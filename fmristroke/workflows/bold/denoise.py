@@ -108,7 +108,6 @@ def init_denoise_wf(
     for pipeline in pipelines.pipelines:
         workflow.__desc__ += f"""*{pipeline.pipeline}: {pipeline._desc} \n"""
 
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

@@ -5,7 +5,6 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import seaborn as sns
 from matplotlib import gridspec as mgs
 from nilearn import plotting
 from nilearn.image import index_img, threshold_img
@@ -26,7 +25,7 @@ def plot_multicomponents(
             else tseries
         )
     except BaseException:
-        return 
+        return
 
     n_components = ts.shape[1]
     anat = nib.load(anat_nii)
