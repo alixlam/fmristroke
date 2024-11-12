@@ -177,10 +177,8 @@ def init_single_subject_wf(subject_id: str):
     ])
 
     func_pre_desc = """
-Functional data lesion specific data preprocessing
-
-: For each of the {num_bold} BOLD runs found per subject (across all
-tasks and sessions), the following lesion specific preprocessing was performed.
+Functional data lesion specific preprocessing :
+For each of the {num_bold} BOLD runs found per subject (across all tasks and sessions), the following lesion specific preprocessing was performed.
 """.format(
         num_bold=len(bold_derivatives["bold_t1"])
     )

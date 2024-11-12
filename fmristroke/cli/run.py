@@ -68,12 +68,16 @@ def main():
     if EXITCODE != 0:
         sys.exit(EXITCODE)
 
-    with Manager() as mgr:
-        from .workflow import build_boilerplate
+    if config.execution.output_dir != config.execution.fmriprep_dir:
+        with Manager() as mgr:
+            from .workflow import build_boilerplate
 
-        p = Process(target=build_boilerplate, args=(str(config_file), fmristroke_wf))
-        p.start()
-        p.join()
+            p = Process(target=build_boilerplate, args=(str(config_file), fmristroke_wf))
+            p.start()
+            p.join()
+
+    if config.execution.boilerplate_only:
+        sys.exit(int(EXITCODE > 0))
 
     # Clean up master process before running workflow, which may create forks
     gc.collect()

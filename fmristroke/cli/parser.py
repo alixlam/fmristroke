@@ -186,6 +186,13 @@ def _build_parser(**kwargs):
         help="Only generate reports, don't run workflows. This will only rerun report "
         "aggregation, not reportlet generation for specific nodes.",
     )
+    g_subset.add_argument(
+        '--boilerplate-only',
+        '--boilerplate_only',
+        action='store_true',
+        default=False,
+        help='Only generate boilerplate for the workflow.'
+    )
 
     g_conf = parser.add_argument_group("Workflow configuration")
     g_conf.add_argument(
@@ -462,7 +469,7 @@ def parse_args(args=None, namespace=None):
         )
 
     # Setup directories
-    config.execution.log_dir = config.execution.output_dir / "logsfmristroke"
+    config.execution.log_dir = config.execution.output_dir / "logs"
     # Check and create output and working directories
     config.execution.log_dir.mkdir(exist_ok=True, parents=True)
     work_dir.mkdir(exist_ok=True, parents=True)
