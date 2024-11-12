@@ -21,6 +21,7 @@ def init_connectivity_wf(
     mem_gb: float,
     atlases: Atlases,
     pipelines: Pipelines,
+    session_level: bool,
     conn_measure: list = ["correlation"],
     name: str = "connectivity_wf",
 ):
@@ -79,7 +80,7 @@ def init_connectivity_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f"""
-    Connectivity matrices are finally computed on the denoised BOLD signal in standard space using the following atlas : {atlases.get_atlases()} and the following
+    {'Then runs from the same session and task were concatenated and' if session_level else 'Then'} connectivity matrices were computed on the denoised BOLD signal using the following atlas : {atlases.get_atlases()} and the following
     connectivity measures : {conn_measure} using the Nilearn package  [@nilearn]."""
 
     inputnode = pe.Node(

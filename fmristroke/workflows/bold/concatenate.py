@@ -15,6 +15,7 @@ from ...interfaces import DerivativesDataSink
 def init_concat_wf(
     mem_gb: float,
     croprun: int,
+    session_level: bool,
     name: str = "concat_wf",
 ):
     """
@@ -31,6 +32,8 @@ def init_concat_wf(
         the FoV
     croprun : :obj: int`
         crop beginning of bold run by n volumes.
+    session_level : :obj:`bool`
+        wether to concatenate bold runs at session level
     name : :obj:`str`
         Name of workflow (default: ``concat_wf``)
 
@@ -58,9 +61,6 @@ def init_concat_wf(
     from ...interfaces.reports import SessionSummary
 
     workflow = Workflow(name=name)
-
-    workflow.__desc__ = f"""Concatenate bold runs from same session and task
-    """
 
     inputnode = pe.Node(
         niu.IdentityInterface(

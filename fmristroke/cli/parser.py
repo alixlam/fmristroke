@@ -186,6 +186,13 @@ def _build_parser(**kwargs):
         help="Only generate reports, don't run workflows. This will only rerun report "
         "aggregation, not reportlet generation for specific nodes.",
     )
+    g_subset.add_argument(
+        '--boilerplate-only',
+        '--boilerplate_only',
+        action='store_true',
+        default=False,
+        help='Only generate boilerplate for the workflow.'
+    )
 
     g_conf = parser.add_argument_group("Workflow configuration")
     g_conf.add_argument(

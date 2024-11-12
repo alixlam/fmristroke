@@ -289,6 +289,8 @@ class execution(_Config):
     """An existing path to the dataset, which must be BIDS-compliant."""
     bids_filters = None
     """A dictionary of BIDS selection filters."""
+    boilerplate_only = False
+    """Only generate a boilerplate."""
     layout = None
     """A :py:class:`~bids.layout.BIDSLayout` object, see :py:func:`init`."""
     log_dir = None

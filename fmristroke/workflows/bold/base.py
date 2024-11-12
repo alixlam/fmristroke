@@ -148,14 +148,6 @@ def init_lesion_preproc_wf(
     )
     # Build workflow
     workflow = Workflow(name=wf_name)
-    workflow.__postdesc__ = """\
-All resamplings can be performed with *a single interpolation
-step* by composing all the pertinent transformations (i.e. co-registrations to anatomical and output spaces).
-Gridded (volumetric) resamplings were performed using `antsApplyTransforms` (ANTs),
-configured with Lanczos interpolation to minimize the smoothing
-effects of other kernels [@lanczos].
-"""
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -429,13 +421,6 @@ def init_lesion_connectivity_wf(bold_file):
     )
     # Build workflow
     workflow = Workflow(name=wf_name)
-    workflow.__postdesc__ = """\
-All resamplings can be performed with *a single interpolation
-step* by composing all the pertinent transformations (i.e. co-registrations to anatomical and output spaces).
-Gridded (volumetric) resamplings were performed using `antsApplyTransforms` (ANTs),
-configured with Lanczos interpolation to minimize the smoothing
-effects of other kernels [@lanczos].
-"""
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -523,6 +508,7 @@ effects of other kernels [@lanczos].
     concat_wf = init_concat_wf(
         mem_gb=mem_gb["largemem"],
         croprun=croprun,
+        session_level=session_level,
         name="concat_runs_wf",
     )
 
@@ -580,6 +566,7 @@ effects of other kernels [@lanczos].
         mem_gb=mem_gb["largemem"],
         atlases=atlases,
         pipelines=pipelines,
+        session_level=session_level,
         conn_measure=conn_measure,
         name="connectivity_wf",
     )
