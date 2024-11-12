@@ -1,107 +1,107 @@
 {
-    "queries": {
-      "baseline": {
-        "preproc": {
-          "datatype": "anat",
-          "desc": "preproc",
-          "space": null,
-          "suffix": "T1w",
-          "extension": [".nii", ".nii.gz"]
-        },
-        "mask": {
-          "datatype": "anat",
-          "desc": "brain",
-          "space": null,
-          "suffix": "mask",
-          "extension": [".nii", ".nii.gz"]
-        },
-        "dseg": {
-          "datatype": "anat",
-          "suffix": "dseg",
-          "space": null,
-          "desc": null,
-          "extension": [".nii", ".nii.gz"]
-        },
-        "tpms": {
-          "datatype": "anat",
-          "label": ["GM", "WM", "CSF"],
-          "suffix": "probseg",
-          "space": null,
-          "extension": [".nii", ".nii.gz"]
-        }
+  "queries": {
+    "baseline": {
+      "preproc": {
+        "datatype": "anat",
+        "desc": "preproc",
+        "space": null,
+        "suffix": "T1w",
+        "extension": [".nii", ".nii.gz"]
       },
-      "std_xfms": {
-        "anat2std_xfm": {
-          "datatype": "anat",
-          "extension": "h5",
-          "from": "T1w",
-          "to": [],
-          "suffix": "xfm",
-          "mode": "image"
-        },
-        "std2anat_xfm": {
-          "datatype": "anat",
-          "extension": "h5",
-          "from": [],
-          "to": "T1w",
-          "suffix": "xfm",
-          "mode": "image"
-        }
+      "mask": {
+        "datatype": "anat",
+        "desc": "brain",
+        "space": null,
+        "suffix": "mask",
+        "extension": [".nii", ".nii.gz"]
       },
-      "surfaces": {
-        "t1w_aseg": {
-          "datatype": "anat",
-          "desc": "aseg",
-          "suffix": "dseg",
-          "extension": [".nii", ".nii.gz"]
-        },
-        "t1w_aparc": {
-          "datatype": "anat",
-          "desc": "aparcaseg",
-          "suffix": "dseg",
-          "extension": [".nii", ".nii.gz"]
-        },
-        "t1w2fsnative_xfm": {
-          "datatype": "anat",
-          "from": "T1w",
-          "to": "fsnative",
-          "extension": "txt",
-          "suffix": "xfm",
-          "mode": "image"
-        },
-        "fsnative2t1w_xfm": {
-          "datatype": "anat",
-          "from": "fsnative",
-          "to": "T1w",
-          "extension": "txt",
-          "suffix": "xfm",
-          "mode": "image"
-        },
-        "surfaces": {
-          "datatype": "anat",
-          "hemi": ["L", "R"],
-          "extension": "surf.gii",
-          "suffix": [ "inflated", "midthickness", "pial", "white"]
-        },
-        "morphometrics": {
-          "datatype": "anat",
-          "hemi": ["L", "R"],
-          "extension": "shape.gii",
-          "suffix": ["thickness", "sulc", "curv"]
-        },
-        "anat_ribbon": {
-          "datatype": "anat",
-          "desc": "ribbon",
-          "suffix": "mask",
-          "extension": "nii.gz"
-        }
+      "dseg": {
+        "datatype": "anat",
+        "suffix": "dseg",
+        "space": null,
+        "desc": null,
+        "extension": [".nii", ".nii.gz"]
+      },
+      "tpms": {
+        "datatype": "anat",
+        "label": ["GM", "WM", "CSF"],
+        "suffix": "probseg",
+        "space": null,
+        "extension": [".nii", ".nii.gz"]
       }
     },
-    "patterns": [
-      "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_space-{space}][_desc-{desc}]_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|dseg|inplaneT[12]|angio>}.{extension<nii|nii.gz|json>|nii.gz}",
-      "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]_from-{from}_to-{to}_mode-{mode<image|points>|image}_{suffix<xfm>|xfm}.{extension<txt|h5>}",
-      "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]_hemi-{hemi<L|R>}_{suffix<white|smoothwm|pial|midthickness|inflated|vinflated|sphere|flat|thickness|sulc|curv>}.{extension<surf.gii|shape.gii>}",
-      "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_space-{space}]_desc-{desc}_{suffix<mask>|mask}.{extension<nii|nii.gz|json>|nii.gz}",
-      "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_space-{space}]_label-{label}[_desc-{desc}]_{suffix<probseg>|probseg}.{extension<nii|nii.gz|json>|nii.gz}"
-    ]
-  }
+    "std_xfms": {
+      "anat2std_xfm": {
+        "datatype": "anat",
+        "extension": "h5",
+        "from": "T1w",
+        "to": [],
+        "suffix": "xfm",
+        "mode": "image"
+      },
+      "std2anat_xfm": {
+        "datatype": "anat",
+        "extension": "h5",
+        "from": [],
+        "to": "T1w",
+        "suffix": "xfm",
+        "mode": "image"
+      }
+    },
+    "surfaces": {
+      "t1w_aseg": {
+        "datatype": "anat",
+        "desc": "aseg",
+        "suffix": "dseg",
+        "extension": [".nii", ".nii.gz"]
+      },
+      "t1w_aparc": {
+        "datatype": "anat",
+        "desc": "aparcaseg",
+        "suffix": "dseg",
+        "extension": [".nii", ".nii.gz"]
+      },
+      "t1w2fsnative_xfm": {
+        "datatype": "anat",
+        "from": "T1w",
+        "to": "fsnative",
+        "extension": "txt",
+        "suffix": "xfm",
+        "mode": "image"
+      },
+      "fsnative2t1w_xfm": {
+        "datatype": "anat",
+        "from": "fsnative",
+        "to": "T1w",
+        "extension": "txt",
+        "suffix": "xfm",
+        "mode": "image"
+      },
+      "surfaces": {
+        "datatype": "anat",
+        "hemi": ["L", "R"],
+        "extension": "surf.gii",
+        "suffix": [ "inflated", "midthickness", "pial", "white"]
+      },
+      "morphometrics": {
+        "datatype": "anat",
+        "hemi": ["L", "R"],
+        "extension": "shape.gii",
+        "suffix": ["thickness", "sulc", "curv"]
+      },
+      "anat_ribbon": {
+        "datatype": "anat",
+        "desc": "ribbon",
+        "suffix": "mask",
+        "extension": "nii.gz"
+      }
+    }
+  },
+  "patterns": [
+    "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_space-{space}][_desc-{desc}]_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|dseg|inplaneT[12]|angio>}.{extension<nii|nii.gz|json>|nii.gz}",
+    "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]_from-{from}_to-{to}_mode-{mode<image|points>|image}_{suffix<xfm>|xfm}.{extension<txt|h5>}",
+    "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]_hemi-{hemi<L|R>}_{suffix<white|smoothwm|pial|midthickness|inflated|vinflated|sphere|flat|thickness|sulc|curv>}.{extension<surf.gii|shape.gii>}",
+    "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_space-{space}]_desc-{desc}_{suffix<mask>|mask}.{extension<nii|nii.gz|json>|nii.gz}",
+    "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_space-{space}]_label-{label}[_desc-{desc}]_{suffix<probseg>|probseg}.{extension<nii|nii.gz|json>|nii.gz}"
+  ]
+}
