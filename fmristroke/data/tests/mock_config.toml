@@ -7,7 +7,7 @@ overcommit_limit = "50%"
 nipype_version = "1.8.6"
 templateflow_version = "23.0.0"
 fmriprep_version = "23.0.2"
-version = "0.1.0"
+version = "1.0.0"
 
 [execution]
 fmriprep_dir = "FCStroke_2009_deriv/"
