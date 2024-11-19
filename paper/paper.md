@@ -34,7 +34,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-Functional Magnetic Resonance Imaging (fMRI) is a widely used neuroimaging technique for the analysis of neural activity and functional connectivity. However, the fMRI signal is inherently noisy and susceptible to various artifacts, compromising the accuracy and reliability of derived analyses. This becomes particularly critical when dealing with stroke patients, given the added complexitiy associated with their neurological condition. Specific preprocessing and denoising are integral steps to identify the nuisance sources and mitigate their effect on fMRI analysis. 
+Functional Magnetic Resonance Imaging (fMRI) is a widely used neuroimaging technique for the analysis of neural activity and functional connectivity. However, the fMRI signal is inherently noisy and susceptible to various artifacts, compromising the accuracy and reliability of derived analyses. This becomes particularly critical when dealing with stroke patients, given the added complexity associated with their neurological condition. Specific preprocessing and denoising are integral steps to identify the nuisance sources and mitigate their effect on fMRI analysis. 
 To address these challenges, we present fMRIStroke, a dedicated preprocessing pipeline designed specifically for the quality control and preprocessing of fMRI data from stroke patients. fMRIStroke operates as an enhancement to standard preprocessing workflows. Building on the outputs from commonly used tools like fMRIprep, fMRIStroke introduces additional quality control visualizations, computes supplementary confounding variables, and performs confound regression (denoising), resulting in preprocessed fMRI data that is ready for subsequent analysis of neural activity or connectivity.
 
 
@@ -52,7 +52,7 @@ To this end, we propose fMRIStroke, a fMRI preprocessing pipeline designed speci
 Concretely, novel quality controls include a hemodynamic lagmap. fMRIStroke assesses hemodynamic lag using cross-correlation with the global gray matter signal [@Siegel:2016] using the rapidTide Python library [@Rapidtide]. As stroke can introduce altered blood flow patterns a normal hemodynamic response cannot be assumed. @Siegel:2016 investigated temporal delays (lag) in resting state functional magnetic resonance imaging signals and found that significant hemodynamic lag was observed in 30% of sub-acute stroke patients and approximately 10% of patients at one-year post-stroke. 
 Lags systematically alter measurements of functional connectivity from the affected nodes, and need to be taken into consideration when doing FC analysis [@Siegel:2017].
 
-Additionally, signal in the lesion mask and signals in CSF and WM masks incorporating lesion masks are added to the confounds already computed by fMRIprep along with new ICA-based cofounds inspired by @Yourganov:2017 proposed method. In this paper the authors point out that the lesion introduces a particular artefact into the fMRI data which is not removed by standard preprocessing techniques. To mitigate this effect, they propose an ICA-based noise identification method. Independent components are calculated on the BOLD signal and those that overlap with the lesion (that is unlikely to include signal related to neuronal activity), are identified as potential noise components. Signals extracted from ICA components can be further regressed out from the fMRI data with a denoising procedure.
+Additionally, signal in the lesion mask and signals in CSF and WM masks incorporating lesion masks are added to the confounds already computed by fMRIprep along with new ICA-based confounds inspired by @Yourganov:2017 proposed method. In this paper the authors point out that the lesion introduces a particular artefact into the fMRI data which is not removed by standard preprocessing techniques. To mitigate this effect, they propose an ICA-based noise identification method. Independent components are calculated on the BOLD signal and those that overlap with the lesion (that is unlikely to include signal related to neuronal activity), are identified as potential noise components. Signals extracted from ICA components can be further regressed out from the fMRI data with a denoising procedure.
 
 
 Finally supplementary outputs include the lesion mask in standardized space and multiple denoised fMRI data as there is currently no consensus in the fMRI community on an optimal denoising strategy.
@@ -61,6 +61,9 @@ fMRIStroke pipeline is presented in more details in the following figure.
 
 
 ![fMRIStroke pipeline.](pipeline.png)
+
+# Acknowledgements
+This work was made possible thanks to the labex Cominlabs, as part of the PEPERONI project. 
 
 
 # References
