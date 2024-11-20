@@ -57,7 +57,7 @@ Additionally, signal in the lesion mask and signals in CSF and WM masks incorpor
 
 Finally supplementary outputs include the lesion mask in standardized space and multiple denoised fMRI data as there is currently no consensus in the fMRI community on an optimal denoising strategy.
 
-fMRIStroke pipeline is presented in more details in the following figure. 
+fMRIStroke pipeline is presented in more detail in the following figure. 
 
 
 ![fMRIStroke pipeline.](pipeline.png)
