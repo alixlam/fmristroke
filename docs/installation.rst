@@ -29,16 +29,24 @@ Docker
 ------
 For every new version that is released, a corresponding Docker image is generated. The Docker image becomes a container when the execution engine loads the image and adds an extra layer that makes it runnable. In order to run the Docker images, the Docker Engine must be installed.
 
-    $ docker pull alixlam/fmristroke:<latest-version>
+1. **Install Docker**
 
-You can run fMRIStroke interacting directly with the Docker Engine via the docker run interface.
+   If not already installed, refer to the `official Docker installation guide <https://docs.docker.com/get-docker/>`_.
 
-    $ docker run -ti --rm \
-        -v path/to/data:/data:ro \        # read-only, for data
-        -v path/to/output:/out \          # read-write, for outputs
-        fmristroke:<latest-version> \
-        /data /out/out \
-        participant
+2. **Pull the Docker image** ::
+
+       $ docker pull alixlam/fmristroke:<latest-version>
+
+    Replace ``<latest-version>`` with the desired tag (e.g., ``latest``).
+
+3. **Run the Docker container** ::
+         $ docker run -ti --rm \
+                -v path/to/data:/data:ro \        # read-only, for data
+                -v path/to/output:/out \          # read-write, for outputs
+                alixlam/fmristroke:<latest-version> \
+                /data /out/out \
+                participant
+
 
 Singularity
 ---------
