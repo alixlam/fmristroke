@@ -40,7 +40,8 @@ For every new version that is released, a corresponding Docker image is generate
     Replace ``<latest-version>`` with the desired tag (e.g., ``latest``).
 
 3. **Run the Docker container** ::
-         $ docker run -ti --rm \
+
+       $ docker run -ti --rm \
                 -v path/to/data:/data:ro \        # read-only, for data
                 -v path/to/output:/out \          # read-write, for outputs
                 alixlam/fmristroke:<latest-version> \
