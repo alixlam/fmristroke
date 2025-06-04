@@ -13,6 +13,9 @@ task-based and resting-state functional MRI (fMRI) from stroke patients.
 .. image:: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/alixlam/76065cdb0e28e9ce276f32f5c5ac568f/raw/covbadge.json
     :target: https://github.com/alixlam/fmristroke/actions/CI
     :alt: Python Coverage
+.. image:: https://img.shields.io/badge/docker-nipreps/fmriprep-brightgreen.svg?logo=docker&style=flat
+  :target: https://hub.docker.com/r/alixlam/fmristroke/tags/
+  :alt: Docker image available!
 
 Complete information and documentation can be found at
 https://fmristroke.readthedocs.io/
