@@ -76,7 +76,7 @@ jobs:
           echo "total=$total" >> $GITHUB_ENV
 
       - name: "Upload HTML report if check failed"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: html-report
           path: htmlcov
