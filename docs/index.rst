@@ -14,5 +14,6 @@
    usage
    outputs
    api
+   publications
    changes
 
