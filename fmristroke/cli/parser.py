@@ -302,7 +302,7 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
     g_fs.add_argument(
         "--freesurfer",
         action="store_true",
-        default=True,
+        default=False,
         dest="freesurfer",
         help="Was freesurfer run",
     )
