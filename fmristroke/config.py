@@ -52,13 +52,23 @@ finally:
     import logging
     import random
     import sys
+    from importlib.metadata import PackageNotFoundError, version
     from pathlib import Path
     from time import strftime
     from uuid import uuid4
 
-    from fmriprep import __version__ as _fmriprep_ver
-    from nipype import __version__ as _nipype_ver
-    from templateflow import __version__ as _tf_ver
+    try:
+        _fmriprep_ver = version("fmriprep")
+    except PackageNotFoundError:
+        _fmriprep_ver = "unknown"
+    try:
+        _nipype_ver = version("nipype")
+    except PackageNotFoundError:
+        _nipype_ver = "unknown"
+    try:
+        _tf_ver = version("templateflow")
+    except PackageNotFoundError:
+        _tf_ver = "unknown"
 
     from . import __version__
 
