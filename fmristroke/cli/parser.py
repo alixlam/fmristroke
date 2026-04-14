@@ -277,6 +277,7 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
     )
     g_confounds.add_argument(
         "--lower_cutoff",
+        "--lower-cutoff",
         dest="lower_cutoff",
         required=False,
         action="store",
@@ -286,6 +287,7 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
     )
     g_confounds.add_argument(
         "--upper_cutoff",
+        "--upper-cutoff",
         dest="upper_cutoff",
         required=False,
         action="store",

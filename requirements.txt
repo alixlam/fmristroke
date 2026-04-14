@@ -346,6 +346,10 @@ sdcflows==2.4.3
     # via fmriprep
 seaborn==0.13.0
     # via niworkflows
+setuptools
+    # via
+    #   -r requirements.in
+    #   fmristroke
 simplejson==3.19.2
     # via nipype
 six==1.16.0

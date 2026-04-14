@@ -31,6 +31,7 @@ def test_parser_valid(tmp_path, args):
     """Check valid arguments."""
     datapath = tmp_path / "data"
     datapath.mkdir(exist_ok=True)
+    args = list(args)
     args[0] = str(datapath)
 
     opts = _build_parser().parse_args(args)
