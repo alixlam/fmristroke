@@ -346,7 +346,7 @@ sdcflows==2.4.3
     # via fmriprep
 seaborn==0.13.0
     # via niworkflows
-setuptools
+setuptools<81
     # via
     #   -r requirements.in
     #   fmristroke
