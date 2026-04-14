@@ -52,13 +52,23 @@ finally:
     import logging
     import random
     import sys
+    from importlib.metadata import PackageNotFoundError, version
     from pathlib import Path
     from time import strftime
     from uuid import uuid4
 
-    from fmriprep import __version__ as _fmriprep_ver
-    from nipype import __version__ as _nipype_ver
-    from templateflow import __version__ as _tf_ver
+    try:
+        _fmriprep_ver = version("fmriprep")
+    except PackageNotFoundError:
+        _fmriprep_ver = "unknown"
+    try:
+        _nipype_ver = version("nipype")
+    except PackageNotFoundError:
+        _nipype_ver = "unknown"
+    try:
+        _tf_ver = version("templateflow")
+    except PackageNotFoundError:
+        _tf_ver = "unknown"
 
     from . import __version__
 
@@ -400,6 +410,10 @@ class workflow(_Config):
     """Method to estimate components for lesion ICA"""
     ica_method = None
     """ICA method to use"""
+    lower_cutoff = 0.2
+    """Lower cutoff for compute_epi_mask"""
+    upper_cutoff = 0.85
+    """Upper cutoff for compute_epi_mask"""
     maxlag = None
     """Maxlag for hemodynamics computations"""
     spaces = None

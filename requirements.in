@@ -1,3 +1,4 @@
 antspyx==0.3.8
 fmriprep==23.0.2
 rapidtide
+setuptools<81

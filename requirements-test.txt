@@ -5,6 +5,7 @@ autopep8
 black
 isort
 build
+setuptools<81
 pytest
 pytest-cov
 coverage
