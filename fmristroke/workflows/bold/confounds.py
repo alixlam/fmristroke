@@ -18,6 +18,8 @@ def init_confs_wf(
     ica_method: str = "canica",
     freesurfer: bool = False,
     ncomp_method: str or int = "varexp",
+    lower_cutoff: float = 0.2,
+    upper_cutoff: float = 0.85,
     name: str = "confounds_wf",
 ):
     """
@@ -42,6 +44,10 @@ def init_confs_wf(
         the FoV
     metadata : :obj:`dict`
         BIDS metadata for BOLD file
+    lower_cutoff : :obj:`float`
+        Lower cutoff passed to :func:`nilearn.masking.compute_epi_mask`
+    upper_cutoff : :obj:`float`
+        Upper cutoff passed to :func:`nilearn.masking.compute_epi_mask`
     name : :obj:`str`
         Name of workflow (default: ``bold_confs_wf``)
 
@@ -147,6 +153,8 @@ def init_confs_wf(
     intersect_mask = pe.Node(
         niu.Function(function=_boldmsk_from_T1w), name="intersect_mask"
     )
+    intersect_mask.inputs.lower_cutoff = lower_cutoff
+    intersect_mask.inputs.upper_cutoff = upper_cutoff
 
     # Generate csf, wm and combined masks
     acc_masks = pe.Node(aCompCorMasks(is_aseg=freesurfer), name="acc_masks")
@@ -487,12 +495,14 @@ def init_carpetplot_wf(
     return workflow
 
 
-def _boldmsk_from_T1w(T1wmask, bold):
+def _boldmsk_from_T1w(T1wmask, bold, lower_cutoff=0.2, upper_cutoff=0.85):
     from pathlib import Path
 
     from nilearn.masking import compute_epi_mask, intersect_masks
 
-    mask_fov = compute_epi_mask(bold)
+    mask_fov = compute_epi_mask(
+        bold, lower_cutoff=lower_cutoff, upper_cutoff=upper_cutoff
+    )
     out = intersect_masks([T1wmask, mask_fov], 1)
     out_name = Path("mask_intersect.nii.gz").absolute()
     out.to_filename(out_name)

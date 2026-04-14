@@ -31,6 +31,8 @@ write_graph = false
 freesurfer = true
 ncomp_method = "varexp"
 ica_method = "canica"
+lower_cutoff = 0.2
+upper_cutoff = 0.85
 maxlag = 10
 croprun = 4
 conn_measure = [ "correlation",]
@@ -47,4 +49,3 @@ stop_on_first_crash = false
 [nipype.plugin_args]
 maxtasksperchild = 1
 raise_insufficient = false
-

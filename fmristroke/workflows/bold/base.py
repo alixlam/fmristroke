@@ -227,6 +227,8 @@ def init_lesion_preproc_wf(
         freesurfer=freesurfer,
         ncomp_method=config.workflow.ncomp_method,
         ica_method=config.workflow.ica_method,
+        lower_cutoff=config.workflow.lower_cutoff,
+        upper_cutoff=config.workflow.upper_cutoff,
         name="lesion_confounds_wf",
     )
 

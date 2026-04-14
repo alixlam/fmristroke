@@ -38,6 +38,34 @@ def test_parser_valid(tmp_path, args):
     assert opts.bids_dir == datapath
 
 
+def test_parser_epi_mask_cutoffs(tmp_path):
+    """Check EPI mask cutoff arguments."""
+    datapath = tmp_path / "data"
+    datapath.mkdir(exist_ok=True)
+
+    opts = _build_parser().parse_args(
+        [str(datapath), "out/", "participant"]
+    )
+
+    assert opts.lower_cutoff == 0.2
+    assert opts.upper_cutoff == 0.85
+
+    opts = _build_parser().parse_args(
+        [
+            str(datapath),
+            "out/",
+            "participant",
+            "--lower_cutoff",
+            "0.1",
+            "--upper_cutoff",
+            "0.9",
+        ]
+    )
+
+    assert opts.lower_cutoff == 0.1
+    assert opts.upper_cutoff == 0.9
+
+
 def test_bids_filter_file(tmp_path, capsys):
     bids_path = tmp_path / "data"
     out_path = tmp_path / "out"

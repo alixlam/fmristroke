@@ -400,6 +400,10 @@ class workflow(_Config):
     """Method to estimate components for lesion ICA"""
     ica_method = None
     """ICA method to use"""
+    lower_cutoff = 0.2
+    """Lower cutoff for compute_epi_mask"""
+    upper_cutoff = 0.85
+    """Upper cutoff for compute_epi_mask"""
     maxlag = None
     """Maxlag for hemodynamics computations"""
     spaces = None

@@ -275,6 +275,24 @@ https://fmriprep.readthedocs.io/en/%s/spaces.html"""
         type=str,
         help="Method to run ICA lesion",
     )
+    g_confounds.add_argument(
+        "--lower_cutoff",
+        dest="lower_cutoff",
+        required=False,
+        action="store",
+        default=0.2,
+        type=float,
+        help="lower cutoff for nilearn.masking.compute_epi_mask",
+    )
+    g_confounds.add_argument(
+        "--upper_cutoff",
+        dest="upper_cutoff",
+        required=False,
+        action="store",
+        default=0.85,
+        type=float,
+        help="upper cutoff for nilearn.masking.compute_epi_mask",
+    )
 
     # Hemodynamics options
     g_lag = parser.add_argument_group(
